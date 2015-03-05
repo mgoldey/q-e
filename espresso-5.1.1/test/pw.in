@@ -16,7 +16,7 @@
   ! nspin     = 2,
   ! tot_magnetization = 1
   edir = 1,
-  emaxpos = 1,
+  emaxpos = 0.25,
   eamp = -1,
   eopreg = 0.5
 /

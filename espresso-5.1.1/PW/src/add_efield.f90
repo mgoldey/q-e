@@ -18,7 +18,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !   This routine adds stuff to the local potential. 
   !
   !   edir - atom to center potential well around 
-  !   emaxpos - radius of potential well
+  !   emaxpos - radius of potential well in alat
   !   eamp - strength of potential in Ry a.u.
   !
   !
@@ -96,7 +96,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
     WRITE( stdout,'(5x,"Adding potential well":)')
     WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') eamp 
     WRITE( stdout,'(8x,"Postion on atom # : ", I11.1)') edir
-    WRITE( stdout,'(8x,"Well radius [bohr] : ", es11.4)') emaxpos
+    WRITE( stdout,'(8x,"Well radius [bohr] : ", es11.4)') emaxpos * alat
     WRITE( stdout,*)     
     !
   ENDIF
