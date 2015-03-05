@@ -5,43 +5,22 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
-! ... written by J. Tobik
+! ... poorly written by N. P. Brawand
 !
-! Changes 30/06/2003 (ADC) : 
-!               Calculation of corrections to energy and forces due
-!               to the field.
-!               Added possibility to subtract the dipole field 
-!               for slab or molecule calculation.
-!               (See Bengtsson PRB 59, 12 301 (1999) and
-!                    Meyer and Vanderbilt, PRB 63, 205426 (2001).)
+! Changes 01/02/2015 (ADC) : 
+!               Stuff
 !
-!          25/06/2009 (Riccardo Sabatini)
-!               reformulation using a unique saw(x) function (included in 
-!               cell_base) in all e-field related routines and inclusion of 
-!               a macroscopic electronic dipole contribution in the mixing 
-!               scheme. 
-!
-
 !
 !--------------------------------------------------------------------------
 SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !--------------------------------------------------------------------------
   !
-  !   This routine adds an electric field to the local potential. The
-  !   field is made artificially periodic by introducing a saw-tooth
-  !   potential. The field is parallel to a reciprocal lattice vector bg, 
-  !   according to the index edir.
+  !   This routine adds stuff to the local potential. 
   !
-  !   if dipfield is false the electric field correction is added to the
-  !   potential given as input (the bare local potential) only
-  !   at the first call to this routine. In the following calls
-  !   the routine exit.
+  !   edir - atom to center potential well around 
+  !   emaxpos - radius of potential well
+  !   eamp - strength of potential in Ry a.u.
   !
-  !   if dipfield is true the dipole moment per unit surface is calculated
-  !   and used to cancel the electric field due to periodic boundary
-  !   conditions. This potential is added to the Hartree and xc potential
-  !   in v_of_rho. NB: in this case the electric field contribution to the 
-  !   band energy is subtracted by deband.
   !
   !
   USE kinds,         ONLY : DP
@@ -59,6 +38,10 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   USE fft_base,      ONLY : dfftp
   USE mp,            ONLY : mp_bcast, mp_sum
   USE control_flags, ONLY : iverbosity
+  !
+  ! ... Coulomb USE
+  !
+  USE ions_base,     ONLY : tau
   
   IMPLICIT NONE
   !
@@ -75,9 +58,19 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   INTEGER :: ir, na, ipol
   REAL(DP) :: length, vamp, value, sawarg, e_dipole, ion_dipole
   REAL(DP) :: tot_dipole, bmod
-
+  
   LOGICAL :: first=.TRUE.
   SAVE first
+  !
+  ! ... Coulomb Vars
+  !
+  INTEGER      :: ip
+  REAL( DP )   :: dist
+  REAL( DP )   :: r( 3 ), s( 3 ), cm( 3 )
+  REAL( DP )   :: inv_nr1, inv_nr2, inv_nr3
+  inv_nr1 = 1.D0 / DBLE( dfftp%nr1 )
+  inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
+  inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
   
   !---------------------
   !  Execution control
@@ -90,137 +83,28 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   IF ((.NOT.dipfield).AND.(.NOT.first) .AND..NOT. iflag) RETURN
   first=.FALSE.
 
-  IF ((edir.lt.1).or.(edir.gt.3)) THEN
-     CALL errore('add_efield',' wrong edir',1)
-  ENDIF
-
   !---------------------
   !  Variable initialization
   !---------------------
-
-  bmod=SQRT(bg(1,edir)**2+bg(2,edir)**2+bg(3,edir)**2)
-
-  tot_dipole=0._dp
-  e_dipole  =0._dp
-  ion_dipole=0._dp
-  
-  !---------------------
-  !  Calculate dipole
-  !---------------------
-  
-  if (dipfield) then
+  cm(:) = 0.D0
   !
-  ! dipole correction is active 
+  ! write the input variables
   !
-     CALL compute_el_dip(emaxpos, eopreg, edir, rho, e_dipole)
-     CALL compute_ion_dip(emaxpos, eopreg, edir, ion_dipole)
-    
-     tot_dipole  = -e_dipole + ion_dipole
-     CALL mp_bcast(tot_dipole, 0, intra_image_comm)
-  !  
-  !  E_{TOT} = -e^{2} \left( eamp - dip \right) dip \frac{\Omega}{4\pi} 
-  !
-     etotefield=-e2*(eamp-tot_dipole/2.d0)*tot_dipole*omega/fpi 
-
-  !---------------------
-  !  Define forcefield
-  !  
-  !  F_{s} = e^{2} \left( eamp - dip \right) z_{v}\cross\frac{\vec{b_{3}}}{bmod} 
-  !---------------------
-    
-     IF (lforce) THEN
-        DO na=1,nat
-           DO ipol=1,3
-              forcefield(ipol,na)= e2 *(eamp - tot_dipole) &
-                               *zv(ityp(na))*bg(ipol,edir)/bmod
-           ENDDO
-        ENDDO
-     ENDIF
-
-  else
-  !
-  ! dipole correction is not active
-  !
-
-     CALL compute_ion_dip(emaxpos, eopreg, edir, ion_dipole)
-
-  !  
-  !  E_{TOT} = -e^{2} eamp * iondip \frac{\Omega}{4\pi} 
-  !
-     etotefield=-e2*eamp*ion_dipole*omega/fpi 
-
-  !---------------------
-  !  Define forcefield
-  !  
-  !  F_{s} = e^{2}  eamp z_{v}\cross\frac{\vec{b_{3}}}{bmod} 
-  !---------------------
-    
-     IF (lforce) THEN
-        DO na=1,nat
-           DO ipol=1,3
-              forcefield(ipol,na)= e2 *eamp &
-                               *zv(ityp(na))*bg(ipol,edir)/bmod
-           ENDDO
-        ENDDO
-     ENDIF
-
-  end if
-
-  !
-  !  Calculate potential and print values 
-  !   
-  
-  length=(1._dp-eopreg)*(alat*SQRT(at(1,edir)**2+at(2,edir)**2+at(3,edir)**2))
-  
-  vamp=e2*(eamp-tot_dipole)*length
-
   IF (ionode) THEN
-       !
-       ! Output data
-       !
-       WRITE( stdout,*)
-       WRITE( stdout,'(5x,"Adding external electric field":)')
-
-       IF (dipfield) then
-          WRITE( stdout,'(/5x,"Computed dipole along edir(",i1,") : ")' ) edir
-
-          !
-          !  If verbose prints also the different components
-          !
-          IF ( iverbosity > 0 ) THEN
-              WRITE( stdout, '(8X,"Elec. dipole ",1F15.4," Ry au,  ", 1F15.4," Debye")' ) &
-                                            e_dipole, (e_dipole*au_debye)
-              WRITE( stdout, '(8X,"Ion. dipole  ",1F15.4," Ry au,", 1F15.4," Debye")' ) &
-                                          ion_dipole, (ion_dipole*au_debye)
-          ENDIF
-
-          WRITE( stdout, '(8X,"Dipole       ",1F15.4," Ry au, ", 1F15.4," Debye")' ) &
-                                            (tot_dipole* (omega/fpi)),   &
-                                            ((tot_dipole* (omega/fpi))*au_debye)  
-
-          WRITE( stdout, '(8x,"Dipole field     ", f11.4," Ry au")') tot_dipole
-          WRITE( stdout,*)
-
-       ENDIF
-
-       IF (abs(eamp)>0._dp) WRITE( stdout, &
-          '(8x,"E field amplitude [Ha a.u.]: ", es11.4)') eamp 
-        
-       WRITE( stdout,'(8x,"Potential amp.   ", f11.4," Ry")') vamp 
-       WRITE( stdout,'(8x,"Total length     ", f11.4," bohr")') length
-       WRITE( stdout,*)     
+    !
+    WRITE( stdout,*)
+    WRITE( stdout,'(5x,"Adding potential well":)')
+    WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') eamp 
+    WRITE( stdout,'(8x,"Postion on atom # : ", I11.1)') edir
+    WRITE( stdout,'(8x,"Well radius [bohr] : ", es11.4)') emaxpos
+    WRITE( stdout,*)     
+    !
   ENDIF
-
-
   !
-  !------------------------------
-  !  Add potential
-  !  
-  !  V\left(ijk\right) = e^{2} \left( eamp - dip \right) z_{v} 
-  !          Saw\left( \frac{k}{nr3} \right) \frac{alat}{bmod} 
-  !          
   !---------------------
-
+  !  Add potential
+  !---------------------
+  !
   ! Index for parallel summation
   !
   index0 = 0
@@ -232,30 +116,53 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !
 #endif
   !
-  ! Loop in the charge array
+  ! ... set center of well on edir atom
   !
-
+  cm(:) = cm(:) + tau(:,edir)
+  !
+  ! ... Loop over position grid
+  !
   DO ir = 1, dfftp%nnr
-     !
-     ! ... three dimensional indexes
-     !
-     i = index0 + ir - 1
-     k = i / (dfftp%nr1x*dfftp%nr2x)
-     i = i - (dfftp%nr1x*dfftp%nr2x)*k
-     j = i / dfftp%nr1x
-     i = i - dfftp%nr1x*j
-     
-     if (edir.eq.1) sawarg = DBLE(i)/DBLE(dfftp%nr1)
-     if (edir.eq.2) sawarg = DBLE(j)/DBLE(dfftp%nr2)
-     if (edir.eq.3) sawarg = DBLE(k)/DBLE(dfftp%nr3)
-     
-     value = e2*(eamp - tot_dipole)*saw(emaxpos,eopreg,sawarg) * (alat/bmod)
-
-     vpoten(ir) = vpoten(ir) + value
-
-  END DO
-  
-  
+    !
+    ! ... three dimensional indexes
+    !
+    i = index0 + ir - 1
+    k = i / (dfftp%nr1x*dfftp%nr2x)
+    i = i - (dfftp%nr1x*dfftp%nr2x)*k
+    j = i / dfftp%nr1x
+    i = i - dfftp%nr1x*j
+    !
+    ! calculate position
+    DO ip = 1, 3
+      !
+      r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
+              DBLE( j )*inv_nr2*at(ip,2) + &
+              DBLE( k )*inv_nr3*at(ip,3)
+      !
+    END DO
+    !
+    ! translate potential well to atom center
+    !
+    r(:) = r(:) - cm(:)
+    !
+    ! ... minimum image convention for periodic BC
+    !
+    s(:) = MATMUL( r(:), bg(:,:) )
+    s(:) = s(:) - ANINT(s(:))
+    r(:) = MATMUL( at(:,:), s(:) )
+    !
+    dist = SQRT( SUM( r * r ) ) 
+    !
+    ! if within emaxpos add potential 
+    !
+    IF(dist <= emaxpos) THEN
+      !
+      vpoten(ir) = vpoten(ir) + eamp
+      !
+    ENDIF
+    !
+  END DO 
+  !
   RETURN
-
+  !
 END SUBROUTINE add_efield

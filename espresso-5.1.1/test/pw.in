@@ -4,6 +4,7 @@
   pseudo_dir   = "./",
   outdir       = "./out",
 !  wf_collect   = .TRUE.
+  tefield = .true.
 /
 &SYSTEM
   ibrav     = 1, 
@@ -14,6 +15,10 @@
   !ecutrho   = 300,
   ! nspin     = 2,
   ! tot_magnetization = 1
+  edir = 1,
+  emaxpos = 1,
+  eamp = -1,
+  eopreg = 0.5
 /
 &ELECTRONS
   conv_thr    = 1.D-6,
