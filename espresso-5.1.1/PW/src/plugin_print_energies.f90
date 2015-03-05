@@ -46,10 +46,12 @@ USE kinds,         ONLY : DP
   !
   INTEGER :: i, is 
   REAL(DP) :: tmp
+  REAL(DP) :: dv
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vpoten ! ef is added to this potential
   !
   !
   ALLOCATE(vpoten(dfftp%nnr))
+  dv = omega / ( dfftp%nr1 + dfftp%nr2 + dfftp%nr3 )
   !
   !
   ! this call only calulates vpoten
@@ -58,7 +60,7 @@ USE kinds,         ONLY : DP
   etotefield = 0.D0
   DO is=1, nspin
     DO i=1, dfftp%nnr
-      etotefield = etotefield + vpoten(i) * rho(i,is)
+      etotefield = etotefield + vpoten(i) * rho(i,is) * dv
     ENDDO
   ENDDO
   !
