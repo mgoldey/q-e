@@ -118,7 +118,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !
   ! ... set center of well on edir atom
   !
-  cm(:) = cm(:) + tau(:,edir)
+  cm(:) = tau(:,edir)
   !
   ! ... Loop over position grid
   !
