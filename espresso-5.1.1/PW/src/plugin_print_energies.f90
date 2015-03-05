@@ -29,7 +29,7 @@ SUBROUTINE plugin_print_energies(etotefield)
   USE lsda_mod,      ONLY : nspin
   USE mp_images,     ONLY : intra_image_comm
   USE mp_bands,      ONLY : me_bgrp
-  USE fft_base,      ONLY : dfftp
+  USE fft_base,      ONLY : dfftp, grid_gather
   USE mp,            ONLY : mp_bcast, mp_sum
   USE control_flags, ONLY : iverbosity, conv_elec
   USE scf,           ONLY : rho
@@ -43,7 +43,9 @@ SUBROUTINE plugin_print_energies(etotefield)
   INTEGER :: i, is 
   REAL(DP) :: tmp
   REAL(DP) :: dv
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpoten ! ef is added to this potential
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotens ! ef is added to this potential serial
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotenp ! ef is added to this potential parll
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: rhos    ! rho serial
   !
   ! dont do anything unless the calculation is converged
   !
@@ -51,27 +53,44 @@ SUBROUTINE plugin_print_energies(etotefield)
   !
   ! calc is converged lets compute and print the correction
   !
-  ALLOCATE(vpoten(dfftp%nnr))
+  ! first setup vars
+  ALLOCATE(vpotenp(dfftp%nnr))
+  ALLOCATE(vpotens( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
+  ALLOCATE(rhos( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
-  vpoten = 0.D0
+  vpotenp = 0.D0
+  vpotens = 0.D0
+  rhos = 0.D0
   !
   !
   ! this call only calulates vpoten
-  CALL add_efield(vpoten, etotefield, rho%of_r, .true. )
+  CALL add_efield(vpotenp, etotefield, rho%of_r, .true. )
   !
-  etotefield = 0.D0
-  DO is=1, nspin
+  ! gather the grids for serial calculation
+#ifdef __MPI
+    CALL grid_gather ( vpotenp, vpotens )
+    CALL grid_gather ( rho%of_r(:,1), rhos )
+#else
+    vpotens(:)=vpotenp(:)
+    rhos(:) = rho%of_r(:,1)
+#endif
+  !
+  ! begin calculation of the correction 
+  IF(ionode) THEN
     !
+    etotefield = 0.D0
     DO i=1, dfftp%nnr
       !
-      etotefield = etotefield + vpoten(i) * rho%of_r(i,is) * dv
+      etotefield = etotefield + vpotens(i) * rhos(i) * dv
       !
     ENDDO
     !
-  ENDDO
+    WRITE(*,*)"    E field correction : ",etotefield," Ry"
+    !
+  ENDIF
   !
-  WRITE(*,*)"    E field correction : ",etotefield," Ry"
-  !
-  DEALLOCATE(vpoten)
+  DEALLOCATE(vpotenp)
+  DEALLOCATE(vpotens)
+  DEALLOCATE(rhos)
   !
 END SUBROUTINE plugin_print_energies
