@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !----------------------------------------------------------------------------
-SUBROUTINE plugin_print_energies(etotefield,rho)
+SUBROUTINE plugin_print_energies(etotefield)
 !----------------------------------------------------------------------------
 !
 ! This routine is used for printing energy contrib from plugins
@@ -32,6 +32,7 @@ USE kinds,         ONLY : DP
   USE fft_base,      ONLY : dfftp
   USE mp,            ONLY : mp_bcast, mp_sum
   USE control_flags, ONLY : iverbosity
+  USE scf          , ONLY : rho
 !
 !
 ! ***Environ MODULES BEGIN***
@@ -40,7 +41,6 @@ USE kinds,         ONLY : DP
   IMPLICIT NONE
   !
   REAL(DP),INTENT(INOUT) :: etotefield       ! contribution to etot due to ef
-  REAL(DP),INTENT(IN)    :: rho(dfftp%nnr,nspin) ! the density whose dipole is computed
   !
   ! local variables
   !
@@ -51,16 +51,17 @@ USE kinds,         ONLY : DP
   !
   !
   ALLOCATE(vpoten(dfftp%nnr))
-  dv = omega / ( dfftp%nr1 + dfftp%nr2 + dfftp%nr3 )
+  dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
+  vpoten = 0.D0
   !
   !
   ! this call only calulates vpoten
-  CALL add_efield(vpoten, etotefield, rho, .true. )
+  CALL add_efield(vpoten, etotefield, rho%of_r, .true. )
   !
   etotefield = 0.D0
   DO is=1, nspin
     DO i=1, dfftp%nnr
-      etotefield = etotefield + vpoten(i) * rho(i,is) * dv
+      etotefield = etotefield + vpoten(i) * rho%of_r(i,is) * dv
     ENDDO
   ENDDO
   !
