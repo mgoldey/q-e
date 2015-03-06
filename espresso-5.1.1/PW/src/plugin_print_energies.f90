@@ -85,6 +85,9 @@ SUBROUTINE plugin_print_energies(etotefield)
       !
     ENDDO
     !
+    ! the correction is - of the energy
+    etotefield = -1.D0 * etotefield
+    !
     WRITE(*,*)"    E field correction : ",etotefield," Ry"
     !
   ENDIF
