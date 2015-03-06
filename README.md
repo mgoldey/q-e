@@ -16,12 +16,12 @@ This README would normally document whatever steps are necessary to get your app
 * install QE
 
 ### INPUT Flags ###
-*tefield - needs to be set to .true.
-*edir - atom # to center potential well around 
-*emaxpos - radius of potential well in alat
-*eamp - strength of potential in Ry a.u.
-*eopreg - doesn't do anything yet
-*example below
+* tefield - needs to be set to .true.
+* edir - atom # to center potential well around 
+* emaxpos - radius of potential well in alat
+* eamp - strength of potential in Ry a.u.
+* eopreg - doesn't do anything yet
+* example below
 
 ### Contribution guidelines ###
 
@@ -36,41 +36,41 @@ This README would normally document whatever steps are necessary to get your app
 
 ### Example ###
 *this is included in the repo
-&CONTROL
-  calculation  = "scf",
-  prefix       = "si",
-  pseudo_dir   = "./",
-  outdir       = "./out",
-!  wf_collect   = .TRUE.
-  tefield = .true.
-/
-&SYSTEM
-  ibrav     = 1, 
-  a = 7,
-  nat       = 5,	
-  ntyp      = 2,
-  ecutwfc   = 18,
-  !ecutrho   = 300,
-  ! nspin     = 2,
-  ! tot_magnetization = 1
-  edir = 1,
-  emaxpos = 0.25,
-  eamp = -1,
-  eopreg = 0.5
-/
-&ELECTRONS
-  conv_thr    = 1.D-6,
-  mixing_beta = 0.30,
-/
-&IONS
-/
-K_POINTS {Gamma}
-ATOMIC_SPECIES
-Si 28.0855 Si.pbe-n-van.UPF
-H 1.00794 H.pbe-rrkjus.UPF
-ATOMIC_POSITIONS (angstrom)
-Si        -0.19448        2.43790        0.00000
-H          1.27605        2.43790       -0.00000
-H         -0.68466        3.14888        1.19025
-H         -0.68466        1.05163        0.02060
-H         -0.68466        3.11319       -1.21085
+* &CONTROL
+ *  calculation  = "scf",
+  * prefix       = "si",
+  * pseudo_dir   = "./",
+  * outdir       = "./out",
+* !   wf_collect   = .TRUE.
+*   tefield = .true.
+* /
+* &SYSTEM
+*   ibrav     = 1, 
+*   a = 7,
+ *  nat       = 5,	
+  * ntyp      = 2,
+  * ecutwfc   = 18,
+*   !ecutrho   = 300,
+ *  ! nspin     = 2,
+ *  ! tot_magnetization = 1
+ *  edir = 1,
+ *  emaxpos = 0.25,
+ *  eamp = -1,
+ *  eopreg = 0.5
+* /
+* &ELECTRONS
+ *  conv_thr    = 1.D-6,
+ *  mixing_beta = 0.30,
+* /
+* &IONS
+* /
+* K_POINTS {Gamma}
+* ATOMIC_SPECIES
+* Si 28.0855 Si.pbe-n-van.UPF
+* H 1.00794 H.pbe-rrkjus.UPF
+* ATOMIC_POSITIONS (angstrom)
+* Si        -0.19448        2.43790        0.00000
+* H          1.27605        2.43790       -0.00000
+* H         -0.68466        3.14888        1.19025
+* H         -0.68466        1.05163        0.02060
+* H         -0.68466        3.11319       -1.21085
