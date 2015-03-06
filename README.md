@@ -15,6 +15,14 @@ This README would normally document whatever steps are necessary to get your app
 * run "git checkout ." and this will restore the EPCDFT files
 * install QE
 
+### INPUT Flags ###
+edir - atom # to center potential well around 
+emaxpos - radius of potential well in alat
+eamp - strength of potential in Ry a.u.
+
+### Example ###
+
+
 ### Contribution guidelines ###
 
 * Writing tests
