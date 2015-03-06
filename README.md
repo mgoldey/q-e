@@ -12,7 +12,7 @@ This README would normally document whatever steps are necessary to get your app
 * Clone the repo
 * download QE 5.1.1
 * tar -zxvf the QE  inside the repo you just downloaded
-* run "git checkout ." and this will restore the EPCDFT files
+* run "git checkout ." inside the repo and this will restore the EPCDFT files
 * install QE
 
 ### INPUT Flags ###
