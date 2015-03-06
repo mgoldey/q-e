@@ -91,7 +91,7 @@ SUBROUTINE plugin_print_energies(etotefield)
     rhosup(:) = rhosup(:) + rhosdown(:) 
     !
     etotefield = 0.D0
-    DO i=1, dfftp%nnr
+    DO i=1, dfftp%nr1x*dfftp%nr2x*dfftp%nr3x
       !
       etotefield = etotefield + vpotens(i) * rhosup(i) * dv
       !
