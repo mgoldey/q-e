@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !----------------------------------------------------------------------------
-SUBROUTINE plugin_print_energies(etotefield)
+SUBROUTINE plugin_print_energies()
   !----------------------------------------------------------------------------
   !
   ! This routine is used for printing energy contrib from plugins
@@ -22,7 +22,7 @@ SUBROUTINE plugin_print_energies(etotefield)
   USE ions_base,     ONLY : nat, ityp, zv
   USE cell_base,     ONLY : alat, at, omega, bg, saw
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
-                            eopreg, forcefield
+                            eopreg, forcefield, etotefield
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode
   USE control_flags, ONLY : mixing_beta
@@ -35,8 +35,6 @@ SUBROUTINE plugin_print_energies(etotefield)
   USE scf,           ONLY : rho
   !
   IMPLICIT NONE
-  !
-  REAL(DP),INTENT(INOUT) :: etotefield       ! contribution to etot due to ef
   !
   ! local variables
   !
