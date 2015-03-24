@@ -137,7 +137,7 @@ SUBROUTINE plugin_print_energies()
       ! is the localization condition satisfied?
       !
       enumerr = eopreg - einwell 
-      IF( ABS(enumerr) .GE. 0.1D0 ) elocflag = .FALSE.
+      IF( ABS(enumerr) .GE. 0.05D0 ) elocflag = .FALSE.
       !WRITE(*,*)"    error in # e's in well : ",enumerr," electrons"
       !
     ENDIF
