@@ -173,7 +173,7 @@ SUBROUTINE plugin_print_energies()
     eamp = eamp - enumerr * ABS(eamp) 
     IF(ionode) WRITE(*,*)"    New field Amp      : ",eamp," Ry"
     !
-    !etotefield = 0.D0 ! this var is added to etot before 
+    etotefield = 0.D0 ! this var is added to etot before 
     !                 ! this routine is called during next scf loop
   ENDIF
   !
