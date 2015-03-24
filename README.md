@@ -20,7 +20,7 @@ This README would normally document whatever steps are necessary to get your app
 * edir - atom # to center potential well around 
 * emaxpos - radius of potential well in alat
 * eamp - strength of potential in Ry a.u.
-* eopreg - doesn't do anything yet
+* eopreg - number of electrons needed in well
 * example below
 
 ### Contribution guidelines ###
@@ -35,6 +35,7 @@ This README would normally document whatever steps are necessary to get your app
 * Other community or team contact
 
 ### Example ###
+* without eamp scf
 *this is included in the repo
 * &CONTROL
  *  calculation  = "scf",
@@ -56,7 +57,7 @@ This README would normally document whatever steps are necessary to get your app
  *  edir = 1,
  *  emaxpos = 0.25,
  *  eamp = -1,
- *  eopreg = 0.5
+ *  eopreg = 0
 * /
 * &ELECTRONS
  *  conv_thr    = 1.D-6,
