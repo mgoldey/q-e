@@ -36,6 +36,7 @@ SUBROUTINE run_pwscf ( exit_status )
   USE mp_images,        ONLY : intra_image_comm
   USE qmmm,             ONLY : qmmm_initialization, qmmm_shutdown, &
                                qmmm_update_positions, qmmm_update_forces
+  USE extfield,         ONLY : tefield, eopreg
   !
   IMPLICIT NONE
   INTEGER, INTENT(OUT) :: exit_status
@@ -145,6 +146,10 @@ SUBROUTINE run_pwscf ( exit_status )
      !
      CALL stop_clock( 'ions' )
      !
+     ! check if charge is localized if not conv_ion set to false
+     !
+     IF(eopreg .NE. 0) CALL plugin_print_energies()
+     !
      ! ... exit condition (ionic convergence) is checked here
      !
      IF ( conv_ions ) EXIT main_loop
@@ -156,7 +161,7 @@ SUBROUTINE run_pwscf ( exit_status )
      ! ... terms of the hamiltonian depending upon nuclear positions
      ! ... are reinitialized here
      !
-     IF ( lmd .OR. lbfgs ) CALL hinit1()
+     IF ( lmd .OR. lbfgs .OR. tefield ) CALL hinit1()
      !
   END DO main_loop
   !

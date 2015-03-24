@@ -37,14 +37,14 @@ SUBROUTINE plugin_print_energies()
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
                             eopreg, forcefield, etotefield
   USE force_mod,     ONLY : lforce
-  USE io_global,     ONLY : stdout,ionode
+  USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
   USE lsda_mod,      ONLY : nspin
   USE mp_images,     ONLY : intra_image_comm
   USE mp_bands,      ONLY : me_bgrp
   USE fft_base,      ONLY : dfftp, grid_gather
   USE mp,            ONLY : mp_bcast, mp_sum
-  USE control_flags, ONLY : iverbosity, conv_elec
+  USE control_flags, ONLY : iverbosity, conv_elec, conv_ions
   USE scf,           ONLY : rho
   !
   IMPLICIT NONE
@@ -137,12 +137,14 @@ SUBROUTINE plugin_print_energies()
       ! is the localization condition satisfied?
       !
       enumerr = eopreg - einwell 
-      IF( ABS(enumerr) .GE. 0.05D0 ) elocflag = .FALSE.
-      !WRITE(*,*)"    error in # e's in well : ",enumerr," electrons"
+        ! conv_ions = false will restart scf
+      IF( ABS(enumerr) .GE. 0.05D0 ) conv_ions = .FALSE.
       !
     ENDIF
     !
   ENDIF
+  !
+  CALL mp_bcast( conv_ions, ionode_id, intra_image_comm )
   !
   DEALLOCATE(vpotenp)
   DEALLOCATE(vpotens)
@@ -151,7 +153,7 @@ SUBROUTINE plugin_print_energies()
   !
   ! if the charge is not localized
   !
-  IF(.NOT.elocflag)THEN
+  IF(.NOT.conv_ions .AND. eopreg .NE. 0)THEN
     !
     ! update applied field and restart scf
     !
@@ -169,13 +171,10 @@ SUBROUTINE plugin_print_energies()
     ENDIF
     !
     eamp = eamp - enumerr * ABS(eamp) 
-    WRITE(*,*)"    New field Amp      : ",eamp," Ry"
+    IF(ionode) WRITE(*,*)"    New field Amp      : ",eamp," Ry"
     !
-    etotefield = 0.D0 ! this var is added to etot before 
+    !etotefield = 0.D0 ! this var is added to etot before 
     !                 ! this routine is called during next scf loop
-    conv_elec = .FALSE.
-    CALL hinit1()
-    !
   ENDIF
   !
 END SUBROUTINE plugin_print_energies
