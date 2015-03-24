@@ -7,18 +7,18 @@
   tefield = .true.
 /
 &SYSTEM
-  ibrav     = 1, 
+  ibrav     = 1,
   a = 7,
-  nat       = 5,	
+  nat       = 5,
   ntyp      = 2,
   ecutwfc   = 18,
   !ecutrho   = 300,
   ! nspin     = 2,
   ! tot_magnetization = 1
   edir = 1,
-  emaxpos = 0.25,
+  emaxpos = 0.2,
   eamp = -1,
-  eopreg = 0.5
+  eopreg = 6
 /
 &ELECTRONS
   conv_thr    = 1.D-6,
