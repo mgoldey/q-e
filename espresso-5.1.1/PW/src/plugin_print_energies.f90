@@ -12,6 +12,19 @@ SUBROUTINE plugin_print_energies()
   ! This routine is used for printing energy contrib from plugins
   ! DO NOT REMOVE THE TAGS ! ***ADDSON_NAME KIND_OF_PATCH***
   !
+  !   This routine calculates the correction to the total energy
+  !   and prints it. It also calculates the total number of 
+  !   electrons within the applied well. If this number is not
+  !   equal to that of eopreg the amplitude of the well is changed
+  !   and the scf loop is restarted. 
+  !
+  !   edir - atom to center potential well around 
+  !   emaxpos - radius of potential well in alat
+  !   eamp - strength of potential in Ry a.u.
+  !   eopreg - number of electrons that should be in well
+  !
+  !
+  !
   USE io_global,        ONLY : stdout, ionode
   USE kinds,            ONLY : DP
   USE io_files,         ONLY : tmp_dir
@@ -38,11 +51,14 @@ SUBROUTINE plugin_print_energies()
   !
   ! local variables
   !
-  INTEGER :: i, is 
+  INTEGER  :: i, is 
   REAL(DP) :: tmp
   REAL(DP) :: dv
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotens ! ef is added to this potential serial
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotenp ! ef is added to this potential parll
+  REAL(DP) :: einwell                              ! number of electrons in well
+  REAL(DP) :: enumerr                              ! eopreg - einwell  (e number error)
+  LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotens   ! ef is added to this potential serial
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotenp   ! ef is added to this potential parll
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosup    ! rho serial
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosdown  ! rho serial
   !
@@ -58,10 +74,14 @@ SUBROUTINE plugin_print_energies()
   ALLOCATE(rhosup( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   ALLOCATE(rhosdown( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
-  vpotenp = 0.D0
-  vpotens = 0.D0
-  rhosup = 0.D0
+  vpotenp  = 0.D0
+  vpotens  = 0.D0
+  rhosup   = 0.D0
   rhosdown = 0.D0
+  einwell  = 0.D0
+  tmp      = 0.D0
+  elocflag = .TRUE.
+  etotefield = 0.D0
   !
   !
   ! this call only calulates vpoten
@@ -88,10 +108,19 @@ SUBROUTINE plugin_print_energies()
     ! combine up and down parts of rho
     rhosup(:) = rhosup(:) + rhosdown(:) 
     !
-    etotefield = 0.D0
     DO i=1, dfftp%nr1x*dfftp%nr2x*dfftp%nr3x
       !
+      ! calculate energy correction
+      !
       etotefield = etotefield + vpotens(i) * rhosup(i) * dv
+      !
+      ! count number of electrons in well for localization condition check
+      !
+      IF(vpotens(i) .NE. 0.D0)THEN
+        !
+        einwell = einwell + rhosup(i) * dv
+        !
+      ENDIF
       !
     ENDDO
     !
@@ -99,6 +128,19 @@ SUBROUTINE plugin_print_energies()
     etotefield = -1.D0 * etotefield
     !
     WRITE(*,*)"    E field correction : ",etotefield," Ry"
+    WRITE(*,*)"    #e's   in well     : ",einwell," electrons"
+    !
+    ! is there a localization condition?
+    !
+    IF(eopreg .NE. 0.D0)THEN
+      !
+      ! is the localization condition satisfied?
+      !
+      enumerr = eopreg - einwell 
+      IF( ABS(enumerr) .GE. 0.1D0 ) elocflag = .FALSE.
+      !WRITE(*,*)"    error in # e's in well : ",enumerr," electrons"
+      !
+    ENDIF
     !
   ENDIF
   !
@@ -106,5 +148,34 @@ SUBROUTINE plugin_print_energies()
   DEALLOCATE(vpotens)
   DEALLOCATE(rhosup)
   DEALLOCATE(rhosdown)
+  !
+  ! if the charge is not localized
+  !
+  IF(.NOT.elocflag)THEN
+    !
+    ! update applied field and restart scf
+    !
+    IF(ionode)THEN
+      !
+      WRITE(*,*)""
+      WRITE(*,*)"    -----------------------------------------------"
+      WRITE(*,*)""
+      WRITE(*,*)"                     SCF converged but..."
+      WRITE(*,*)""
+      WRITE(*,*)"    electron localization condition NOT satisfied"
+      WRITE(*,*)"    restarting scf with different applied potential"
+      WRITE(*,*)""
+      !
+    ENDIF
+    !
+    eamp = eamp - enumerr * ABS(eamp) 
+    WRITE(*,*)"    New field Amp      : ",eamp," Ry"
+    !
+    etotefield = 0.D0 ! this var is added to etot before 
+    !                 ! this routine is called during next scf loop
+    conv_elec = .FALSE.
+    CALL hinit1()
+    !
+  ENDIF
   !
 END SUBROUTINE plugin_print_energies

@@ -20,6 +20,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !   edir - atom to center potential well around 
   !   emaxpos - radius of potential well in alat
   !   eamp - strength of potential in Ry a.u.
+  !   eopreg - number of electrons that should be in well
   !
   !
   !
