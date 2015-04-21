@@ -35,15 +35,15 @@ This README would normally document whatever steps are necessary to get your app
 * Other community or team contact
 
 ### Example ###
-*this is included in the repo
-*&CONTROL
+* this is included in the repo
+* &CONTROL
 *  calculation  = "scf",
 *  prefix       = "si",
 *  pseudo_dir   = "./",
 *  outdir       = "./out",
-*!  wf_collect   = .TRUE.
+* !  wf_collect   = .TRUE.
 *  tefield = .true.
-*/
+* /
 *&SYSTEM
 *  ibrav     = 1,
 *  a = 7,
