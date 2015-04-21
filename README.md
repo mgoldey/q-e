@@ -44,7 +44,7 @@ This README would normally document whatever steps are necessary to get your app
 * !  wf_collect   = .TRUE.
 *  tefield = .true.
 * /
-*&SYSTEM
+* &SYSTEM
 *  ibrav     = 1,
 *  a = 7,
 *  nat       = 5,
@@ -57,20 +57,20 @@ This README would normally document whatever steps are necessary to get your app
 *  emaxpos = 0.2,
 *  eamp = -1,
 *  eopreg = 6
-*/
-*&ELECTRONS
+* /
+* &ELECTRONS
 *  conv_thr    = 1.D-6,
 *  mixing_beta = 0.30,
-*/
-*&IONS
-*/
-*K_POINTS {Gamma}
-*ATOMIC_SPECIES
-*Si 28.0855 Si.pbe-n-van.UPF
-*H 1.00794 H.pbe-rrkjus.UPF
-*ATOMIC_POSITIONS (angstrom)
-*Si        -0.19448        2.43790        0.00000
-*H          1.27605        2.43790       -0.00000
-*H         -0.68466        3.14888        1.19025
-*H         -0.68466        1.05163        0.02060
-*H         -0.68466        3.11319       -1.21085
+* /
+* &IONS
+* /
+* K_POINTS {Gamma}
+* ATOMIC_SPECIES
+* Si 28.0855 Si.pbe-n-van.UPF
+* H 1.00794 H.pbe-rrkjus.UPF
+* ATOMIC_POSITIONS (angstrom)
+* Si        -0.19448        2.43790        0.00000
+* H          1.27605        2.43790       -0.00000
+* H         -0.68466        3.14888        1.19025
+* H         -0.68466        1.05163        0.02060
+* H         -0.68466        3.11319       -1.21085
