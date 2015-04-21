@@ -1,0 +1,4 @@
+&INPUTPP
+  prefix       = "si",
+  outdir       = "./out",
+/
