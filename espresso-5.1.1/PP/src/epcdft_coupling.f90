@@ -14,6 +14,15 @@
 !
 ! Notes:
 !        1 = (2-delta_{NumOfSpin,2}) * 1/TotalGridPnts * <phi|phi>
+!
+!        S( j , i ) matrix = < evc1(i) | evc2(j) > 
+!                                 evc1 -->
+!                                e
+!                                v
+!                                c
+!                                2
+!                                |
+!                                v
 ! 
 !-----------------------------------------------------------------------
 PROGRAM epcdft_coupling 
@@ -39,17 +48,20 @@ PROGRAM epcdft_coupling
   !
   IMPLICIT NONE
   LOGICAL                      :: exst2
+  CHARACTER (len=20)          :: FMT
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
   CHARACTER (len=256)          :: tmp_dir2
   CHARACTER (len=256)          :: prefix2
   CHARACTER(LEN=256), external :: trimcheck
-  INTEGER                      :: ios,ik,i,ibnd, ig, is
+  INTEGER                      :: ios,ik,i,j,ibnd, ig, is
+  INTEGER                      :: ik1, ik2, ibnd1, ibnd2
   INTEGER                      :: iunwfc2 = 3636 ! unit for 2nd set of wfcs
   REAL(DP)                     :: dtmp  ! temp variable
   COMPLEX(DP)                  :: ztmp  ! temp variable
   COMPLEX(DP), EXTERNAL        :: zdotc
   COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)
+  COMPLEX(DP),    ALLOCATABLE  :: smat(:,:)  ! S_ij matrix <wfc_j|wfc2_i>
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
   !
@@ -97,28 +109,64 @@ PROGRAM epcdft_coupling
   !
   CALL init_us_1 ! compute pseduo pot stuff
   !
+  i = 0
+  j = 0
   dtmp = 0.0
   ztmp = 0.0
   ALLOCATE( evc2( npwx, nbnd ) )
+  ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
+  smat = 0.0
   !WRITE(*,*)"Size of ecv dim1 ",SIZE(evc,1)," size of evc2 dim1 ",SIZE(evc2,1)
   !WRITE(*,*)"Size of ecv dim2 ",SIZE(evc,2)," size of evc2 dim2 ",SIZE(evc2,2)
   !
-  DO ik = 1,nks
+  DO ik1 = 1, nks
      !
-     ! prepare the indices of this k point
-     CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
+     ! prepare the indices & read evc1
+     CALL gk_sort( xk(1,ik1), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
+     CALL davcio( evc, 2*nwordwfc, iunwfc, ik1, -1 ) 
      !
-     ! read phi_ik
-     CALL davcio( evc, 2*nwordwfc, iunwfc, ik, -1 ) 
-     CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik, -1 ) 
-     !
-     DO ibnd=1,nbnd 
+     DO ibnd1 = 1, nbnd
         !
-        dtmp = REAL(zdotc(npw, evc(:,ibnd), 1, evc(:,ibnd), 1 ), DP)
-        WRITE(*,*)"Overlap of k = ",ik," and ibnd =",ibnd," is = ",2.0*dtmp
+        i = i + 1 ! S matrix counter
         !
-     ENDDO
+        DO ik2 = 1, nks
+           !
+           ! prepare the indices & read evc2
+           CALL gk_sort( xk(1,ik2), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
+           CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik2, -1 ) 
+           !
+           DO ibnd2= 1, nbnd 
+              !
+              j = j + 1 ! S matrix counter
+              !
+              ! evc is being conjg
+              smat(i, j) = zdotc(npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+              !
+           ENDDO ! end ibnd2
+           !
+        ENDDO ! end ik2
+        !
+        j = 0 ! S matrix inner counter reset
+        !
+     ENDDO ! end ibnd1
      !
+  ENDDO ! end ik1
+  !
+  ! for spin = 1
+  IF(.NOT.noncolin) smat = 2.0 * smat
+  !
+  ! Print Results
+  !
+  WRITE(*,*)""
+  WRITE(*,*)"  REAL S_ij"
+  DO j = 1, nbnd*nks
+    WRITE(*,"(4F8.3)")REAL(smat(j,:))
+  ENDDO
+  !
+  WRITE(*,*)""
+  WRITE(*,*)"  IMG S_ij"
+  DO j = 1, nbnd*nks
+    WRITE(*,"(4F8.3)")AIMAG(smat(j,:))
   ENDDO
   !
   CALL environment_end ( 'epcdft_coupling' )
@@ -126,6 +174,7 @@ PROGRAM epcdft_coupling
   CALL stop_pp
   !
   STOP
+  !
   !
 END PROGRAM epcdft_coupling
 !
