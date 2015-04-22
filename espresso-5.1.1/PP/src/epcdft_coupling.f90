@@ -57,10 +57,14 @@ PROGRAM epcdft_coupling
   INTEGER                      :: ios,ik,i,j,ibnd, ig, is
   INTEGER                      :: ik1, ik2, ibnd1, ibnd2
   INTEGER                      :: iunwfc2 = 3636 ! unit for 2nd set of wfcs
+  INTEGER,    ALLOCATABLE      :: ivpt(:) ! pivot indices for zgefa 
+  INTEGER                      :: info ! for zgefa to stop zgedi 
   REAL(DP)                     :: dtmp  ! temp variable
   COMPLEX(DP)                  :: ztmp  ! temp variable
+  COMPLEX(DP)                  :: smatdet ! determinant of smat
   COMPLEX(DP), EXTERNAL        :: zdotc
   COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)
+  COMPLEX(DP), ALLOCATABLE     :: work(:)
   COMPLEX(DP),    ALLOCATABLE  :: smat(:,:)  ! S_ij matrix <wfc_j|wfc2_i>
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
@@ -115,7 +119,11 @@ PROGRAM epcdft_coupling
   ztmp = 0.0
   ALLOCATE( evc2( npwx, nbnd ) )
   ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
+  ALLOCATE( ivpt( nks*nbnd ) )
+  ALLOCATE( work( nks*nbnd ) )
   smat = 0.0
+  ivpt = 0
+  smatdet = 0.0
   !WRITE(*,*)"Size of ecv dim1 ",SIZE(evc,1)," size of evc2 dim1 ",SIZE(evc2,1)
   !WRITE(*,*)"Size of ecv dim2 ",SIZE(evc,2)," size of evc2 dim2 ",SIZE(evc2,2)
   !
@@ -155,19 +163,34 @@ PROGRAM epcdft_coupling
   ! for spin = 1
   IF(.NOT.noncolin) smat = 2.0 * smat
   !
-  ! Print Results
+  ! Print smat
   !
   WRITE(*,*)""
   WRITE(*,*)"  REAL S_ij"
+  WRITE(*,*)"----------------"
   DO j = 1, nbnd*nks
-    WRITE(*,"(4F8.3)")REAL(smat(j,:))
+    WRITE(*,1)REAL(smat(j,:))
   ENDDO
   !
   WRITE(*,*)""
   WRITE(*,*)"  IMG S_ij"
+  WRITE(*,*)"----------------"
   DO j = 1, nbnd*nks
-    WRITE(*,"(4F8.3)")AIMAG(smat(j,:))
+    WRITE(*,1)AIMAG(smat(j,:))
   ENDDO
+  !
+  ! calculate determinant of smat
+  !
+  CALL zgefa(smat,nbnd*nks,nbnd*nks,ivpt,info) ! prep matrix for det
+  CALL errore('epcdft_coupling','error in zgefa',abs(info))
+  CALL zgedi(smat,nbnd*nks,nbnd*nks,ivpt,smatdet,work,10) ! get det of Smat from zgefa ivpt's
+  !
+  ! Print determinant smat
+  !
+  WRITE(*,*)""
+  WRITE(*,*)"  Det( S_ij )"
+  WRITE(*,*)"----------------"
+  WRITE(*,1)smatdet
   !
   CALL environment_end ( 'epcdft_coupling' )
   !
@@ -175,6 +198,7 @@ PROGRAM epcdft_coupling
   !
   STOP
   !
+  1 FORMAT(4E12.3)
   !
 END PROGRAM epcdft_coupling
 !
