@@ -11,6 +11,9 @@
 ! 
 !
 ! Nicholas Brawand nicholasbrawand@gmail.com
+!
+! Notes:
+!        1 = (2-delta_{NumOfSpin,2}) * 1/TotalGridPnts * <phi|phi>
 ! 
 !-----------------------------------------------------------------------
 PROGRAM epcdft_coupling 
@@ -29,20 +32,25 @@ PROGRAM epcdft_coupling
   USE gvect,                ONLY : ngm, g 
   USE gvecs,                ONLY : nls
   USE noncollin_module,     ONLY : npol, nspin_mag, noncolin
-  USE cell_base,            ONLY : tpiba2
+  USE cell_base,            ONLY : tpiba2, omega
   USE environment,          ONLY : environment_start, environment_end
   USE fft_base,             ONLY : dffts, cgather_smooth
   USE fft_interfaces,       ONLY : invfft
   !
   IMPLICIT NONE
-  CHARACTER (len=256) :: outdir
+  CHARACTER (len=256)          :: outdir
+  CHARACTER (len=256)          :: outdir2
+  CHARACTER (len=256)          :: tmp_dir2
+  CHARACTER (len=256)          :: prefix2
   CHARACTER(LEN=256), external :: trimcheck
-  CHARACTER(len=256) :: filename
-  INTEGER             :: iunitout,ios,ik,i,iuwfcr,lrwfcr,ibnd, ig, is
-  LOGICAL             :: exst
-  COMPLEX(DP), ALLOCATABLE :: evc_r(:,:), dist_evc_r(:,:)
+  CHARACTER(len=256)           :: filename
+  INTEGER                      :: iunitout,ios,ik,i,iuwfcr,lrwfcr,ibnd, ig, is
+  LOGICAL                      :: exst
+  COMPLEX(DP), ALLOCATABLE     :: evc_r(:,:), dist_evc_r(:,:)
+  REAL(DP)                     :: dtmp  ! temp var
+  REAL(DP)                     :: dv    ! for ints over realspace 
   !
-  NAMELIST / inputpp / outdir, prefix
+  NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
   !
   !
 #ifdef __MPI
@@ -68,6 +76,7 @@ PROGRAM epcdft_coupling
 200  CALL errore ('epcdft_coupling', 'reading inputpp namelist', ABS (ios) )
      !
      tmp_dir = trimcheck (outdir)
+     tmp_dir2 = trimcheck (outdir2)
      ! 
   END IF
   !
@@ -75,11 +84,16 @@ PROGRAM epcdft_coupling
   !
   CALL mp_bcast( tmp_dir, ionode_id, world_comm )
   CALL mp_bcast( prefix, ionode_id, world_comm )
+  CALL mp_bcast( tmp_dir2, ionode_id, world_comm )
+  CALL mp_bcast( prefix2, ionode_id, world_comm )
+!WRITE(*,*)"dir1 prefix1 dir2 prefix2",tmp_dir," ",prefix," ",tmp_dir2," ",prefix2," "
   !
   !   Now allocate space for pwscf variables, read and check them.
   !
   CALL read_file
-  call openfil_pp
+  CALL openfil_pp
+  dtmp = 0.0
+  dv = omega / DBLE( dffts%nr1*dffts%nr2*dffts%nr3 )
   exst=.false.
   filename='wfc_r'
   write(6,*) 'filename=',filename
@@ -107,13 +121,13 @@ PROGRAM epcdft_coupling
           igk, g2kin)
      !
      CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
-     do ibnd=1,nbnd 
+     DO ibnd=1,nbnd 
         !
-        ! I perform fourier transform
+        ! Fourier transform to realspace
         !
         evc_r = cmplx(0.d0, 0.d0)     
         do ig = 1, npw
-           evc_r (nls (igk (ig) ),1 ) = evc (ig,ibnd)
+           evc_r( nls( igk(ig) ), 1 ) = evc(ig,ibnd)
         enddo
         CALL invfft ('Wave', evc_r(:,1), dffts)
         IF (noncolin) THEN
@@ -135,10 +149,20 @@ PROGRAM epcdft_coupling
         dist_evc_r(1:dffts%nnr,:)=evc_r(1:dffts%nnr,:)
 #endif
         !
-        if(ionode)     call davcio (dist_evc_r, lrwfcr, iuwfcr, (ik-1)*nbnd+ibnd, +1)
+        ! overlap check
+        !
+        IF(ionode) THEN
+           !  
+           dtmp = 0.0
+           DO i = 1, dffts%nr1x*dffts%nr2x*dffts%nr3x
+              dtmp = dtmp + ( dist_evc_r(i,1) * CONJG(dist_evc_r(i,1)) )
+           ENDDO
+           dtmp = DOT_PRODUCT( dist_evc_r(:,1) , dist_evc_r(:,1) )
+           WRITE(*,*)"overlap of k = ",ik," and ibnd =",ibnd," is = ",2*dtmp*dv/omega
+           !
+        ENDIF
+        !
      ENDDO
-     !
-     ! ... First task is the only task allowed to write the file
      !
   ENDDO
   !
