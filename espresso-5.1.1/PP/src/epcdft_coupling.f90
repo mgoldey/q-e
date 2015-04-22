@@ -38,15 +38,18 @@ PROGRAM epcdft_coupling
   USE fft_interfaces,       ONLY : invfft
   !
   IMPLICIT NONE
+  LOGICAL                      :: exst2
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
   CHARACTER (len=256)          :: tmp_dir2
   CHARACTER (len=256)          :: prefix2
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER                      :: ios,ik,i,ibnd, ig, is
+  INTEGER                      :: iunwfc2 = 3636 ! unit for 2nd set of wfcs
   REAL(DP)                     :: dtmp  ! temp variable
   COMPLEX(DP)                  :: ztmp  ! temp variable
-  COMPLEX(DP), EXTERNAL :: zdotc
+  COMPLEX(DP), EXTERNAL        :: zdotc
+  COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
   !
@@ -83,17 +86,22 @@ PROGRAM epcdft_coupling
   CALL mp_bcast( prefix, ionode_id, world_comm )
   CALL mp_bcast( tmp_dir2, ionode_id, world_comm )
   CALL mp_bcast( prefix2, ionode_id, world_comm )
-!WRITE(*,*)"dir1 prefix1 dir2 prefix2",tmp_dir," ",prefix," ",tmp_dir2," ",prefix2," "
+  !WRITE(*,*)"dir1 prefix1 dir2 prefix2",tmp_dir," ",prefix," ",tmp_dir2," ",prefix2," "
   !
-  ! read & construct everything from outfile geometry, wfc, eigenvals, potential...
-  CALL read_file() 
+  CALL read_file() ! read , wfc, eigenvals, potential
   !
   CALL openfil_pp() ! open all files for scf run set filenames/units
+  !
+  CALL diropn_gw ( iunwfc2, tmp_dir2, trim( prefix2 )//'.wfc', 2*nwordwfc, exst2, 1 )! diropn with more control
+  !WRITE(*,*)"Found file with 2nd set of wfcs: ",exst2
   !
   CALL init_us_1 ! compute pseduo pot stuff
   !
   dtmp = 0.0
   ztmp = 0.0
+  ALLOCATE( evc2( npwx, nbnd ) )
+  !WRITE(*,*)"Size of ecv dim1 ",SIZE(evc,1)," size of evc2 dim1 ",SIZE(evc2,1)
+  !WRITE(*,*)"Size of ecv dim2 ",SIZE(evc,2)," size of evc2 dim2 ",SIZE(evc2,2)
   !
   DO ik = 1,nks
      !
@@ -102,6 +110,7 @@ PROGRAM epcdft_coupling
      !
      ! read phi_ik
      CALL davcio( evc, 2*nwordwfc, iunwfc, ik, -1 ) 
+     CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik, -1 ) 
      !
      DO ibnd=1,nbnd 
         !
@@ -119,3 +128,77 @@ PROGRAM epcdft_coupling
   STOP
   !
 END PROGRAM epcdft_coupling
+!
+!
+!
+!-----------------------------------------------------------------------
+SUBROUTINE diropn_gw (unit, tmp_dir2, filename, recl, exst, ndnmbr )
+  !-----------------------------------------------------------------------
+  !
+  !     this routine (taken from PP/src/pw2gw.f90 and modded) opens a file in tmp_dir2 for direct I/O access
+  !     If appropriate, the node number is added to the file name
+  !
+  USE kinds
+  USE io_files
+  IMPLICIT NONE
+
+  !
+  !    first the input variables
+  !
+  CHARACTER(len=*) :: filename
+  ! input: name of the file to open
+  INTEGER :: unit, recl
+  ! input: unit of the file to open
+  ! input: length of the records
+  LOGICAL :: exst
+  ! output: if true the file exists
+  !
+  INTEGER :: ndnmbr
+  !
+  !    local variables
+  !
+  CHARACTER(len=256) :: tempfile
+  ! complete file name
+  CHARACTER(len=80) :: assstr
+  INTEGER :: ios, unf_recl, ierr
+  ! used to check I/O operations
+  ! length of the record
+  ! error code
+  LOGICAL :: opnd
+  ! if true the file is already opened
+  CHARACTER (len=256), INTENT(IN)          :: tmp_dir2
+  CHARACTER(len=256) :: strnum
+  !
+  !WRITE( strnum, '(i10)' ) ndnmbr
+  IF(ndnmbr>-1 .and. ndnmbr<10)   WRITE( strnum, '(I1)' ) ndnmbr
+  IF(ndnmbr>9 .and. ndnmbr<100)   WRITE( strnum, '(I2)' ) ndnmbr
+  IF(ndnmbr>99 .and. ndnmbr<1000) WRITE( strnum, '(I3)' ) ndnmbr
+  !
+  IF (unit < 0) CALL errore ('diropn', 'wrong unit', 1)
+  !
+  !    we first check that the file is not already openend
+  !
+  ios = 0
+  INQUIRE (unit = unit, opened = opnd)
+  IF (opnd) CALL errore ('diropn', "can't open a connected unit", abs(unit))
+  !
+  !      then we check the filename
+  !
+
+  IF (filename == ' ') CALL errore ('diropn', 'filename not given', 2)
+  tempfile = trim(tmp_dir2) // trim(filename) // trim(strnum)
+
+  INQUIRE (file = tempfile, exist = exst)
+  !
+  !      the unit for record length is unfortunately machine-dependent
+  !
+#define DIRECT_IO_FACTOR 8
+  unf_recl = DIRECT_IO_FACTOR * recl
+  IF (unf_recl <= 0) CALL errore ('diropn', 'wrong record length', 3)
+  !
+  OPEN ( unit, file = trim(tempfile), iostat = ios, form = 'unformatted', &
+       status = 'unknown', access = 'direct', recl = unf_recl )
+
+  IF (ios /= 0) CALL errore ('diropn', 'error opening '//filename, unit)
+  RETURN
+END SUBROUTINE diropn_gw
