@@ -13,9 +13,9 @@
 ! Nicholas Brawand nicholasbrawand@gmail.com
 !
 ! Notes:
-!        1 = (2-delta_{NumOfSpin,2}) * 1/TotalGridPnts * <phi|phi>
+!        1) 1 = (2-delta_{NumOfSpin,2}) * 1/TotalGridPnts * <phi|phi>
 !
-!        S( j , i ) matrix = < evc1(i) | evc2(j) > 
+!        2) S( j , i ) matrix = < evc1(i) | evc2(j) > 
 !                                 evc1 -->
 !                                e
 !                                v
@@ -23,6 +23,11 @@
 !                                2
 !                                |
 !                                v
+!
+!        3) V is applied to psi in realspace. CODE ONLY WORKS FOR Dense = Smooth
+!           Vx1(r)_dense_parallel -> Vx1(r)_dense_serial ->
+!           Vx1(r)_smooth_serial with (psi(G)->psi(r)) =  vpsi1(r)=|Vx1(r)*psi>
+!           vpsi1(r) -> vpsi1(G)
 ! 
 !-----------------------------------------------------------------------
 PROGRAM epcdft_coupling 
@@ -43,8 +48,9 @@ PROGRAM epcdft_coupling
   USE noncollin_module,     ONLY : npol, nspin_mag, noncolin
   USE cell_base,            ONLY : tpiba2, omega
   USE environment,          ONLY : environment_start, environment_end
-  USE fft_base,             ONLY : dffts, cgather_smooth
+  USE fft_base,             ONLY : dfftp, dffts, cgather_smooth, grid_gather
   USE fft_interfaces,       ONLY : invfft
+  USE scf,                  ONLY : rho
   !
   IMPLICIT NONE
   LOGICAL                      :: exst2
@@ -66,6 +72,8 @@ PROGRAM epcdft_coupling
   COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)
   COMPLEX(DP), ALLOCATABLE     :: work(:)
   COMPLEX(DP),    ALLOCATABLE  :: smat(:,:)  ! S_ij matrix <wfc_j|wfc2_i>
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1   ! Vx1 is added to this potential (serial)
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1   ! Vx1 is added to this potential (parallel)
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
   !
@@ -117,13 +125,45 @@ PROGRAM epcdft_coupling
   j = 0
   dtmp = 0.0
   ztmp = 0.0
+  ALLOCATE(vxp1(dfftp%nnr))
+  ALLOCATE(vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   ALLOCATE( evc2( npwx, nbnd ) )
   ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( ivpt( nks*nbnd ) )
   ALLOCATE( work( nks*nbnd ) )
+  vxp1 = 0.0
+  vxs1 = 0.0
   smat = 0.0
   ivpt = 0
   smatdet = 0.0
+  !
+  ! Print checks and errors
+  !
+  IF(ionode)THEN
+     !
+     WRITE(*,*)" "
+     WRITE(*,*)"    ======================================================================= "
+     WRITE(*,*)" "
+     WRITE(*,*)"      EPCDFT_Coupling Code only works:"
+     WRITE(*,*)"      1) with norm conserving pseudos."
+     WRITE(*,*)"      2) (which implies) when smooth grid = dense grid."
+     WRITE(*,*)"      3) in serial. (Lucky Charms form the best medium with your espresso)"
+     WRITE(*,*)" "
+     WRITE(*,*)"    ======================================================================= "
+     WRITE(*,*)" "
+     !
+  ENDIF
+  !
+  ! this call only calulates vpoten
+  CALL add_efield( vxp1, dtmp, rho%of_r, .true. )
+  !
+  ! gather the potentials
+#ifdef __MPI
+    CALL grid_gather ( vxp1, vxs1 )
+#else
+    vxs1(:)=vxp1(:)
+#endif
+  !
   !WRITE(*,*)"Size of ecv dim1 ",SIZE(evc,1)," size of evc2 dim1 ",SIZE(evc2,1)
   !WRITE(*,*)"Size of ecv dim2 ",SIZE(evc,2)," size of evc2 dim2 ",SIZE(evc2,2)
   !
