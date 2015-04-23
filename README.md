@@ -23,6 +23,10 @@ This README would normally document whatever steps are necessary to get your app
 * eopreg - number of electrons needed in well
 * example below
 
+### To remove the field ###
+* tefield - needs to be set to .false.
+* eopreg - must be 0
+
 ### Contribution guidelines ###
 
 * Writing tests
