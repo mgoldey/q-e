@@ -62,7 +62,7 @@ PROGRAM epcdft_coupling
   USE mp_world,             ONLY : world_comm
   USE wavefunctions_module, ONLY : evc, psic
   USE io_files,             ONLY : nwordwfc, iunwfc
-  USE gvect,                ONLY : ngm, g
+  USE gvect,                ONLY : ngm, g, gstart
   USE gvecs,                ONLY : nls, nlsm
   USE noncollin_module,     ONLY : npol, nspin_mag, noncolin
   USE cell_base,            ONLY : tpiba2, omega
@@ -318,9 +318,25 @@ PROGRAM epcdft_coupling
               !
               j = j + 1 ! S matrix counter goes with evc2
               !
-              ! evc1 and psic=|vex1*evc1> is being conjg
-              smat(i, j)      = zdotc(npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
-              vex1_smat(i, j) = zdotc(npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
+              IF(gamma_only) THEN
+                 !
+                 smat(i, j) = 2.D0 * zdotc( npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+                 !
+                 ! remove G=0 term because it is being double counted
+                 IF(gstart == 2) smat(i,j) = smat(i,j) - ( CONJG(evc(1,ibnd1)) * evc2(1,ibnd2) )
+                 !
+                 !
+                 vex1_smat(i, j) = 2.D0 * zdotc(npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
+                 !
+                 IF(gstart == 2) vex1_smat(i, j) = vex1_smat(i, j) - ( CONJG(vex1_evc1(1)) * evc2(1,ibnd2) ) 
+                 !
+              ELSE ! if not gamma_only
+                 !
+                 smat(i, j) = zdotc( npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+                 !
+                 vex1_smat(i, j) = zdotc( npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
+                 !
+              ENDIF ! end if gamma_only
               !
            ENDDO ! end ibnd2
            !
@@ -333,8 +349,8 @@ PROGRAM epcdft_coupling
   ENDDO ! end ik1
   !
   ! for spin = 1
-  IF(.NOT.noncolin) smat = 2.0 * smat
-  IF(.NOT.noncolin) vex1_smat = 2.0 * vex1_smat
+  !IF(.NOT.noncolin) smat = 2.0 * smat
+  !IF(.NOT.noncolin) vex1_smat = 2.0 * vex1_smat
   !
   ! Print smat
   !
