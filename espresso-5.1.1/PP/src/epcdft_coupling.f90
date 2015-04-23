@@ -15,12 +15,15 @@
 ! Notes:
 !        1) 1 = (2-delta_{NumOfSpin,2}) * 1/TotalGridPnts * <phi|phi>
 !
-!        2) S( j , i ) matrix = < evc1(i) | evc2(j) > 
-!                                 evc1 -->
+!           
+!        2) S(i,j) matrix is smat_ij = < evc1(i) | evc2(j) > 
+!                                 evc2(j) -->
 !                                e
 !                                v
 !                                c
-!                                2
+!                                1
+!                               (i)
+!
 !                                |
 !                                v
 !
@@ -28,6 +31,22 @@
 !           Vx1(r)_dense_parallel -> Vx1(r)_dense_serial ->
 !           Vx1(r)_smooth_serial with (psi(G)->psi(r)) =  vpsi1(r)=|Vx1(r)*psi>
 !           vpsi1(r) -> vpsi1(G)
+!
+!        4) Only Vx1 is working right now.
+!
+!        5) vex1_smat(i,j) = < Vex1*evc1(i) | evc2(j) > 
+!                                 evc2(j) -->
+!                                V
+!                                e
+!                                x
+!                                e
+!                                *
+!                                v
+!                                c
+!                                1
+!                               (i)
+!                                |
+!                                v
 ! 
 !-----------------------------------------------------------------------
 PROGRAM epcdft_coupling 
@@ -41,26 +60,30 @@ PROGRAM epcdft_coupling
   USE io_global,            ONLY : ionode, ionode_id, stdout
   USE mp,                   ONLY : mp_bcast, mp_barrier
   USE mp_world,             ONLY : world_comm
-  USE wavefunctions_module, ONLY : evc
+  USE wavefunctions_module, ONLY : evc, psic
   USE io_files,             ONLY : nwordwfc, iunwfc
-  USE gvect,                ONLY : ngm, g 
-  USE gvecs,                ONLY : nls
+  USE gvect,                ONLY : ngm, g
+  USE gvecs,                ONLY : nls, nlsm
   USE noncollin_module,     ONLY : npol, nspin_mag, noncolin
   USE cell_base,            ONLY : tpiba2, omega
   USE environment,          ONLY : environment_start, environment_end
   USE fft_base,             ONLY : dfftp, dffts, cgather_smooth, grid_gather
-  USE fft_interfaces,       ONLY : invfft
-  USE scf,                  ONLY : rho
+  USE fft_interfaces,       ONLY : invfft, fwfft
+  USE scf,                  ONLY : rho, v
+  USE control_flags,        ONLY : gamma_only
+  USE fft_base            
+  USE gvect           
   !
   IMPLICIT NONE
   LOGICAL                      :: exst2
+  LOGICAL                      :: debug
   CHARACTER (len=20)          :: FMT
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
   CHARACTER (len=256)          :: tmp_dir2
   CHARACTER (len=256)          :: prefix2
   CHARACTER(LEN=256), external :: trimcheck
-  INTEGER                      :: ios,ik,i,j,ibnd, ig, is
+  INTEGER                      :: ios,ik,i,j, ig, is, itmp
   INTEGER                      :: ik1, ik2, ibnd1, ibnd2
   INTEGER                      :: iunwfc2 = 3636 ! unit for 2nd set of wfcs
   INTEGER,    ALLOCATABLE      :: ivpt(:) ! pivot indices for zgefa 
@@ -68,10 +91,13 @@ PROGRAM epcdft_coupling
   REAL(DP)                     :: dtmp  ! temp variable
   COMPLEX(DP)                  :: ztmp  ! temp variable
   COMPLEX(DP)                  :: smatdet ! determinant of smat
+  COMPLEX(DP)                  :: vex1_smatdet ! determinant of vex1_smat
   COMPLEX(DP), EXTERNAL        :: zdotc
   COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)
+  COMPLEX(DP), ALLOCATABLE     :: vex1_evc1(:) ! |Vex1_evc1>
   COMPLEX(DP), ALLOCATABLE     :: work(:)
-  COMPLEX(DP),    ALLOCATABLE  :: smat(:,:)  ! S_ij matrix <wfc_j|wfc2_i>
+  COMPLEX(DP),    ALLOCATABLE  :: smat(:,:)     ! S_ij matrix <wfc1_i|wfc2_j>
+  COMPLEX(DP),    ALLOCATABLE  :: vex1_smat(:,:)! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1   ! Vx1 is added to this potential (serial)
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1   ! Vx1 is added to this potential (parallel)
   !
@@ -128,14 +154,22 @@ PROGRAM epcdft_coupling
   ALLOCATE(vxp1(dfftp%nnr))
   ALLOCATE(vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   ALLOCATE( evc2( npwx, nbnd ) )
+  ALLOCATE( vex1_evc1( npwx ) )
   ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
+  ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( ivpt( nks*nbnd ) )
   ALLOCATE( work( nks*nbnd ) )
+  evc2 = 0.0
+  vex1_evc1 = 0.0
   vxp1 = 0.0
   vxs1 = 0.0
   smat = 0.0
+  vex1_smat = 0.0
   ivpt = 0
   smatdet = 0.0
+  vex1_smatdet = 0.0
+  psic = 0.0
+  debug = .true.
   !
   ! Print checks and errors
   !
@@ -148,8 +182,61 @@ PROGRAM epcdft_coupling
      WRITE(*,*)"      1) with norm conserving pseudos."
      WRITE(*,*)"      2) (which implies) when smooth grid = dense grid."
      WRITE(*,*)"      3) in serial. (Lucky Charms form the best medium with your espresso)"
+     WRITE(*,*)"      4) Need to check rows and colmns make sure in order (use mathematica)"
+     WRITE(*,*)"      5) Need to check Vx1 is applied correctly."
      WRITE(*,*)" "
      WRITE(*,*)"    ======================================================================= "
+     WRITE(*,*)" "
+     !
+  ENDIF
+  !
+  ! Print Debug Info
+  !
+  IF(debug)THEN
+     !
+     WRITE(*,*)" "
+     WRITE(*,*)" "
+     WRITE(*,*)"      EPCDFT_Coupling Code Stats:"
+     WRITE(*,*)" "
+     WRITE(*,*)"      Dense Grid Stuff"
+     WRITE(*,*)"      size(nl)       : ", size(nl)
+     WRITE(*,*)"      size(nlm)      : ", size(nlm)
+     WRITE(*,*)"      dfftp%nnr      : ", dfftp%nnr
+     WRITE(*,*)"      dfftp%nr1      : ", dfftp%nr1
+     WRITE(*,*)"      dfftp%nr2      : ", dfftp%nr2
+     WRITE(*,*)"      dfftp%nr3      : ", dfftp%nr3
+     WRITE(*,*)"      dfftp%nr1x     : ", dfftp%nr1x
+     WRITE(*,*)"      dfftp%nr2x     : ", dfftp%nr2x
+     WRITE(*,*)"      dfftp%nr3x     : ", dfftp%nr3x
+     WRITE(*,*)"      local g ngm    : ", ngm
+     WRITE(*,*)"      all gs ngm_g   : ", ngm_g
+     WRITE(*,*)"      # shell ngl    : ", ngl
+     WRITE(*,*)" "
+     WRITE(*,*)"      Smooth Grid Stuff"
+     WRITE(*,*)"      size(nls)      : ", size(nls)
+     WRITE(*,*)"      size(nlsm)     : ", size(nlsm)
+     WRITE(*,*)"      dffts%nnr      : ", dffts%nnr
+     WRITE(*,*)"      dffts%nr1      : ", dffts%nr1
+     WRITE(*,*)"      dffts%nr2      : ", dffts%nr2
+     WRITE(*,*)"      dffts%nr3      : ", dffts%nr3
+     WRITE(*,*)"      dffts%nr1x     : ", dffts%nr1x
+     WRITE(*,*)"      dffts%nr2x     : ", dffts%nr2x
+     WRITE(*,*)"      dffts%nr3x     : ", dffts%nr3x
+     WRITE(*,*)" "
+     WRITE(*,*)"      Plane Wave Stuff"
+     WRITE(*,*)"      npw            : ", npw 
+     WRITE(*,*)"      npwx           : ", npwx 
+     WRITE(*,*)"      size(igk)      : ", size(igk)
+     WRITE(*,*)" "
+     WRITE(*,*)"      Phys Objects"
+     WRITE(*,*)"      nbnd           : ", nbnd 
+     WRITE(*,*)"      size(psic)     : ", size(psic)
+     WRITE(*,*)"      size(evc)      : ", size(evc)
+     WRITE(*,*)"      size(evc,1)    : ", size(evc,1)
+     WRITE(*,*)"      size(evc,2)    : ", size(evc,2)
+     WRITE(*,*)"      size(rho%of_r) : ", size(rho%of_r)
+     WRITE(*,*)"      size(v%of_r)   : ", size(v%of_r)
+     WRITE(*,*)" "
      WRITE(*,*)" "
      !
   ENDIF
@@ -167,6 +254,7 @@ PROGRAM epcdft_coupling
   !WRITE(*,*)"Size of ecv dim1 ",SIZE(evc,1)," size of evc2 dim1 ",SIZE(evc2,1)
   !WRITE(*,*)"Size of ecv dim2 ",SIZE(evc,2)," size of evc2 dim2 ",SIZE(evc2,2)
   !
+  i = 0
   DO ik1 = 1, nks
      !
      ! prepare the indices & read evc1
@@ -175,7 +263,50 @@ PROGRAM epcdft_coupling
      !
      DO ibnd1 = 1, nbnd
         !
-        i = i + 1 ! S matrix counter
+        i = i + 1 ! S matrix counter goes with evc1
+        !
+        ! create | vxs1 * psic > go to realspace, multiply then back to G space
+        !
+        psic = 0.0
+        !
+        ! setup psic = evc_ik_iband
+        IF(gamma_only)THEN
+           !
+           psic( nls (igk(1:npw)) ) =        evc( 1:npw, ibnd1 )
+           psic( nlsm(igk(1:npw)) ) = CONJG( evc( 1:npw, ibnd1 ) )
+           !
+        ELSE
+           !
+           psic( nls(igk(1:npw)) ) = evc(1:npw,ibnd1)
+           !
+        ENDIF
+        !
+        ! go to real space
+        CALL invfft ('Wave', psic, dffts)
+        !
+        ! apply Vex1 to psi in realspace
+        DO itmp = 1, dffts%nnr
+           !
+           psic(itmp) = psic(itmp) * vxs1(itmp)
+           !
+        ENDDO
+        !
+        ! go back to g space
+        CALL fwfft ('Wave', psic, dffts)
+        !
+        ! going back to the plane wave sphere
+        IF(gamma_only)THEN
+           !
+           vex1_evc1( 1:npw )  = psic( nls (igk(1:npw)) ) 
+           vex1_evc1( 1:npw ) = CONJG( psic( nlsm(igk(1:npw)) ) ) 
+           !
+        ELSE
+           !
+           vex1_evc1(1:npw) = psic( nls(igk(1:npw)) ) 
+           !
+        ENDIF
+        !
+        ! calculate <psi1|psi2> and <vxs1*psi1|psi2>
         !
         DO ik2 = 1, nks
            !
@@ -185,16 +316,17 @@ PROGRAM epcdft_coupling
            !
            DO ibnd2= 1, nbnd 
               !
-              j = j + 1 ! S matrix counter
+              j = j + 1 ! S matrix counter goes with evc2
               !
-              ! evc is being conjg
-              smat(i, j) = zdotc(npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+              ! evc1 and psic=|vex1*evc1> is being conjg
+              smat(i, j)      = zdotc(npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+              vex1_smat(i, j) = zdotc(npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
               !
            ENDDO ! end ibnd2
            !
         ENDDO ! end ik2
         !
-        j = 0 ! S matrix inner counter reset
+        j = 0 ! S matrix inner counter reset for evc2
         !
      ENDDO ! end ibnd1
      !
@@ -202,21 +334,38 @@ PROGRAM epcdft_coupling
   !
   ! for spin = 1
   IF(.NOT.noncolin) smat = 2.0 * smat
+  IF(.NOT.noncolin) vex1_smat = 2.0 * vex1_smat
   !
   ! Print smat
   !
   WRITE(*,*)""
-  WRITE(*,*)"  REAL S_ij"
-  WRITE(*,*)"----------------"
+  WRITE(*,*)"  REAL S_row,col <psi(row)|psi(col)>"
+  WRITE(*,*)"-------------------------------------"
   DO j = 1, nbnd*nks
     WRITE(*,1)REAL(smat(j,:))
   ENDDO
   !
   WRITE(*,*)""
-  WRITE(*,*)"  IMG S_ij"
-  WRITE(*,*)"----------------"
+  WRITE(*,*)"  IMG S_row,col <psi(row)|psi(col)>"
+  WRITE(*,*)"-------------------------------------"
   DO j = 1, nbnd*nks
     WRITE(*,1)AIMAG(smat(j,:))
+  ENDDO
+  !
+  ! Print vex1_smat
+  !
+  WRITE(*,*)""
+  WRITE(*,*)"  REAL <Vex1*psi(row)|psi(col)>"
+  WRITE(*,*)"-------------------------------------"
+  DO j = 1, nbnd*nks
+    WRITE(*,1)REAL(vex1_smat(j,:))
+  ENDDO
+  !
+  WRITE(*,*)""
+  WRITE(*,*)"  IMG <Vex1*psi(row)|psi(col)>"
+  WRITE(*,*)"-------------------------------------"
+  DO j = 1, nbnd*nks
+    WRITE(*,1)AIMAG(vex1_smat(j,:))
   ENDDO
   !
   ! calculate determinant of smat
@@ -225,12 +374,26 @@ PROGRAM epcdft_coupling
   CALL errore('epcdft_coupling','error in zgefa',abs(info))
   CALL zgedi(smat,nbnd*nks,nbnd*nks,ivpt,smatdet,work,10) ! get det of Smat from zgefa ivpt's
   !
+  ! calculate determinant of vex1_smat
+  !
+  ivpt = 0
+  CALL zgefa(vex1_smat,nbnd*nks,nbnd*nks,ivpt,info) ! prep matrix for det
+  CALL errore('epcdft_coupling','error in zgefa',abs(info))
+  CALL zgedi(vex1_smat,nbnd*nks,nbnd*nks,ivpt,vex1_smatdet,work,10) ! get det of Smat from zgefa ivpt's
+  !
   ! Print determinant smat
   !
   WRITE(*,*)""
   WRITE(*,*)"  Det( S_ij )"
   WRITE(*,*)"----------------"
   WRITE(*,1)smatdet
+  !
+  ! Print determinant vex1_smat
+  !
+  WRITE(*,*)""
+  WRITE(*,*)"  Det( <Vex1*psi(row)|psi(col)> )"
+  WRITE(*,*)"----------------"
+  WRITE(*,1)vex1_smatdet
   !
   CALL environment_end ( 'epcdft_coupling' )
   !
