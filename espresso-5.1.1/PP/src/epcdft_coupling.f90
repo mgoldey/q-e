@@ -362,14 +362,14 @@ PROGRAM epcdft_coupling
   WRITE(*,*)""
   WRITE(*,*)"  Det( S_ij )"
   WRITE(*,*)"----------------"
-  WRITE(*,1)REAL(smatdet)
+  WRITE(*,*)smatdet
   !
   ! Print determinant vex1_smat
   !
   WRITE(*,*)""
   WRITE(*,*)"  Det( < Vex1 * psi1 | psi1 > )"
   WRITE(*,*)"--------------------------------"
-  WRITE(*,1)REAL(vex1_smatdet)
+  WRITE(*,*)vex1_smatdet
   WRITE(*,*)" "
   WRITE(*,*)"  ======================================================================= "
   WRITE(*,*)" "
@@ -390,6 +390,7 @@ PROGRAM epcdft_coupling
   STOP
   !
   1 FORMAT(8E12.3)
+  2 FORMAT(2E16.5)
   !
 END PROGRAM epcdft_coupling
 !
