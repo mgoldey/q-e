@@ -88,8 +88,8 @@ PROGRAM epcdft_coupling
   REAL(DP)                     :: dtmp           ! temp variable
   REAL(DP),    EXTERNAL        :: ddot
   COMPLEX(DP)                  :: ztmp           ! temp variable
-  COMPLEX(DP)                  :: smatdet        ! determinant of smat
-  COMPLEX(DP)                  :: vex1_smatdet   ! determinant of vex1_smat
+  COMPLEX(DP)                  :: smatdet(2)     ! determinant of smat
+  COMPLEX(DP)                  :: vex1_smatdet(2)! determinant of vex1_smat
   COMPLEX(DP), EXTERNAL        :: zdotc
   COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)      ! will store 2nd vecs for dot prods
   COMPLEX(DP), ALLOCATABLE     :: vex1_evc1(:)   ! |Vex1_evc1>
