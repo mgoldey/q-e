@@ -182,6 +182,15 @@ PROGRAM epcdft_coupling
      WRITE(*,*)" "
      WRITE(*,*)"    ======================================================================= "
      WRITE(*,*)" "
+     WRITE(*,*)" "
+     WRITE(*,*)"    Reading data from :"
+     WRITE(*,*)"    "
+     WRITE(*,*)"    "
+     WRITE(*,*)"    "
+     WRITE(*,*)"    prefix1 : ", prefix
+     WRITE(*,*)"    outdir1 : ", tmp_dir
+     WRITE(*,*)"    prefix2 : ", prefix2
+     WRITE(*,*)"    outdir2 : ", tmp_dir2
      !
   ENDIF
   !
@@ -298,14 +307,14 @@ PROGRAM epcdft_coupling
   ! Print smat
   !
   WRITE(*,*)""
-  WRITE(*,*)"  REAL S_row,col <psi(row)|psi(col)>"
+  WRITE(*,*)"  REAL S_row,col <psi1(row)|psi2(col)>"
   WRITE(*,*)"-------------------------------------"
   DO j = 1, nbnd*nks
     WRITE(*,1)REAL(smat(j,:))
   ENDDO
   !
   WRITE(*,*)""
-  WRITE(*,*)"  IMG S_row,col <psi(row)|psi(col)>"
+  WRITE(*,*)"  IMG S_row,col <psi1(row)|psi2(col)>"
   WRITE(*,*)"-------------------------------------"
   DO j = 1, nbnd*nks
     WRITE(*,1)AIMAG(smat(j,:))
@@ -314,14 +323,14 @@ PROGRAM epcdft_coupling
   ! Print vex1_smat
   !
   WRITE(*,*)""
-  WRITE(*,*)"  REAL <Vex1*psi(row)|psi(col)>"
+  WRITE(*,*)"  REAL <Vex1*psi1(row)|psi2(col)>"
   WRITE(*,*)"-------------------------------------"
   DO j = 1, nbnd*nks
     WRITE(*,1)REAL(vex1_smat(j,:))
   ENDDO
   !
   WRITE(*,*)""
-  WRITE(*,*)"  IMG <Vex1*psi(row)|psi(col)>"
+  WRITE(*,*)"  IMG <Vex1*psi1(row)|psi2(col)>"
   WRITE(*,*)"-------------------------------------"
   DO j = 1, nbnd*nks
     WRITE(*,1)AIMAG(vex1_smat(j,:))
@@ -350,9 +359,12 @@ PROGRAM epcdft_coupling
   ! Print determinant vex1_smat
   !
   WRITE(*,*)""
-  WRITE(*,*)"  Det( <Vex1*psi(row)|psi(col)> )"
-  WRITE(*,*)"----------------"
+  WRITE(*,*)"  Det( < Vex1 * psi1 | psi1 > )"
+  WRITE(*,*)"--------------------------------"
   WRITE(*,1)REAL(vex1_smatdet)
+  WRITE(*,*)" "
+  WRITE(*,*)"  ======================================================================= "
+  WRITE(*,*)" "
   !
   DEALLOCATE( vxs1 )
   !DEALLOCATE( vxp1 )
