@@ -89,6 +89,7 @@ PROGRAM epcdft_coupling
   INTEGER,    ALLOCATABLE      :: ivpt(:) ! pivot indices for zgefa 
   INTEGER                      :: info ! for zgefa to stop zgedi 
   REAL(DP)                     :: dtmp  ! temp variable
+  REAL(DP),    EXTERNAL        :: ddot
   COMPLEX(DP)                  :: ztmp  ! temp variable
   COMPLEX(DP)                  :: smatdet ! determinant of smat
   COMPLEX(DP)                  :: vex1_smatdet ! determinant of vex1_smat
@@ -182,8 +183,6 @@ PROGRAM epcdft_coupling
      WRITE(*,*)"      1) with norm conserving pseudos."
      WRITE(*,*)"      2) (which implies) when smooth grid = dense grid."
      WRITE(*,*)"      3) in serial. (Lucky Charms form the best medium with your espresso)"
-     WRITE(*,*)"      4) Need to check rows and colmns make sure in order (use mathematica)"
-     WRITE(*,*)"      5) Need to check Vx1 is applied correctly."
      WRITE(*,*)" "
      WRITE(*,*)"    ======================================================================= "
      WRITE(*,*)" "
@@ -320,15 +319,20 @@ PROGRAM epcdft_coupling
               !
               IF(gamma_only) THEN
                  !
-                 CALL gamma_dot( gstart, npwx, evc(:,ibnd1), evc2(:,ibnd2), smat(i, j) )
+                 ! take the dot products and remove the double count on G=0 point
                  !
-                 CALL gamma_dot( gstart, npwx, vex1_evc1(:), evc2(:,ibnd2), vex1_smat(i, j) )
+                 smat(i,j) =  2.d0 * ddot( 2*npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+                 IF(gstart == 2) smat(i,j) = smat(i,j) - DBLE(evc(1,ibnd1)) * DBLE(evc2(1,ibnd2))
+                 !
+                 vex1_smat(i,j) = 2.d0 * ddot( 2*npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
+                 IF(gstart == 2) vex1_smat(i,j) = vex1_smat(i,j) - DBLE(vex1_evc1(1)) * DBLE(evc2(1,ibnd2))
+                 !
                  !
               ELSE ! if not gamma_only
                  !
-                 smat(i, j)      = zdotc( npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+                 smat(i, j)      = zdotc( npwx, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
                  !
-                 vex1_smat(i, j) = zdotc( npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
+                 vex1_smat(i, j) = zdotc( npwx, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
                  !
               ENDIF ! end if gamma_only
               !
@@ -380,14 +384,14 @@ PROGRAM epcdft_coupling
   !
   ! calculate determinant of smat
   !
-  CALL zgefa(smat,nbnd*nks,nbnd*nks,ivpt,info) ! prep matrix for det
+  CALL zgefa(smat,nbnd*nks,nbnd*nks,ivpt,info)             ! prep matrix for det
   CALL errore('epcdft_coupling','error in zgefa',abs(info))
-  CALL zgedi(smat,nbnd*nks,nbnd*nks,ivpt,smatdet,work,10) ! get det of Smat from zgefa ivpt's
+  CALL zgedi(smat,nbnd*nks,nbnd*nks,ivpt,smatdet,work,10)  ! get det of Smat from zgefa ivpt's
   !
   ! calculate determinant of vex1_smat
   !
   ivpt = 0
-  CALL zgefa(vex1_smat,nbnd*nks,nbnd*nks,ivpt,info) ! prep matrix for det
+  CALL zgefa(vex1_smat,nbnd*nks,nbnd*nks,ivpt,info)                 ! prep matrix for det
   CALL errore('epcdft_coupling','error in zgefa',abs(info))
   CALL zgedi(vex1_smat,nbnd*nks,nbnd*nks,ivpt,vex1_smatdet,work,10) ! get det of Smat from zgefa ivpt's
   !
@@ -396,14 +400,14 @@ PROGRAM epcdft_coupling
   WRITE(*,*)""
   WRITE(*,*)"  Det( S_ij )"
   WRITE(*,*)"----------------"
-  WRITE(*,1)smatdet
+  WRITE(*,1)REAL(smatdet)
   !
   ! Print determinant vex1_smat
   !
   WRITE(*,*)""
   WRITE(*,*)"  Det( <Vex1*psi(row)|psi(col)> )"
   WRITE(*,*)"----------------"
-  WRITE(*,1)vex1_smatdet
+  WRITE(*,1)REAL(vex1_smatdet)
   !
   CALL environment_end ( 'epcdft_coupling' )
   !
@@ -490,34 +494,3 @@ SUBROUTINE diropn_gw (unit, tmp_dir2, filename, recl, exst, ndnmbr )
 END SUBROUTINE diropn_gw
 !
 !-----------------------------------------------------------------------
-SUBROUTINE gamma_dot (gstart, n, a, b, c)
-  !-----------------------------------------------------------------------
-  !
-  ! Calculate <a|b> using gamma point tricks.
-  ! Return the result in c. 
-  ! n is the length of a and b.   
-  !     
-  !
-  USE kinds, ONLY : DP
-  !
-  IMPLICIT NONE
-  !
-  COMPLEX(DP), EXTERNAL      :: zdotc
-  INTEGER,     INTENT(IN)    :: gstart
-  INTEGER,     INTENT(IN)    :: n
-  COMPLEX(DP), INTENT(IN)    :: a(n)
-  COMPLEX(DP), INTENT(IN)    :: b(n)
-  COMPLEX(DP), INTENT(INOUT) :: c
-  !
-  ! sum over first half of G vectors
-  c = zdotc( n, a, 1, b, 1 )
-  !
-  ! sum over 2nd half of the G vectors a* -> a and b -> b*
-  c = c + zdotc( n, b, 1, a, 1 )
-  !
-  ! remove the double count at G=0 from above, 
-  ! they are both real at G = 0 so Conjg doesn't matter
-  IF(gstart == 2) c = c - a(1) * b(1)
-  !
-  !
-END SUBROUTINE gamma_dot
