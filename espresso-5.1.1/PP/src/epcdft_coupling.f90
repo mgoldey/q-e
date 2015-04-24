@@ -188,10 +188,12 @@ PROGRAM epcdft_coupling
      WRITE(*,*)"    "
      WRITE(*,*)"    "
      WRITE(*,*)"    "
-     WRITE(*,*)"    prefix1 : ", prefix
-     WRITE(*,*)"    outdir1 : ", tmp_dir
-     WRITE(*,*)"    prefix2 : ", prefix2
-     WRITE(*,*)"    outdir2 : ", tmp_dir2
+     WRITE(*,*)"    prefix1 : "  , prefix
+     WRITE(*,*)"    outdir1 : "  , tmp_dir
+     WRITE(*,*)"    prefix2 : "  , prefix2
+     WRITE(*,*)"    outdir2 : "  , tmp_dir2
+     WRITE(*,*)"    # of spins :", nks
+     WRITE(*,*)"    # of bands :", nbnd
      !
   ENDIF
   !
@@ -209,7 +211,6 @@ PROGRAM epcdft_coupling
   !
   i = 0
   !
-write(*,*)nks," ",nbnd
   DO ik1 = 1, nks
      !
      ! prepare the indices & read evc1
