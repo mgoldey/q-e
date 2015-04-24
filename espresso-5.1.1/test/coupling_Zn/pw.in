@@ -13,7 +13,7 @@
   a         = 10,
   nat       = 2,
   ntyp      = 1,
-  ecutwfc   = 80,
+  ecutwfc   = 110,
   !ecutrho  = 300,
   assume_isolated='mp'
   tot_charge = +1
@@ -21,7 +21,7 @@
   tot_magnetization = 1
   edir = 1,
   emaxpos = 0.25,
-  eamp = -0.5,
+  eamp = -0.52,
   eopreg = 12
 /
 &ELECTRONS
