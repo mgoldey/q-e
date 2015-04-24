@@ -174,11 +174,12 @@ PROGRAM epcdft_coupling
      WRITE(*,*)" "
      WRITE(*,*)"    ======================================================================= "
      WRITE(*,*)" "
-     WRITE(*,*)"      EPCDFT_Coupling Code only works:"
-     WRITE(*,*)"      1) with norm conserving pseudos."
-     WRITE(*,*)"      2) (which implies) when smooth grid = dense grid."
-     WRITE(*,*)"      3) in serial. (Lucky Charms form the best medium with your espresso)"
-     WRITE(*,*)"      4) Make sure your grids/cutoffs... are the same for both systems!"
+     WRITE(*,*)"      EPCDFT_Coupling Code warnings:"
+     WRITE(*,*)"      1) Only works with norm conserving pseudos."
+     WRITE(*,*)"      2) (which implies) that smooth grid = dense grid."
+     WRITE(*,*)"      3) Run must be in serial (Lucky Charms form the best medium with your espresso)"
+     WRITE(*,*)"      4) No K-points."
+     WRITE(*,*)"      5) Make sure your grids/cutoffs... are the same for both systems."
      WRITE(*,*)" "
      WRITE(*,*)"    ======================================================================= "
      WRITE(*,*)" "
@@ -208,6 +209,7 @@ PROGRAM epcdft_coupling
   !
   i = 0
   !
+write(*,*)nks," ",nbnd
   DO ik1 = 1, nks
      !
      ! prepare the indices & read evc1
@@ -271,24 +273,28 @@ PROGRAM epcdft_coupling
               !
               j = j + 1 ! S matrix counter goes with evc2
               !
-              IF(gamma_only) THEN
+              IF(ik1 == ik2) THEN ! if spins match
                  !
-                 ! take the dot products and remove the double count on G=0 point
+                 IF(gamma_only) THEN
+                    !
+                    ! take the dot products and remove the double count on G=0 point
+                    !
+                    smat(i,j) =  2.d0 * ddot( 2*npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+                    IF(gstart == 2) smat(i,j) = smat(i,j) - DBLE(evc(1,ibnd1)) * DBLE(evc2(1,ibnd2))
+                    !
+                    !
+                    vex1_smat(i,j) = 2.d0 * ddot( 2*npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
+                    IF(gstart == 2) vex1_smat(i,j) = vex1_smat(i,j) - DBLE(vex1_evc1(1)) * DBLE(evc2(1,ibnd2))
+                    !
+                 ELSE ! if not gamma_only
+                    !
+                    smat(i, j)      = zdotc( npwx, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+                    !
+                    vex1_smat(i, j) = zdotc( npwx, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
+                    !
+                 ENDIF ! end if gamma_only
                  !
-                 smat(i,j) =  2.d0 * ddot( 2*npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
-                 IF(gstart == 2) smat(i,j) = smat(i,j) - DBLE(evc(1,ibnd1)) * DBLE(evc2(1,ibnd2))
-                 !
-                 vex1_smat(i,j) = 2.d0 * ddot( 2*npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
-                 IF(gstart == 2) vex1_smat(i,j) = vex1_smat(i,j) - DBLE(vex1_evc1(1)) * DBLE(evc2(1,ibnd2))
-                 !
-                 !
-              ELSE ! if not gamma_only
-                 !
-                 smat(i, j)      = zdotc( npwx, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
-                 !
-                 vex1_smat(i, j) = zdotc( npwx, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
-                 !
-              ENDIF ! end if gamma_only
+              ENDIF ! end if spins match
               !
            ENDDO ! end ibnd2
            !
@@ -300,9 +306,10 @@ PROGRAM epcdft_coupling
      !
   ENDDO ! end ik1
   !
-  ! for spin = 1
-  !IF(.NOT.noncolin) smat = 2.0 * smat
-  !IF(.NOT.noncolin) vex1_smat = 2.0 * vex1_smat
+  ! convert to Single-precision so zgedi doesn't give stupid results
+  !
+  smat = CMPLX( REAL(smat), AIMAG(smat) )
+  vex1_smat = CMPLX( REAL(vex1_smat), AIMAG(vex1_smat) )
   !
   ! Print smat
   !
@@ -381,7 +388,7 @@ PROGRAM epcdft_coupling
   !
   STOP
   !
-  1 FORMAT(4E12.3)
+  1 FORMAT(8E12.3)
   !
 END PROGRAM epcdft_coupling
 !
