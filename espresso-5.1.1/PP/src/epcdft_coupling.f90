@@ -8,15 +8,15 @@
 ! -----------------------------------------------------------------
 ! This program reads the prefix1.wfc and prefix2.wfc in G-space written by QE and 
 ! and computes S_1,2. Where S_1,2 is the overlap of the slater det's of system 1 and 2.
+!
+! It also computes det(<Vex1*Phi1|Phi2>) where Phi is a slater det and Vex1 is the 
+! applied field to system 1.
 ! 
 !
 ! Nicholas Brawand nicholasbrawand@gmail.com
 !
 ! Notes:
-!        1) 1 = (2-delta_{NumOfSpin,2}) * 1/TotalGridPnts * <phi|phi>
-!
-!           
-!        2) S(i,j) matrix is smat_ij = < evc1(i) | evc2(j) > 
+!        1) S(i,j) matrix is smat_ij = < evc1(i) | evc2(j) > 
 !                                 evc2(j) -->
 !                                e
 !                                v
@@ -27,14 +27,14 @@
 !                                |
 !                                v
 !
-!        3) V is applied to psi in realspace. CODE ONLY WORKS FOR Dense = Smooth
+!        2) V is applied to psi in realspace. CODE ONLY WORKS FOR Dense = Smooth
 !           Vx1(r)_dense_parallel -> Vx1(r)_dense_serial ->
 !           Vx1(r)_smooth_serial with (psi(G)->psi(r)) =  vpsi1(r)=|Vx1(r)*psi>
 !           vpsi1(r) -> vpsi1(G)
 !
-!        4) Only Vx1 is working right now.
+!        3) Only Vx1 is working right now.
 !
-!        5) vex1_smat(i,j) = < Vex1*evc1(i) | evc2(j) > 
+!        4) vex1_smat(i,j) = < Vex1*evc1(i) | evc2(j) > 
 !                                 evc2(j) -->
 !                                V
 !                                e
@@ -71,12 +71,9 @@ PROGRAM epcdft_coupling
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE scf,                  ONLY : rho, v
   USE control_flags,        ONLY : gamma_only
-  USE fft_base            
-  USE gvect           
   !
   IMPLICIT NONE
   LOGICAL                      :: exst2
-  LOGICAL                      :: debug
   CHARACTER (len=20)           :: FMT
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
@@ -155,7 +152,6 @@ PROGRAM epcdft_coupling
   ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   !
-  debug     = .false.
   ivpt      = 0
   i         = 0
   j         = 0
@@ -182,59 +178,9 @@ PROGRAM epcdft_coupling
      WRITE(*,*)"      1) with norm conserving pseudos."
      WRITE(*,*)"      2) (which implies) when smooth grid = dense grid."
      WRITE(*,*)"      3) in serial. (Lucky Charms form the best medium with your espresso)"
+     WRITE(*,*)"      4) Make sure your grids/cutoffs... are the same for both systems!"
      WRITE(*,*)" "
      WRITE(*,*)"    ======================================================================= "
-     WRITE(*,*)" "
-     !
-  ENDIF
-  !
-  ! Print Debug Info
-  !
-  IF(debug)THEN
-     !
-     WRITE(*,*)" "
-     WRITE(*,*)" "
-     WRITE(*,*)"      EPCDFT_Coupling Code Stats:"
-     WRITE(*,*)" "
-     WRITE(*,*)"      Dense Grid Stuff"
-     WRITE(*,*)"      size(nl)       : ", size(nl)
-     WRITE(*,*)"      size(nlm)      : ", size(nlm)
-     WRITE(*,*)"      dfftp%nnr      : ", dfftp%nnr
-     WRITE(*,*)"      dfftp%nr1      : ", dfftp%nr1
-     WRITE(*,*)"      dfftp%nr2      : ", dfftp%nr2
-     WRITE(*,*)"      dfftp%nr3      : ", dfftp%nr3
-     WRITE(*,*)"      dfftp%nr1x     : ", dfftp%nr1x
-     WRITE(*,*)"      dfftp%nr2x     : ", dfftp%nr2x
-     WRITE(*,*)"      dfftp%nr3x     : ", dfftp%nr3x
-     WRITE(*,*)"      local g ngm    : ", ngm
-     WRITE(*,*)"      all gs ngm_g   : ", ngm_g
-     WRITE(*,*)"      # shell ngl    : ", ngl
-     WRITE(*,*)" "
-     WRITE(*,*)"      Smooth Grid Stuff"
-     WRITE(*,*)"      size(nls)      : ", size(nls)
-     WRITE(*,*)"      size(nlsm)     : ", size(nlsm)
-     WRITE(*,*)"      dffts%nnr      : ", dffts%nnr
-     WRITE(*,*)"      dffts%nr1      : ", dffts%nr1
-     WRITE(*,*)"      dffts%nr2      : ", dffts%nr2
-     WRITE(*,*)"      dffts%nr3      : ", dffts%nr3
-     WRITE(*,*)"      dffts%nr1x     : ", dffts%nr1x
-     WRITE(*,*)"      dffts%nr2x     : ", dffts%nr2x
-     WRITE(*,*)"      dffts%nr3x     : ", dffts%nr3x
-     WRITE(*,*)" "
-     WRITE(*,*)"      Plane Wave Stuff"
-     WRITE(*,*)"      npw            : ", npw 
-     WRITE(*,*)"      npwx           : ", npwx 
-     WRITE(*,*)"      size(igk)      : ", size(igk)
-     WRITE(*,*)" "
-     WRITE(*,*)"      Phys Objects"
-     WRITE(*,*)"      nbnd           : ", nbnd 
-     WRITE(*,*)"      size(psic)     : ", size(psic)
-     WRITE(*,*)"      size(evc)      : ", size(evc)
-     WRITE(*,*)"      size(evc,1)    : ", size(evc,1)
-     WRITE(*,*)"      size(evc,2)    : ", size(evc,2)
-     WRITE(*,*)"      size(rho%of_r) : ", size(rho%of_r)
-     WRITE(*,*)"      size(v%of_r)   : ", size(v%of_r)
-     WRITE(*,*)" "
      WRITE(*,*)" "
      !
   ENDIF
