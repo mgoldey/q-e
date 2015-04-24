@@ -1,11 +1,11 @@
 &CONTROL
   calculation  = "scf",
-  prefix       = "zn2",
+  prefix       = "zn",
   pseudo_dir   = "./",
-  outdir       = "./out2",
+  outdir       = "./out",
 !  wf_collect   = .TRUE.
 !  restart_mode = 'restart'
-  tefield = .false.
+  tefield = .true.
 /
 &SYSTEM
   nosym = .true.
@@ -13,7 +13,7 @@
   a         = 10,
   nat       = 2,
   ntyp      = 1,
-  ecutwfc   = 110,
+  ecutwfc   = 80,
   !ecutrho  = 300,
   assume_isolated='mp'
   tot_charge = +1
@@ -21,8 +21,8 @@
   tot_magnetization = 1
   edir = 1,
   emaxpos = 0.25,
-  eamp = 0,
-  eopreg = 0
+  eamp = -0.5,
+  eopreg = 12
 /
 &ELECTRONS
  ! startingpot = 'file'
