@@ -96,7 +96,7 @@ PROGRAM epcdft_coupling
   COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)
   COMPLEX(DP), ALLOCATABLE     :: vex1_evc1(:) ! |Vex1_evc1>
   COMPLEX(DP), ALLOCATABLE     :: work(:)
-  COMPLEX(DP),    ALLOCATABLE  :: smat(:,:)     ! S_ij matrix <wfc1_i|wfc2_j>
+  COMPLEX(DP), ALLOCATABLE  :: smat(:,:)     ! S_ij matrix <wfc1_i|wfc2_j>
   COMPLEX(DP),    ALLOCATABLE  :: vex1_smat(:,:)! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1   ! Vx1 is added to this potential (serial)
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1   ! Vx1 is added to this potential (parallel)
@@ -320,19 +320,13 @@ PROGRAM epcdft_coupling
               !
               IF(gamma_only) THEN
                  !
-                 smat(i, j) = 2.D0 * zdotc( npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+                 CALL gamma_dot( gstart, npwx, evc(:,ibnd1), evc2(:,ibnd2), smat(i, j) )
                  !
-                 ! remove G=0 term because it is being double counted
-                 IF(gstart == 2) smat(i,j) = smat(i,j) - ( CONJG(evc(1,ibnd1)) * evc2(1,ibnd2) )
-                 !
-                 !
-                 vex1_smat(i, j) = 2.D0 * zdotc(npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
-                 !
-                 IF(gstart == 2) vex1_smat(i, j) = vex1_smat(i, j) - ( CONJG(vex1_evc1(1)) * evc2(1,ibnd2) ) 
+                 CALL gamma_dot( gstart, npwx, vex1_evc1(:), evc2(:,ibnd2), vex1_smat(i, j) )
                  !
               ELSE ! if not gamma_only
                  !
-                 smat(i, j) = zdotc( npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
+                 smat(i, j)      = zdotc( npw, evc(:,ibnd1), 1, evc2(:,ibnd2), 1 )
                  !
                  vex1_smat(i, j) = zdotc( npw, vex1_evc1(:), 1, evc2(:,ibnd2), 1 )
                  !
@@ -494,3 +488,36 @@ SUBROUTINE diropn_gw (unit, tmp_dir2, filename, recl, exst, ndnmbr )
   IF (ios /= 0) CALL errore ('diropn', 'error opening '//filename, unit)
   RETURN
 END SUBROUTINE diropn_gw
+!
+!-----------------------------------------------------------------------
+SUBROUTINE gamma_dot (gstart, n, a, b, c)
+  !-----------------------------------------------------------------------
+  !
+  ! Calculate <a|b> using gamma point tricks.
+  ! Return the result in c. 
+  ! n is the length of a and b.   
+  !     
+  !
+  USE kinds, ONLY : DP
+  !
+  IMPLICIT NONE
+  !
+  COMPLEX(DP), EXTERNAL      :: zdotc
+  INTEGER,     INTENT(IN)    :: gstart
+  INTEGER,     INTENT(IN)    :: n
+  COMPLEX(DP), INTENT(IN)    :: a(n)
+  COMPLEX(DP), INTENT(IN)    :: b(n)
+  COMPLEX(DP), INTENT(INOUT) :: c
+  !
+  ! sum over first half of G vectors
+  c = zdotc( n, a, 1, b, 1 )
+  !
+  ! sum over 2nd half of the G vectors a* -> a and b -> b*
+  c = c + zdotc( n, b, 1, a, 1 )
+  !
+  ! remove the double count at G=0 from above, 
+  ! they are both real at G = 0 so Conjg doesn't matter
+  IF(gstart == 2) c = c - a(1) * b(1)
+  !
+  !
+END SUBROUTINE gamma_dot
