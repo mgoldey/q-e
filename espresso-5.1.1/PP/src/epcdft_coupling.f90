@@ -74,6 +74,7 @@ PROGRAM epcdft_coupling
   !
   IMPLICIT NONE
   LOGICAL                      :: exst2
+  LOGICAL                      :: debug
   CHARACTER (len=20)           :: FMT
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
@@ -98,6 +99,12 @@ PROGRAM epcdft_coupling
   COMPLEX(DP), ALLOCATABLE     :: vex1_smat(:,:) ! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1    ! Vx1 is added to this potential (serial)
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1    ! Vx1 is added to this potential (parallel)
+  !
+  ! zgeev stuff
+  EXTERNAL :: zgeev
+  COMPLEX(DP) VL(1), VR(1) ! zgeev stuff
+  COMPLEX(DP), ALLOCATABLE ::  zgeevwork(:), zgeevw(:)
+  REAL(DP),    ALLOCATABLE ::  zgeevrwork(:)
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
   !
@@ -151,7 +158,11 @@ PROGRAM epcdft_coupling
   ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
+  ALLOCATE( zgeevwork( 2*nks*nbnd   ) )
+  ALLOCATE( zgeevrwork( 2*nks*nbnd   ) )
+  ALLOCATE( zgeevw( nks*nbnd   ) )
   !
+  debug     = .false.
   ivpt      = 0
   i         = 0
   j         = 0
@@ -309,87 +320,91 @@ PROGRAM epcdft_coupling
   !
   ! Print smat
   !
-  WRITE(*,*)""
-  WRITE(*,*)"  REAL S_row,col <psi1(row)|psi2(col)>"
-  WRITE(*,*)"-------------------------------------"
-  DO j = 1, nbnd*nks
-    WRITE(*,1)REAL(smat(j,:))
-  ENDDO
-  !
-  WRITE(*,*)""
-  WRITE(*,*)"  IMG S_row,col <psi1(row)|psi2(col)>"
-  WRITE(*,*)"-------------------------------------"
-  DO j = 1, nbnd*nks
-    WRITE(*,1)AIMAG(smat(j,:))
-  ENDDO
-  !
-  ! Print vex1_smat
-  !
-  WRITE(*,*)""
-  WRITE(*,*)"  REAL <Vex1*psi1(row)|psi2(col)>"
-  WRITE(*,*)"-------------------------------------"
-  DO j = 1, nbnd*nks
-    WRITE(*,1)REAL(vex1_smat(j,:))
-  ENDDO
-  !
-  WRITE(*,*)""
-  WRITE(*,*)"  IMG <Vex1*psi1(row)|psi2(col)>"
-  WRITE(*,*)"-------------------------------------"
-  DO j = 1, nbnd*nks
-    WRITE(*,1)AIMAG(vex1_smat(j,:))
-  ENDDO
+  IF(debug) THEN
+     !
+     WRITE(*,*)""
+     WRITE(*,*)"  REAL S_row,col <psi1(row)|psi2(col)>"
+     WRITE(*,*)"-------------------------------------"
+     DO j = 1, nbnd*nks
+       WRITE(*,1)REAL(smat(j,:))
+     ENDDO
+     !
+     WRITE(*,*)""
+     WRITE(*,*)"  IMG S_row,col <psi1(row)|psi2(col)>"
+     WRITE(*,*)"-------------------------------------"
+     DO j = 1, nbnd*nks
+       WRITE(*,1)AIMAG(smat(j,:))
+     ENDDO
+     !
+     ! Print vex1_smat
+     !
+     WRITE(*,*)""
+     WRITE(*,*)"  REAL <Vex1*psi1(row)|psi2(col)>"
+     WRITE(*,*)"-------------------------------------"
+     DO j = 1, nbnd*nks
+       WRITE(*,1)REAL(vex1_smat(j,:))
+     ENDDO
+     !
+     WRITE(*,*)""
+     WRITE(*,*)"  IMG <Vex1*psi1(row)|psi2(col)>"
+     WRITE(*,*)"-------------------------------------"
+     DO j = 1, nbnd*nks
+       WRITE(*,1)AIMAG(vex1_smat(j,:))
+     ENDDO
+     !
+  ENDIF
   !
   ! calculate determinant of smat
   !
-  CALL zgefa(smat,nbnd*nks,nbnd*nks,ivpt,info)             ! prep matrix for det
-  CALL errore('epcdft_coupling','error in zgefa',abs(info))
-  CALL zgedi(smat,nbnd*nks,nbnd*nks,ivpt,smatdet,work,10)  ! get det of Smat from zgefa ivpt's
+  ! store eigenvalues of smat in sgeevw
+  !
+  CALL ZGEEV( 'N', 'N', nbnd*nks, smat, nbnd*nks, zgeevw, VL, 1, VR, 1, &
+              zgeevwork, 2*nbnd*nks, zgeevrwork, info )
+  !
+  WRITE(*,*)""
+  IF(info == 0)THEN
+     WRITE(*,*)" zgeev 1st call was successful  "
+  ELSE
+     WRITE(*,*)" zgeev 1st call NOT successful!  "
+  ENDIF
+  !
+  ! det(s) is given by prod of eigenvalues
+  !
+  smatdet(1) = zgeevw(1)
+  DO i = 2, nbnd*nks
+     smatdet(1) = smatdet(1) * zgeevw(i)
+  ENDDO
   !
   ! calculate determinant of vex1_smat
   !
-  ivpt = 0
-  CALL zgefa(vex1_smat,nbnd*nks,nbnd*nks,ivpt,info)                 ! prep matrix for det
-  CALL errore('epcdft_coupling','error in zgefa',abs(info))
-  CALL zgedi(vex1_smat,nbnd*nks,nbnd*nks,ivpt,vex1_smatdet,work,10) ! get det of Smat from zgefa ivpt's
+  CALL ZGEEV( 'N', 'N', nbnd*nks, vex1_smat, nbnd*nks, zgeevw, VL, 1, VR, 1, &
+              zgeevwork, 2*nbnd*nks, zgeevrwork, info )
+  !
+  WRITE(*,*)""
+  IF(info == 0)THEN
+     WRITE(*,*)" zgeev 2st call was successful  "
+  ELSE
+     WRITE(*,*)" zgeev 2st call NOT successful!  "
+  ENDIF
+  !
+  vex1_smatdet(1) = zgeevw(1)
+  DO i = 2, nbnd*nks
+     vex1_smatdet(1) = vex1_smatdet(1) * zgeevw(i)
+  ENDDO
   !
   ! Print determinant smat
-  !
-  ! IF DET(2) is non zero zgedi will multiply DET(1) by ten
-  ! I don't know why... But that is why the IF statement is below
-  WRITE(*,*)""
-  WRITE(*,*)"  Det(2) from zgedi call"
-  WRITE(*,*)"--------------------------"
-  WRITE(*,*)"For S    : ",smatdet(2)
-  WRITE(*,*)"For VexS : ",vex1_smatdet(2)
-  WRITE(*,*)""
   !
   WRITE(*,*)""
   WRITE(*,*)"  Det( S_ij )"
   WRITE(*,*)"----------------"
-  IF(smatdet(2) .ne. 0.d0) THEN
-     !
-     WRITE(*,*) smatdet(1)/10.d0
-     !
-  ELSE
-     !
-     WRITE(*,*)smatdet(1)
-     !
-  ENDIF
+  WRITE(*,*) smatdet(1)
   !
   ! Print determinant vex1_smat
   !
   WRITE(*,*)""
   WRITE(*,*)"  Det( < Vex1 * psi1 | psi1 > )"
   WRITE(*,*)"--------------------------------"
-  IF(vex1_smatdet(2) .ne. 0.d0) THEN
-     !
-     WRITE(*,*) vex1_smatdet(1)/10.d0
-     !
-  ELSE
-     !
-     WRITE(*,*)vex1_smatdet(1)
-     !
-  ENDIF
+  WRITE(*,*) vex1_smatdet(1)
   WRITE(*,*)" "
   WRITE(*,*)"  ======================================================================= "
   WRITE(*,*)" "
@@ -402,6 +417,9 @@ PROGRAM epcdft_coupling
   DEALLOCATE( work )
   DEALLOCATE( vex1_evc1 )
   DEALLOCATE( vex1_smat )
+  DEALLOCATE( zgeevwork )
+  DEALLOCATE( zgeevrwork )
+  DEALLOCATE( zgeevw )
   !
   CALL environment_end ( 'epcdft_coupling' )
   !
