@@ -77,7 +77,7 @@ PROGRAM epcdft_coupling
   IMPLICIT NONE
   LOGICAL                      :: exst2
   LOGICAL                      :: debug
-  CHARACTER (len=20)          :: FMT
+  CHARACTER (len=20)           :: FMT
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
   CHARACTER (len=256)          :: tmp_dir2
@@ -86,21 +86,21 @@ PROGRAM epcdft_coupling
   INTEGER                      :: ios,ik,i,j, ig, is, itmp
   INTEGER                      :: ik1, ik2, ibnd1, ibnd2
   INTEGER                      :: iunwfc2 = 3636 ! unit for 2nd set of wfcs
-  INTEGER,    ALLOCATABLE      :: ivpt(:) ! pivot indices for zgefa 
-  INTEGER                      :: info ! for zgefa to stop zgedi 
-  REAL(DP)                     :: dtmp  ! temp variable
+  INTEGER,     ALLOCATABLE     :: ivpt(:)        ! pivot indices for zgefa 
+  INTEGER                      :: info           ! for zgefa to stop zgedi 
+  REAL(DP)                     :: dtmp           ! temp variable
   REAL(DP),    EXTERNAL        :: ddot
-  COMPLEX(DP)                  :: ztmp  ! temp variable
-  COMPLEX(DP)                  :: smatdet ! determinant of smat
-  COMPLEX(DP)                  :: vex1_smatdet ! determinant of vex1_smat
+  COMPLEX(DP)                  :: ztmp           ! temp variable
+  COMPLEX(DP)                  :: smatdet        ! determinant of smat
+  COMPLEX(DP)                  :: vex1_smatdet   ! determinant of vex1_smat
   COMPLEX(DP), EXTERNAL        :: zdotc
-  COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)
-  COMPLEX(DP), ALLOCATABLE     :: vex1_evc1(:) ! |Vex1_evc1>
+  COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)      ! will store 2nd vecs for dot prods
+  COMPLEX(DP), ALLOCATABLE     :: vex1_evc1(:)   ! |Vex1_evc1>
   COMPLEX(DP), ALLOCATABLE     :: work(:)
-  COMPLEX(DP), ALLOCATABLE  :: smat(:,:)     ! S_ij matrix <wfc1_i|wfc2_j>
-  COMPLEX(DP),    ALLOCATABLE  :: vex1_smat(:,:)! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1   ! Vx1 is added to this potential (serial)
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1   ! Vx1 is added to this potential (parallel)
+  COMPLEX(DP), ALLOCATABLE     :: smat(:,:)      ! S_ij matrix <wfc1_i|wfc2_j>
+  COMPLEX(DP), ALLOCATABLE     :: vex1_smat(:,:) ! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1    ! Vx1 is added to this potential (serial)
+  REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1    ! Vx1 is added to this potential (parallel)
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
   !
@@ -111,7 +111,7 @@ PROGRAM epcdft_coupling
   !
   ! setup vars and consistency checks
   !
-  CALL get_env( 'ESPRESSO_TMPDIR', outdir ) ! set env variable
+  CALL get_env( 'ESPRESSO_TMPDIR', outdir )  ! set env variable
   IF ( TRIM( outdir ) == ' ' ) outdir = './' ! remove spaces from end
   IF ( TRIM( outdir2 ) == ' ' ) outdir2 = './'
   !
@@ -121,7 +121,7 @@ PROGRAM epcdft_coupling
   !
   IF ( ionode )  THEN
      !
-     CALL input_from_file() ! check command line for input file and attach to 5 
+     CALL input_from_file()        ! check command line for input file and attach to 5 
      ! 
      READ (5, inputpp, err = 200, iostat = ios)
 200  CALL errore ('epcdft_coupling', 'reading inputpp namelist', ABS (ios) )
@@ -137,40 +137,39 @@ PROGRAM epcdft_coupling
   CALL mp_bcast( prefix, ionode_id, world_comm )
   CALL mp_bcast( tmp_dir2, ionode_id, world_comm )
   CALL mp_bcast( prefix2, ionode_id, world_comm )
-  !WRITE(*,*)"dir1 prefix1 dir2 prefix2",tmp_dir," ",prefix," ",tmp_dir2," ",prefix2," "
   !
-  CALL read_file() ! read , wfc, eigenvals, potential
+  CALL read_file()  ! read , wfc, eigenvals, potential
   !
   CALL openfil_pp() ! open all files for scf run set filenames/units
   !
   CALL diropn_gw ( iunwfc2, tmp_dir2, trim( prefix2 )//'.wfc', 2*nwordwfc, exst2, 1 )! diropn with more control
-  !WRITE(*,*)"Found file with 2nd set of wfcs: ",exst2
   !
-  CALL init_us_1 ! compute pseduo pot stuff
+  CALL init_us_1    ! compute pseduo pot stuff
   !
-  i = 0
-  j = 0
-  dtmp = 0.0
-  ztmp = 0.0
-  ALLOCATE(vxp1(dfftp%nnr))
-  ALLOCATE(vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
+  ALLOCATE( ivpt( nks*nbnd   ) )
+  ALLOCATE( work( nks*nbnd   ) )
+  ALLOCATE( vxp1( dfftp%nnr  ) )
   ALLOCATE( evc2( npwx, nbnd ) )
-  ALLOCATE( vex1_evc1( npwx ) )
+  ALLOCATE( vex1_evc1( npwx  ) )
   ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
-  ALLOCATE( ivpt( nks*nbnd ) )
-  ALLOCATE( work( nks*nbnd ) )
-  evc2 = 0.0
-  vex1_evc1 = 0.0
-  vxp1 = 0.0
-  vxs1 = 0.0
-  smat = 0.0
-  vex1_smat = 0.0
-  ivpt = 0
-  smatdet = 0.0
-  vex1_smatdet = 0.0
-  psic = 0.0
-  debug = .true.
+  ALLOCATE( vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
+  !
+  debug     = .false.
+  ivpt      = 0
+  i         = 0
+  j         = 0
+  dtmp      = 0.d0
+  ztmp      = 0.d0
+  evc2      = 0.d0
+  vex1_evc1 = 0.d0
+  vxp1      = 0.d0
+  vxs1      = 0.d0
+  smat      = 0.d0
+  vex1_smat = 0.d0
+  smatdet   = 0.d0
+  psic      = 0.d0
+  vex1_smatdet = 0.d0
   !
   ! Print checks and errors
   !
@@ -250,10 +249,10 @@ PROGRAM epcdft_coupling
     vxs1(:)=vxp1(:)
 #endif
   !
-  !WRITE(*,*)"Size of ecv dim1 ",SIZE(evc,1)," size of evc2 dim1 ",SIZE(evc2,1)
-  !WRITE(*,*)"Size of ecv dim2 ",SIZE(evc,2)," size of evc2 dim2 ",SIZE(evc2,2)
+  ! Start calculating evc, vex1_evc and evc2 overlaps over kpnts and bands
   !
   i = 0
+  !
   DO ik1 = 1, nks
      !
      ! prepare the indices & read evc1
@@ -408,6 +407,15 @@ PROGRAM epcdft_coupling
   WRITE(*,*)"  Det( <Vex1*psi(row)|psi(col)> )"
   WRITE(*,*)"----------------"
   WRITE(*,1)REAL(vex1_smatdet)
+  !
+  DEALLOCATE( vxs1 )
+  !DEALLOCATE( vxp1 )
+  DEALLOCATE( evc2 )
+  DEALLOCATE( smat )
+  DEALLOCATE( ivpt )
+  DEALLOCATE( work )
+  DEALLOCATE( vex1_evc1 )
+  DEALLOCATE( vex1_smat )
   !
   CALL environment_end ( 'epcdft_coupling' )
   !
