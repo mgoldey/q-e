@@ -307,11 +307,6 @@ PROGRAM epcdft_coupling
      !
   ENDDO ! end ik1
   !
-  ! convert to Single-precision so zgedi doesn't give stupid results
-  !
-  smat = CMPLX( REAL(smat), AIMAG(smat) )
-  vex1_smat = CMPLX( REAL(vex1_smat), AIMAG(vex1_smat) )
-  !
   ! Print smat
   !
   WRITE(*,*)""
@@ -359,17 +354,42 @@ PROGRAM epcdft_coupling
   !
   ! Print determinant smat
   !
+  ! IF DET(2) is non zero zgedi will multiply DET(1) by ten
+  ! I don't know why... But that is why the IF statement is below
+  WRITE(*,*)""
+  WRITE(*,*)"  Det(2) from zgedi call"
+  WRITE(*,*)"--------------------------"
+  WRITE(*,*)"For S    : ",smatdet(2)
+  WRITE(*,*)"For VexS : ",vex1_smatdet(2)
+  WRITE(*,*)""
+  !
   WRITE(*,*)""
   WRITE(*,*)"  Det( S_ij )"
   WRITE(*,*)"----------------"
-  WRITE(*,*)smatdet
+  IF(smatdet(2) .ne. 0.d0) THEN
+     !
+     WRITE(*,*) smatdet(1)/10.d0
+     !
+  ELSE
+     !
+     WRITE(*,*)smatdet(1)
+     !
+  ENDIF
   !
   ! Print determinant vex1_smat
   !
   WRITE(*,*)""
   WRITE(*,*)"  Det( < Vex1 * psi1 | psi1 > )"
   WRITE(*,*)"--------------------------------"
-  WRITE(*,*)vex1_smatdet
+  IF(vex1_smatdet(2) .ne. 0.d0) THEN
+     !
+     WRITE(*,*) vex1_smatdet(1)/10.d0
+     !
+  ELSE
+     !
+     WRITE(*,*)vex1_smatdet(1)
+     !
+  ENDIF
   WRITE(*,*)" "
   WRITE(*,*)"  ======================================================================= "
   WRITE(*,*)" "
