@@ -13,8 +13,8 @@
   ntyp      = 2,
   ecutwfc   = 40,
   !ecutrho  = 300,
-  ! nspin   = 2,
-  ! tot_magnetization = 1
+   nspin   = 2,
+   tot_magnetization = 0
   edir = 1,
   emaxpos = 0.2,
   eamp = -1.676,
