@@ -65,7 +65,7 @@ PROGRAM epcdft_coupling
   IMPLICIT NONE
   LOGICAL                      :: exst2
   LOGICAL                      :: debug
-  CHARACTER (len=20)           :: FMT
+  LOGICAL                      :: det_by_zgedi   ! will use zgedi to get determinants if true
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
   CHARACTER (len=256)          :: tmp_dir2
@@ -74,7 +74,6 @@ PROGRAM epcdft_coupling
   INTEGER                      :: ios,ik,i,j, ig, is, itmp
   INTEGER                      :: ik1, ik2, ibnd1, ibnd2
   INTEGER                      :: iunwfc2 = 3636 ! unit for 2nd set of wfcs
-  INTEGER,     ALLOCATABLE     :: ivpt(:)        ! pivot indices for zgefa 
   INTEGER                      :: info           ! for zgefa to stop zgedi 
   REAL(DP)                     :: dtmp           ! temp variable
   REAL(DP),    EXTERNAL        :: ddot
@@ -84,7 +83,6 @@ PROGRAM epcdft_coupling
   COMPLEX(DP), EXTERNAL        :: zdotc
   COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)      ! will store 2nd vecs for dot prods
   COMPLEX(DP), ALLOCATABLE     :: vex1_evc1(:)   ! |Vex1_evc1>
-  COMPLEX(DP), ALLOCATABLE     :: work(:)
   COMPLEX(DP), ALLOCATABLE     :: smat(:,:)      ! S_ij matrix <wfc1_i|wfc2_j>
   COMPLEX(DP), ALLOCATABLE     :: vex1_smat(:,:) ! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1    ! Vx1 is added to this potential (serial)
@@ -134,8 +132,6 @@ PROGRAM epcdft_coupling
   !
   CALL init_us_1    ! compute pseduo pot stuff
   !
-  ALLOCATE( ivpt( nks*nbnd   ) )
-  ALLOCATE( work( nks*nbnd   ) )
   ALLOCATE( vxp1( dfftp%nnr  ) )
   ALLOCATE( evc2( npwx, nbnd ) )
   ALLOCATE( vex1_evc1( npwx  ) )
@@ -144,7 +140,6 @@ PROGRAM epcdft_coupling
   ALLOCATE( vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   !
   debug     = .false.
-  ivpt      = 0
   i         = 0
   j         = 0
   dtmp      = 0.d0
@@ -158,6 +153,7 @@ PROGRAM epcdft_coupling
   smatdet   = 0.d0
   psic      = 0.d0
   vex1_smatdet = 0.d0
+  det_by_zgedi = .true.
   !
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
   !
@@ -281,39 +277,39 @@ PROGRAM epcdft_coupling
      !
   ENDIF
   !
-  ! calculate determinant of smat
+  ! calculate determinant of smat and vex1_smat
   !
-  CALL get_det_from_zgeev(nbnd*nks, smat, smatdet)
+  IF(det_by_zgedi) THEN
+     !
+     CALL get_det_from_zgedi( smat, nbnd*nks, smatdet )
+     !
+     CALL get_det_from_zgedi( vex1_smat, nbnd*nks, vex1_smatdet )
+     !
+  ELSE
+     !
+     CALL get_det_from_zgeev( nbnd*nks, smat, smatdet )
+     !
+     CALL get_det_from_zgeev( nbnd*nks, vex1_smat, vex1_smatdet )
+     !
+  ENDIF
   !
-  ! calculate determinant of vex1_smat
+  ! Print determinants
   !
-  CALL get_det_from_zgeev(nbnd*nks, vex1_smat, vex1_smatdet)
+  CALL print_cnum( " Det( S_ij)",  smatdet(1) )
   !
-  ! Print determinant smat
+  CALL print_cnum( " Det( < psi_i | V_x1 | psi_j > )",  vex1_smatdet(1) )
   !
-  WRITE(*,*)""
-  WRITE(*,*)"  Det( S_ij )"
-  WRITE(*,*)"----------------"
-  WRITE(*,*) smatdet(1)
-  !
-  ! Print determinant vex1_smat
-  !
-  WRITE(*,*)""
-  WRITE(*,*)"  Det( < Vex1 * psi1 | psi1 > )"
-  WRITE(*,*)"--------------------------------"
-  WRITE(*,*) vex1_smatdet(1)
-  WRITE(*,*)" "
-  WRITE(*,*)"  ======================================================================= "
-  WRITE(*,*)" "
   !
   ! closing shop
+  !
+  WRITE(*,*)" "
+  WRITE(*,*)"  ========================================================================= "
+  WRITE(*,*)" "
   !
   DEALLOCATE( vxs1 )
   !DEALLOCATE( vxp1 )
   DEALLOCATE( evc2 )
   DEALLOCATE( smat )
-  DEALLOCATE( ivpt )
-  DEALLOCATE( work )
   DEALLOCATE( vex1_evc1 )
   DEALLOCATE( vex1_smat )
   !
@@ -450,7 +446,7 @@ END SUBROUTINE print_cmat
 !
 !
 !-----------------------------------------------------------------------
-SUBROUTINE get_det_from_zgeev(lda, a, det)
+SUBROUTINE get_det_from_zgeev(n, a, det)
   !-----------------------------------------------------------------------
   !
   !     this routine will solve for the determinant of a matrix "a"
@@ -460,35 +456,30 @@ SUBROUTINE get_det_from_zgeev(lda, a, det)
   !
   IMPLICIT NONE
   !
-  INTEGER,      INTENT(IN)    :: lda
-  COMPLEX(DP),  INTENT(INOUT) :: det(lda)
-  COMPLEX(DP),  INTENT(IN)    :: a(lda,lda)      
+  INTEGER,      INTENT(IN)    :: n
+  COMPLEX(DP),  INTENT(INOUT) :: det(n)
+  COMPLEX(DP),  INTENT(IN)    :: a(n,n)      
   !
   INTEGER                  :: i
   INTEGER                  :: info 
   EXTERNAL                 :: zgeev
   COMPLEX(DP)              :: VL(1), VR(1) 
-  REAL(DP)                 :: zgeevrwork(2*lda)
-  COMPLEX(DP)              :: zgeevwork(2*lda), zgeevw(lda)
+  REAL(DP)                 :: zgeevrwork(2*n)
+  COMPLEX(DP)              :: zgeevwork(2*n), zgeevw(n)
   !
   !
   !
   ! find and store eigenvalues of a in sgeevw
   !
-  CALL ZGEEV( 'N', 'N', lda, a, lda, zgeevw, VL, 1, VR, 1, &
-              zgeevwork, 2*lda, zgeevrwork, info )
+  CALL ZGEEV( 'N', 'N', n, a, n, zgeevw, VL, 1, VR, 1, &
+              zgeevwork, 2*n, zgeevrwork, info )
   !
-  WRITE(*,*)""
-  IF(info == 0)THEN
-     WRITE(*,*)" zgeev call was successful"
-  ELSE
-     WRITE(*,*)" zgeev call NOT successful!"
-  ENDIF
+  CALL errore('epcdft_coupling', 'error in zgeev', abs(info)) 
   !
   ! det(s) is given by prod of eigenvalues
   !
   det(1) = zgeevw(1)
-  DO i = 2, lda 
+  DO i = 2, n 
      det(1) = det(1) * zgeevw(i)
   ENDDO
   !
@@ -546,4 +537,75 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
   RETURN
   !
 END SUBROUTINE print_checks_warns 
+!
+!
+!
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE get_det_from_zgedi(a, n, det)
+  !--------------------------------------------------------------------------
+  !
+  !     this routine will solve for the determinant of a matrix "a"
+  !     and store it in det(1)
+  !
+  USE kinds
+  USE io_global,            ONLY : ionode
+  !
+  IMPLICIT NONE
+  !
+  INTEGER,      INTENT(IN)    :: n
+  COMPLEX(DP),  INTENT(INOUT) :: det(2)
+  COMPLEX(DP),  INTENT(IN)    :: a(n,n)      
+  !
+  INTEGER                  :: i
+  INTEGER                  :: info 
+  INTEGER                  :: ivpt(n)
+  EXTERNAL                 :: zgefa
+  EXTERNAL                 :: zgedi
+  COMPLEX(DP)              :: work(n)
+  !
+  ! factor "a" by gaussian elimination
+  ! a will be upper trianglular
+  CALL zgefa(a, n, n, ivpt, info)  
+  !
+  CALL errore( 'epcdft_coupling', 'error in zgefa', abs(info))
+  !
+  ! compute det of "a" using factors computed by zgefa
+  !
+  ! !!! the det = det(1) * 10**det(2) !!!
+  !
+  CALL zgedi(a, n, n, ivpt, det, work, 10)
+  !
+  ! compute det from output of zgedi
+  !
+  det(1) = det(1) * 10.d0**( det(2) )
+  !
+  RETURN
+  !
+END SUBROUTINE get_det_from_zgedi
+!
+!
+!
+!
+!-----------------------------------------------------------------------
+SUBROUTINE print_cnum (aname, a)
+  !-----------------------------------------------------------------------
+  !
+  !     this routine prints a complex number "a"
+  !
+  USE kinds
+  !
+  IMPLICIT NONE
+  !
+  CHARACTER(*), INTENT(IN)       :: aname
+  COMPLEX(DP),  INTENT(IN)       :: a
+  !
+  WRITE(*,*)""
+  WRITE(*,*)"   ",aname
+  WRITE(*,*)"   -------------------------------------"
+  WRITE(*,*)"   ",a
+  !
+  RETURN
+  !
+END SUBROUTINE print_cnum
 !
