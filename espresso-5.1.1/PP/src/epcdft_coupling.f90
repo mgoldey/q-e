@@ -69,6 +69,9 @@ PROGRAM epcdft_coupling
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
   CHARACTER (len=256)          :: tmp_dir2
+  CHARACTER (len=256)          :: tmp_dir_pass   ! used to store tmp_dir during pass for reading two systems
+  INTEGER                      :: iunwfc_pass    ! same as above but diff var
+  CHARACTER (len=256)          :: prefix_pass
   CHARACTER (len=256)          :: prefix2
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER                      :: ios,ik,i,j, ig, is, itmp
@@ -125,16 +128,45 @@ PROGRAM epcdft_coupling
   CALL mp_bcast( tmp_dir2, ionode_id, world_comm )
   CALL mp_bcast( prefix2, ionode_id, world_comm )
   !
-  CALL read_file()  ! read , wfc, eigenvals, potential
+  ! first read system 2 and store in system 1's variables 
+  ! then we will restore vars to right place and read sys 1's stuff
+  !
+  tmp_dir_pass = tmp_dir ! store system 1's dir for later reading
+  iunwfc_pass = iunwfc    
+  prefix_pass = prefix
+  !
+  tmp_dir = tmp_dir2     ! the great exchange 
+  iunwfc = iunwfc2
+  prefix = prefix2
+  !
+     WRITE(*,*)"    ======================================================================= "
+  WRITE(*,*) "    SYSTEM 2 INFO"
+  CALL read_file()  ! read , wfc, eigenvals, potential for system 2
+  !
+  ! now put system 2's vecs into system 2's vars
+  ALLOCATE( evc2( npwx, nbnd ) )
+  evc2 = evc
+  !
+  ! deallocate to avoid reallocation of sys 1 vars
+  CALL clean_pw( .TRUE. )
+  !
+  ! re open the wfc file for system 2
+  CALL diropn_gw ( iunwfc2, tmp_dir2, trim( prefix2 )//'.wfc', 2*nwordwfc, exst2, 1 ) ! below 
+  !
+  ! restore sys 1's vars and read sys 1's data
+     WRITE(*,*)"    ======================================================================= "
+  WRITE(*,*) "    SYSTEM 1 INFO"
+  tmp_dir = tmp_dir_pass
+  iunwfc = iunwfc_pass
+  prefix = prefix_pass
+  CALL read_file()  
+     WRITE(*,*)"    ======================================================================= "
   !
   CALL openfil_pp() ! open all files for scf run set filenames/units
-  !
-  CALL diropn_gw ( iunwfc2, tmp_dir2, trim( prefix2 )//'.wfc', 2*nwordwfc, exst2, 1 )! diropn with more control
   !
   CALL init_us_1    ! compute pseduo pot stuff
   !
   ALLOCATE( vxp1( dfftp%nnr  ) )
-  ALLOCATE( evc2( npwx, nbnd ) )
   ALLOCATE( vex1_evc1( npwx  ) )
   ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
@@ -537,6 +569,7 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
      WRITE(*,*)"      3) Run must be in serial."
      WRITE(*,*)"      4) No K-points."
      WRITE(*,*)"      5) Make sure your grids/cutoffs... are the same for both systems."
+     WRITE(*,*)"      6) Previous PW runs must NOT use parallelization over k points."
      WRITE(*,*)" "
      WRITE(*,*)"    ======================================================================= "
      WRITE(*,*)" "
