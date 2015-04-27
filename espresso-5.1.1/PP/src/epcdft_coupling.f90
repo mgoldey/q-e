@@ -78,6 +78,7 @@ PROGRAM epcdft_coupling
   REAL(DP)                     :: dtmp           ! temp variable
   REAL(DP),    EXTERNAL        :: ddot
   COMPLEX(DP)                  :: ztmp           ! temp variable
+  COMPLEX(DP)                  :: vex1_test      ! sum_i <i|vex1|i> for testing 
   COMPLEX(DP)                  :: smatdet(2)     ! determinant of smat
   COMPLEX(DP)                  :: vex1_smatdet(2)! determinant of vex1_smat
   COMPLEX(DP), EXTERNAL        :: zdotc
@@ -139,7 +140,7 @@ PROGRAM epcdft_coupling
   ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   !
-  debug     = .false.
+  debug     = .true.
   i         = 0
   j         = 0
   dtmp      = 0.d0
@@ -152,6 +153,7 @@ PROGRAM epcdft_coupling
   vex1_smat = 0.d0
   smatdet   = 0.d0
   psic      = 0.d0
+  vex1_test = 0.d0
   vex1_smatdet = 0.d0
   det_by_zgedi = .true.
   !
@@ -271,9 +273,25 @@ PROGRAM epcdft_coupling
   !
   IF(debug) THEN
      !
+     ! print matrices
      CALL print_cmat (" S_row,col <psi1(row)|psi2(col)>", smat, nbnd*nks)
-     !
      CALL print_cmat (" <Vex1*psi1(row)|psi2(col)>", vex1_smat, nbnd*nks)
+     !
+     ! print trace of coupling matrix
+     vex1_test = 0.d0
+     DO i = 1, nbnd*nks
+        vex1_test = vex1_test + vex1_smat(i,i)
+     ENDDO
+     CALL print_cnum (" Sum_i <i|Vx1|i>", vex1_test)
+     !
+     ! print trace of coupling matrix
+     vex1_test = 0.d0
+     DO i = 1, nbnd*nks
+        DO j = 1, nbnd*nks
+           vex1_test = vex1_test + vex1_smat(j,i)
+        ENDDO
+     ENDDO
+     CALL print_cnum (" Sum_i,j <j|Vx1|i>", vex1_test)
      !
   ENDIF
   !
@@ -295,7 +313,7 @@ PROGRAM epcdft_coupling
   !
   ! Print determinants
   !
-  CALL print_cnum( " Det( S_ij)",  smatdet(1) )
+  CALL print_cnum( " Det( S_ij )",  smatdet(1) )
   !
   CALL print_cnum( " Det( < psi_i | V_x1 | psi_j > )",  vex1_smatdet(1) )
   !
