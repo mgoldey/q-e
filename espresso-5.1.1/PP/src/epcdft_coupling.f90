@@ -65,6 +65,7 @@ PROGRAM epcdft_coupling
   IMPLICIT NONE
   LOGICAL                      :: exst2
   LOGICAL                      :: debug
+  LOGICAL                      :: s_spin         ! calculate S matrix for each spin separately
   LOGICAL                      :: det_by_zgedi   ! will use zgedi to get determinants if true
   CHARACTER (len=256)          :: outdir
   CHARACTER (len=256)          :: outdir2
@@ -83,11 +84,15 @@ PROGRAM epcdft_coupling
   COMPLEX(DP)                  :: ztmp           ! temp variable
   COMPLEX(DP)                  :: vex1_test      ! sum_i <i|vex1|i> for testing 
   COMPLEX(DP)                  :: smatdet(2)     ! determinant of smat
+  COMPLEX(DP)                  :: smatdet_spinup(2)! determinant of smat_spin
+  COMPLEX(DP)                  :: smatdet_spindown(2)! determinant of smat_spin
   COMPLEX(DP)                  :: vex1_smatdet(2)! determinant of vex1_smat
   COMPLEX(DP), EXTERNAL        :: zdotc
   COMPLEX(DP), ALLOCATABLE     :: evc2(:,:)      ! will store 2nd vecs for dot prods
   COMPLEX(DP), ALLOCATABLE     :: vex1_evc1(:)   ! |Vex1_evc1>
   COMPLEX(DP), ALLOCATABLE     :: smat(:,:)      ! S_ij matrix <wfc1_i|wfc2_j>
+  COMPLEX(DP), ALLOCATABLE     :: smat_spinup(:,:)! S_ij matrix <wfc1_i|wfc2_j> for each spin
+  COMPLEX(DP), ALLOCATABLE     :: smat_spindown(:,:)! S_ij matrix <wfc1_i|wfc2_j> for each spin
   COMPLEX(DP), ALLOCATABLE     :: vex1_smat(:,:) ! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1    ! Vx1 is added to this potential (serial)
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1    ! Vx1 is added to this potential (parallel)
@@ -166,10 +171,14 @@ PROGRAM epcdft_coupling
   !
   CALL init_us_1    ! compute pseduo pot stuff
   !
+  s_spin    = .true.
+  !
   ALLOCATE( vxp1( dfftp%nnr  ) )
   ALLOCATE( vex1_evc1( npwx  ) )
   ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
+  IF( s_spin ) ALLOCATE( smat_spinup( nbnd, nbnd ) )
+  IF( s_spin ) ALLOCATE( smat_spindown( nbnd, nbnd ) )
   ALLOCATE( vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   !
   debug     = .true.
@@ -182,8 +191,12 @@ PROGRAM epcdft_coupling
   vxp1      = 0.d0
   vxs1      = 0.d0
   smat      = 0.d0
+  IF( s_spin ) smat_spinup = 0.d0
+  IF( s_spin ) smat_spindown = 0.d0
   vex1_smat = 0.d0
   smatdet   = 0.d0
+  smatdet_spinup   = 0.d0
+  smatdet_spindown = 0.d0
   psic      = 0.d0
   vex1_test = 0.d0
   vex1_smatdet = 0.d0
@@ -301,6 +314,24 @@ PROGRAM epcdft_coupling
      !
   ENDDO ! end ik1
   !
+  ! build S for each spin
+  !
+  IF(s_spin) THEN
+     !
+     DO i = 1, nbnd
+        !
+        DO j = 1, nbnd
+           !
+           smat_spinup(j,i) = smat( j, i )
+           !
+           smat_spindown(j,i) = smat( j + nbnd , i + nbnd )
+           !
+        ENDDO
+        !
+     ENDDO
+     !
+  ENDIF
+  !
   ! Processing matrix results
   !
   IF(debug) THEN
@@ -308,6 +339,8 @@ PROGRAM epcdft_coupling
      ! print matrices
      CALL print_cmat (" S_row,col <psi1(row)|psi2(col)>", smat, nbnd*nks)
      CALL print_cmat (" <Vex1*psi1(row)|psi2(col)>", vex1_smat, nbnd*nks)
+     IF(s_spin) CALL print_cmat (" S_ij_up", smat_spinup, nbnd)
+     IF(s_spin) CALL print_cmat (" S_ij_down", smat_spindown, nbnd)
      !
      ! print trace of coupling matrix
      vex1_test = 0.d0
@@ -335,11 +368,27 @@ PROGRAM epcdft_coupling
      !
      CALL get_det_from_zgedi( vex1_smat, nbnd*nks, vex1_smatdet )
      !
+     IF(s_spin) THEN
+        !
+        CALL get_det_from_zgedi( smat_spinup, nbnd, smatdet_spinup )
+        !
+        CALL get_det_from_zgedi( smat_spindown, nbnd, smatdet_spindown )
+        !
+     ENDIF
+     !
   ELSE
      !
      CALL get_det_from_zgeev( nbnd*nks, smat, smatdet )
      !
      CALL get_det_from_zgeev( nbnd*nks, vex1_smat, vex1_smatdet )
+     !
+     IF(s_spin) THEN
+        !
+        CALL get_det_from_zgeev( nbnd, smat_spinup, smatdet_spinup )
+        !
+        CALL get_det_from_zgeev( nbnd, smat_spindown, smatdet_spindown )
+        !
+     ENDIF
      !
   ENDIF
   !
@@ -348,6 +397,14 @@ PROGRAM epcdft_coupling
   CALL print_cnum( " Det( S_ij )",  smatdet(1) )
   !
   CALL print_cnum( " Det( < psi_i | V_x1 | psi_j > )",  vex1_smatdet(1) )
+  !
+  IF(s_spin) THEN
+     !
+     CALL print_cnum( " Det( S_up_ij )",  smatdet_spinup(1) )
+     !
+     CALL print_cnum( " Det( S_down_ij )",  smatdet_spindown(1) )
+     !
+  ENDIF
   !
   !
   ! closing shop
@@ -362,6 +419,8 @@ PROGRAM epcdft_coupling
   DEALLOCATE( smat )
   DEALLOCATE( vex1_evc1 )
   DEALLOCATE( vex1_smat )
+  IF( s_spin ) DEALLOCATE( smat_spinup )
+  IF( s_spin ) DEALLOCATE( smat_spindown )
   !
   CALL environment_end ( 'epcdft_coupling' )
   !
