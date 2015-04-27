@@ -16,25 +16,15 @@
 ! Nicholas Brawand nicholasbrawand@gmail.com
 !
 ! Notes:
-!        1) S(i,j) matrix is smat_ij = < evc1(i) | evc2(j) > 
-!                                 evc2(j) -->
-!                                e
-!                                v
-!                                c
-!                                1
-!                               (i)
 !
-!                                |
-!                                v
-!
-!        2) V is applied to psi in realspace. CODE ONLY WORKS FOR Dense = Smooth
+!        1) V is applied to psi in realspace. CODE ONLY WORKS FOR Dense = Smooth
 !           Vx1(r)_dense_parallel -> Vx1(r)_dense_serial ->
 !           Vx1(r)_smooth_serial with (psi(G)->psi(r)) =  vpsi1(r)=|Vx1(r)*psi>
 !           vpsi1(r) -> vpsi1(G)
 !
-!        3) Only Vx1 is working right now.
+!        2) Only Vx1 is working right now.
 !
-!        4) vex1_smat(i,j) = < Vex1*evc1(i) | evc2(j) > 
+!        3) vex1_smat(i,j) = < Vex1*evc1(i) | evc2(j) > 
 !                                 evc2(j) -->
 !                                V
 !                                e
@@ -100,12 +90,6 @@ PROGRAM epcdft_coupling
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1    ! Vx1 is added to this potential (serial)
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1    ! Vx1 is added to this potential (parallel)
   !
-  ! zgeev stuff
-  EXTERNAL :: zgeev
-  COMPLEX(DP) VL(1), VR(1) ! zgeev stuff
-  COMPLEX(DP), ALLOCATABLE ::  zgeevwork(:), zgeevw(:)
-  REAL(DP),    ALLOCATABLE ::  zgeevrwork(:)
-  !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
   !
 #ifdef __MPI
@@ -158,9 +142,6 @@ PROGRAM epcdft_coupling
   ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
   ALLOCATE( vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
-  ALLOCATE( zgeevwork( 2*nks*nbnd   ) )
-  ALLOCATE( zgeevrwork( 2*nks*nbnd   ) )
-  ALLOCATE( zgeevw( nks*nbnd   ) )
   !
   debug     = .false.
   ivpt      = 0
@@ -178,35 +159,7 @@ PROGRAM epcdft_coupling
   psic      = 0.d0
   vex1_smatdet = 0.d0
   !
-  ! Print checks and errors
-  !
-  IF(ionode)THEN
-     !
-     WRITE(*,*)" "
-     WRITE(*,*)"    ======================================================================= "
-     WRITE(*,*)" "
-     WRITE(*,*)"      EPCDFT_Coupling Code warnings:"
-     WRITE(*,*)"      1) Only works with norm conserving pseudos."
-     WRITE(*,*)"      2) (which implies) that smooth grid = dense grid."
-     WRITE(*,*)"      3) Run must be in serial (Lucky Charms form the best medium with your espresso)"
-     WRITE(*,*)"      4) No K-points."
-     WRITE(*,*)"      5) Make sure your grids/cutoffs... are the same for both systems."
-     WRITE(*,*)" "
-     WRITE(*,*)"    ======================================================================= "
-     WRITE(*,*)" "
-     WRITE(*,*)" "
-     WRITE(*,*)"    Reading data from :"
-     WRITE(*,*)"    "
-     WRITE(*,*)"    "
-     WRITE(*,*)"    "
-     WRITE(*,*)"    prefix1 : "  , prefix
-     WRITE(*,*)"    outdir1 : "  , tmp_dir
-     WRITE(*,*)"    prefix2 : "  , prefix2
-     WRITE(*,*)"    outdir2 : "  , tmp_dir2
-     WRITE(*,*)"    # of spins :", nks
-     WRITE(*,*)"    # of bands :", nbnd
-     !
-  ENDIF
+  CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
   !
   ! this call only calulates vpoten
   CALL add_efield( vxp1, dtmp, rho%of_r, .true. )
@@ -318,79 +271,23 @@ PROGRAM epcdft_coupling
      !
   ENDDO ! end ik1
   !
-  ! Print smat
+  ! Processing matrix results
   !
   IF(debug) THEN
      !
-     WRITE(*,*)""
-     WRITE(*,*)"  REAL S_row,col <psi1(row)|psi2(col)>"
-     WRITE(*,*)"-------------------------------------"
-     DO j = 1, nbnd*nks
-       WRITE(*,1)REAL(smat(j,:))
-     ENDDO
+     CALL print_cmat (" S_row,col <psi1(row)|psi2(col)>", smat, nbnd*nks)
      !
-     WRITE(*,*)""
-     WRITE(*,*)"  IMG S_row,col <psi1(row)|psi2(col)>"
-     WRITE(*,*)"-------------------------------------"
-     DO j = 1, nbnd*nks
-       WRITE(*,1)AIMAG(smat(j,:))
-     ENDDO
-     !
-     ! Print vex1_smat
-     !
-     WRITE(*,*)""
-     WRITE(*,*)"  REAL <Vex1*psi1(row)|psi2(col)>"
-     WRITE(*,*)"-------------------------------------"
-     DO j = 1, nbnd*nks
-       WRITE(*,1)REAL(vex1_smat(j,:))
-     ENDDO
-     !
-     WRITE(*,*)""
-     WRITE(*,*)"  IMG <Vex1*psi1(row)|psi2(col)>"
-     WRITE(*,*)"-------------------------------------"
-     DO j = 1, nbnd*nks
-       WRITE(*,1)AIMAG(vex1_smat(j,:))
-     ENDDO
+     CALL print_cmat (" <Vex1*psi1(row)|psi2(col)>", vex1_smat, nbnd*nks)
      !
   ENDIF
   !
   ! calculate determinant of smat
   !
-  ! store eigenvalues of smat in sgeevw
-  !
-  CALL ZGEEV( 'N', 'N', nbnd*nks, smat, nbnd*nks, zgeevw, VL, 1, VR, 1, &
-              zgeevwork, 2*nbnd*nks, zgeevrwork, info )
-  !
-  WRITE(*,*)""
-  IF(info == 0)THEN
-     WRITE(*,*)" zgeev 1st call was successful  "
-  ELSE
-     WRITE(*,*)" zgeev 1st call NOT successful!  "
-  ENDIF
-  !
-  ! det(s) is given by prod of eigenvalues
-  !
-  smatdet(1) = zgeevw(1)
-  DO i = 2, nbnd*nks
-     smatdet(1) = smatdet(1) * zgeevw(i)
-  ENDDO
+  CALL get_det_from_zgeev(nbnd*nks, smat, smatdet)
   !
   ! calculate determinant of vex1_smat
   !
-  CALL ZGEEV( 'N', 'N', nbnd*nks, vex1_smat, nbnd*nks, zgeevw, VL, 1, VR, 1, &
-              zgeevwork, 2*nbnd*nks, zgeevrwork, info )
-  !
-  WRITE(*,*)""
-  IF(info == 0)THEN
-     WRITE(*,*)" zgeev 2st call was successful  "
-  ELSE
-     WRITE(*,*)" zgeev 2st call NOT successful!  "
-  ENDIF
-  !
-  vex1_smatdet(1) = zgeevw(1)
-  DO i = 2, nbnd*nks
-     vex1_smatdet(1) = vex1_smatdet(1) * zgeevw(i)
-  ENDDO
+  CALL get_det_from_zgeev(nbnd*nks, vex1_smat, vex1_smatdet)
   !
   ! Print determinant smat
   !
@@ -409,6 +306,8 @@ PROGRAM epcdft_coupling
   WRITE(*,*)"  ======================================================================= "
   WRITE(*,*)" "
   !
+  ! closing shop
+  !
   DEALLOCATE( vxs1 )
   !DEALLOCATE( vxp1 )
   DEALLOCATE( evc2 )
@@ -417,9 +316,6 @@ PROGRAM epcdft_coupling
   DEALLOCATE( work )
   DEALLOCATE( vex1_evc1 )
   DEALLOCATE( vex1_smat )
-  DEALLOCATE( zgeevwork )
-  DEALLOCATE( zgeevrwork )
-  DEALLOCATE( zgeevw )
   !
   CALL environment_end ( 'epcdft_coupling' )
   !
@@ -507,3 +403,147 @@ SUBROUTINE diropn_gw (unit, tmp_dir2, filename, recl, exst, ndnmbr )
 END SUBROUTINE diropn_gw
 !
 !-----------------------------------------------------------------------
+!
+!
+!
+!-----------------------------------------------------------------------
+SUBROUTINE print_cmat (aname, a, lda)
+  !-----------------------------------------------------------------------
+  !
+  !     this routine prints a complex matrix a 
+  !
+  USE kinds
+  !
+  IMPLICIT NONE
+  !
+  INTEGER, INTENT(IN)            :: lda
+  CHARACTER(*), INTENT(IN)       :: aname
+  COMPLEX(DP), INTENT(IN)        :: a(lda,lda)      
+  !
+  INTEGER j
+  !
+  WRITE(*,*)""
+  WRITE(*,*)" The REAL part of : "
+  WRITE(*,*)aname
+  WRITE(*,*)"-------------------------------------"
+  !
+  DO j = 1, lda
+    WRITE(*,1)REAL(a(j,:))
+  ENDDO
+  !
+  WRITE(*,*)""
+  WRITE(*,*)" The IMG part of : "
+  WRITE(*,*)aname
+  WRITE(*,*)"-------------------------------------"
+  !
+  DO j = 1, lda
+    WRITE(*,1)AIMAG(a(j,:))
+  ENDDO
+  !
+  1 FORMAT(8E12.3)
+  !
+  RETURN
+  !
+END SUBROUTINE print_cmat
+!
+!
+!
+!
+!-----------------------------------------------------------------------
+SUBROUTINE get_det_from_zgeev(lda, a, det)
+  !-----------------------------------------------------------------------
+  !
+  !     this routine will solve for the determinant of a matrix "a"
+  !     and store it in det(1)
+  !
+  USE kinds
+  !
+  IMPLICIT NONE
+  !
+  INTEGER,      INTENT(IN)    :: lda
+  COMPLEX(DP),  INTENT(INOUT) :: det(lda)
+  COMPLEX(DP),  INTENT(IN)    :: a(lda,lda)      
+  !
+  INTEGER                  :: i
+  INTEGER                  :: info 
+  EXTERNAL                 :: zgeev
+  COMPLEX(DP)              :: VL(1), VR(1) 
+  REAL(DP)                 :: zgeevrwork(2*lda)
+  COMPLEX(DP)              :: zgeevwork(2*lda), zgeevw(lda)
+  !
+  !
+  !
+  ! find and store eigenvalues of a in sgeevw
+  !
+  CALL ZGEEV( 'N', 'N', lda, a, lda, zgeevw, VL, 1, VR, 1, &
+              zgeevwork, 2*lda, zgeevrwork, info )
+  !
+  WRITE(*,*)""
+  IF(info == 0)THEN
+     WRITE(*,*)" zgeev call was successful"
+  ELSE
+     WRITE(*,*)" zgeev call NOT successful!"
+  ENDIF
+  !
+  ! det(s) is given by prod of eigenvalues
+  !
+  det(1) = zgeevw(1)
+  DO i = 2, lda 
+     det(1) = det(1) * zgeevw(i)
+  ENDDO
+  !
+  RETURN
+  !
+END SUBROUTINE get_det_from_zgeev
+!
+!
+!
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
+  !--------------------------------------------------------------------------
+  !
+  !     this routine prints warnings and some data from the input file 
+  !     
+  !
+  USE io_global,            ONLY : ionode
+  !
+  IMPLICIT NONE
+  !
+  INTEGER,      INTENT(IN)    :: nks
+  INTEGER,      INTENT(IN)    :: nbnd
+  CHARACTER(*), INTENT(IN)    :: prefix
+  CHARACTER(*), INTENT(IN)    :: prefix2
+  CHARACTER(*), INTENT(IN)    :: tmp_dir
+  CHARACTER(*), INTENT(IN)    :: tmp_dir2
+  !
+  IF(ionode)THEN
+     !
+     WRITE(*,*)" "
+     WRITE(*,*)"    ======================================================================= "
+     WRITE(*,*)" "
+     WRITE(*,*)"      EPCDFT_Coupling Code warnings:"
+     WRITE(*,*)"      1) Only works with norm conserving pseudos."
+     WRITE(*,*)"      2) (which implies) that smooth grid = dense grid."
+     WRITE(*,*)"      3) Run must be in serial."
+     WRITE(*,*)"      4) No K-points."
+     WRITE(*,*)"      5) Make sure your grids/cutoffs... are the same for both systems."
+     WRITE(*,*)" "
+     WRITE(*,*)"    ======================================================================= "
+     WRITE(*,*)" "
+     WRITE(*,*)" "
+     WRITE(*,*)"    Data from input file :"
+     WRITE(*,*)" "
+     WRITE(*,*)"    prefix1 : "  , prefix
+     WRITE(*,*)"    outdir1 : "  , tmp_dir
+     WRITE(*,*)"    prefix2 : "  , prefix2
+     WRITE(*,*)"    outdir2 : "  , tmp_dir2
+     WRITE(*,*)"    # of spins :", nks
+     WRITE(*,*)"    # of bands :", nbnd
+     !
+  ENDIF
+  !
+  RETURN
+  !
+END SUBROUTINE print_checks_warns 
+!
