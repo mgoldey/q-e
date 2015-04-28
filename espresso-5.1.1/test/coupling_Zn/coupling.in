@@ -1,6 +1,13 @@
 &INPUTPP
   prefix       = "zn",
   outdir       = "./out",
-  prefix2       = "zn2",
-  outdir2       = "./out2",
+  prefix2      = "zn2",
+  outdir2      = "./out2",
+  occup1       = 12
+  occup2       = 12
+  occdown1     = 11
+  occdown2     = 11
+  debug        = .false.
+  s_spin       = .false.
+  det_by_zgedi = .true.
 /

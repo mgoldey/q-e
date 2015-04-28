@@ -79,6 +79,13 @@ PROGRAM epcdft_coupling
   INTEGER                      :: ik1, ik2, ibnd1, ibnd2
   INTEGER                      :: iunwfc2 = 3636 ! unit for 2nd set of wfcs
   INTEGER                      :: info           ! for zgefa to stop zgedi 
+  INTEGER                      :: occup1         ! occupied up states for system 1 
+  INTEGER                      :: occup2         ! occupied up states for system 2 
+  INTEGER                      :: occdown1       
+  INTEGER                      :: occdown2       
+  INTEGER                      :: occ(2,2)       ! array that holds all the occupations above (system,spin)
+  INTEGER                      :: occtmp1        ! temp var will hold num occ states for system 1 in main loop 
+  INTEGER                      :: occtmp2        ! temp var will hold num occ states for system 2 in main loop 
   REAL(DP)                     :: dtmp           ! temp variable
   REAL(DP),    EXTERNAL        :: ddot
   COMPLEX(DP)                  :: ztmp           ! temp variable
@@ -97,7 +104,8 @@ PROGRAM epcdft_coupling
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1    ! Vx1 is added to this potential (serial)
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1    ! Vx1 is added to this potential (parallel)
   !
-  NAMELIST / inputpp / outdir, prefix, prefix2, outdir2
+  NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
+                       debug,  s_spin, det_by_zgedi
   !
 #ifdef __MPI
   CALL mp_startup ( )
@@ -171,17 +179,19 @@ PROGRAM epcdft_coupling
   !
   CALL init_us_1    ! compute pseduo pot stuff
   !
-  s_spin    = .true.
+  occ(1,1) = occup1
+  occ(1,2) = occdown1
+  occ(2,1) = occup2
+  occ(2,2) = occdown2
   !
   ALLOCATE( vxp1( dfftp%nnr  ) )
   ALLOCATE( vex1_evc1( npwx  ) )
-  ALLOCATE( smat( nks*nbnd, nks*nbnd ) )
-  ALLOCATE( vex1_smat( nks*nbnd, nks*nbnd ) )
-  IF( s_spin ) ALLOCATE( smat_spinup( nbnd, nbnd ) )
-  IF( s_spin ) ALLOCATE( smat_spindown( nbnd, nbnd ) )
+  ALLOCATE( smat( SUM(occ(1,:)), SUM(occ(2,:)) ) )
+  ALLOCATE( vex1_smat( SUM(occ(1,:)), SUM(occ(2,:)) ) )
+  IF( s_spin ) ALLOCATE( smat_spinup( occ(1,1), occ(2,1) ) )
+  IF( s_spin ) ALLOCATE( smat_spindown( occ(1,2), occ(2,2) ) )
   ALLOCATE( vxs1( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   !
-  debug     = .true.
   i         = 0
   j         = 0
   dtmp      = 0.d0
@@ -200,9 +210,9 @@ PROGRAM epcdft_coupling
   psic      = 0.d0
   vex1_test = 0.d0
   vex1_smatdet = 0.d0
-  det_by_zgedi = .true.
   !
-  CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
+  CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
+                          occ(1,1), occ(1,2), occ(2,1), occ(2,2), debug,  s_spin, det_by_zgedi )
   !
   ! this call only calulates vpoten
   CALL add_efield( vxp1, dtmp, rho%of_r, .true. )
@@ -224,7 +234,11 @@ PROGRAM epcdft_coupling
      CALL gk_sort( xk(1,ik1), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
      CALL davcio( evc, 2*nwordwfc, iunwfc, ik1, -1 ) 
      !
-     DO ibnd1 = 1, nbnd
+     ! set number of states to include in S matrix
+     IF(ik1 == 1) occtmp1 = occ(1,1) 
+     IF(ik1 == 2) occtmp1 = occ(1,2) 
+     !
+     DO ibnd1 = 1, occtmp1
         !
         i = i + 1 ! S matrix counter goes with evc1
         !
@@ -277,7 +291,11 @@ PROGRAM epcdft_coupling
            CALL gk_sort( xk(1,ik2), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
            CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik2, -1 ) 
            !
-           DO ibnd2= 1, nbnd 
+           ! set number of states to include in S matrix
+           IF(ik2 == 1) occtmp2 = occ(2,1) 
+           IF(ik2 == 2) occtmp2 = occ(2,2) 
+           !
+           DO ibnd2= 1, occtmp2
               !
               j = j + 1 ! S matrix counter goes with evc2
               !
@@ -318,13 +336,25 @@ PROGRAM epcdft_coupling
   !
   IF(s_spin) THEN
      !
-     DO i = 1, nbnd
+     ! spin up
+     !
+     DO i = 1, occ(2,1)
         !
-        DO j = 1, nbnd
+        DO j = 1, occ(1,1)
            !
            smat_spinup(j,i) = smat( j, i )
            !
-           smat_spindown(j,i) = smat( j + nbnd , i + nbnd )
+        ENDDO
+        !
+     ENDDO
+     !
+     ! spin down
+     !
+     DO i = occ(2,1)+1, occ(2,2)
+        !
+        DO j = occ(1,1)+1, occ(1,2)
+           !
+           smat_spindown(j,i) = smat( j, i )
            !
         ENDDO
         !
@@ -337,22 +367,22 @@ PROGRAM epcdft_coupling
   IF(debug) THEN
      !
      ! print matrices
-     CALL print_cmat (" S_row,col <psi1(row)|psi2(col)>", smat, nbnd*nks)
-     CALL print_cmat (" <Vex1*psi1(row)|psi2(col)>", vex1_smat, nbnd*nks)
-     IF(s_spin) CALL print_cmat (" S_ij_up", smat_spinup, nbnd)
-     IF(s_spin) CALL print_cmat (" S_ij_down", smat_spindown, nbnd)
+     CALL print_cmat ( " S_row,col <psi1(row)|psi2(col)>", smat, SUM(occ(1,:)) )
+     CALL print_cmat ( " <Vex1*psi1(row)|psi2(col)>", vex1_smat, SUM(occ(1,:)) )
+     IF(s_spin) CALL print_cmat (" S_ij_up", smat_spinup, occ(1,1) )
+     IF(s_spin) CALL print_cmat (" S_ij_down", smat_spindown, occ(1,2) )
      !
      ! print trace of coupling matrix
      vex1_test = 0.d0
-     DO i = 1, nbnd*nks
+     DO i = 1, SUM(occ(1,:))
         vex1_test = vex1_test + vex1_smat(i,i)
      ENDDO
      CALL print_cnum (" Sum_i <i|Vx1|i>", vex1_test)
      !
-     ! print trace of coupling matrix
+     ! print sum of coupling matrix
      vex1_test = 0.d0
-     DO i = 1, nbnd*nks
-        DO j = 1, nbnd*nks
+     DO i = 1, SUM(occ(2,:)) 
+        DO j = 1, SUM(occ(1,:))
            vex1_test = vex1_test + vex1_smat(j,i)
         ENDDO
      ENDDO
@@ -364,29 +394,29 @@ PROGRAM epcdft_coupling
   !
   IF(det_by_zgedi) THEN
      !
-     CALL get_det_from_zgedi( smat, nbnd*nks, smatdet )
+     CALL get_det_from_zgedi( smat, SUM(occ(1,:)), smatdet )
      !
-     CALL get_det_from_zgedi( vex1_smat, nbnd*nks, vex1_smatdet )
+     CALL get_det_from_zgedi( vex1_smat, SUM(occ(1,:)), vex1_smatdet )
      !
      IF(s_spin) THEN
         !
-        CALL get_det_from_zgedi( smat_spinup, nbnd, smatdet_spinup )
+        CALL get_det_from_zgedi( smat_spinup, occ(1,1), smatdet_spinup )
         !
-        CALL get_det_from_zgedi( smat_spindown, nbnd, smatdet_spindown )
+        CALL get_det_from_zgedi( smat_spindown, occ(1,2), smatdet_spindown )
         !
      ENDIF
      !
   ELSE
      !
-     CALL get_det_from_zgeev( nbnd*nks, smat, smatdet )
+     CALL get_det_from_zgeev( SUM(occ(1,:)), smat, smatdet )
      !
-     CALL get_det_from_zgeev( nbnd*nks, vex1_smat, vex1_smatdet )
+     CALL get_det_from_zgeev( SUM(occ(2,:)), vex1_smat, vex1_smatdet )
      !
      IF(s_spin) THEN
         !
-        CALL get_det_from_zgeev( nbnd, smat_spinup, smatdet_spinup )
+        CALL get_det_from_zgeev( occ(1,1), smat_spinup, smatdet_spinup )
         !
-        CALL get_det_from_zgeev( nbnd, smat_spindown, smatdet_spindown )
+        CALL get_det_from_zgeev( occ(1,2), smat_spindown, smatdet_spindown )
         !
      ENDIF
      !
@@ -600,7 +630,8 @@ END SUBROUTINE get_det_from_zgeev
 !
 !
 !-----------------------------------------------------------------------------
-SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
+SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occup1, &
+                              occdown1, occup2, occdown2, debug,  s_spin, det_by_zgedi )
   !--------------------------------------------------------------------------
   !
   !     this routine prints warnings and some data from the input file 
@@ -616,6 +647,8 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
   CHARACTER(*), INTENT(IN)    :: prefix2
   CHARACTER(*), INTENT(IN)    :: tmp_dir
   CHARACTER(*), INTENT(IN)    :: tmp_dir2
+  INTEGER,      INTENT(IN)    :: occup1, occdown1, occup2, occdown2
+  LOGICAL,      INTENT(IN)    :: debug, s_spin, det_by_zgedi
   !
   IF(ionode)THEN
      !
@@ -629,18 +662,29 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd )
      WRITE(*,*)"      4) No K-points."
      WRITE(*,*)"      5) Make sure your grids/cutoffs... are the same for both systems."
      WRITE(*,*)"      6) Previous PW runs must NOT use parallelization over k points."
+     WRITE(*,*)"      7) occup1+occdown1 == occup2+occdown2."
+     WRITE(*,*)"      8) if s_spin = .true. then  occup1 must = occup2."
+     WRITE(*,*)"      9) if s_spin = .true. then occdown1 must = occdown2."
      WRITE(*,*)" "
      WRITE(*,*)"    ======================================================================= "
      WRITE(*,*)" "
      WRITE(*,*)" "
      WRITE(*,*)"    Data from input file :"
      WRITE(*,*)" "
-     WRITE(*,*)"    prefix1 : "  , prefix
-     WRITE(*,*)"    outdir1 : "  , tmp_dir
-     WRITE(*,*)"    prefix2 : "  , prefix2
-     WRITE(*,*)"    outdir2 : "  , tmp_dir2
-     WRITE(*,*)"    # of spins :", nks
-     WRITE(*,*)"    # of bands :", nbnd
+     WRITE(*,*)"    prefix1      :", prefix
+     WRITE(*,*)"    outdir1      :", tmp_dir
+     WRITE(*,*)"    prefix2      :", prefix2
+     WRITE(*,*)"    outdir2      :", tmp_dir2
+     WRITE(*,*)"    debug        :", debug
+     WRITE(*,*)"    s_spin       :", s_spin
+     WRITE(*,*)"    det_by_zgedi :", det_by_zgedi
+     WRITE(*,*)" "
+     WRITE(*,*)"    # of spins   :", nks
+     WRITE(*,*)"    # of bands   :", nbnd
+     WRITE(*,*)"    # occ up states in sys 1   :", occup1 
+     WRITE(*,*)"    # occ down states in sys 1 :", occdown1 
+     WRITE(*,*)"    # occ up states in sys 2   :", occup2 
+     WRITE(*,*)"    # occ down states in sys 2 :", occdown2 
      !
   ENDIF
   !
