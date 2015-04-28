@@ -350,11 +350,11 @@ PROGRAM epcdft_coupling
      !
      ! spin down
      !
-     DO i = occ(2,1)+1, occ(2,2)
+     DO i = 1, occ(2,2)
         !
-        DO j = occ(1,1)+1, occ(1,2)
+        DO j = 1, occ(1,2)
            !
-           smat_spindown(j,i) = smat( j, i )
+           smat_spindown(j,i) = smat( j+occ(1,1) , i+occ(2,1) )
            !
         ENDDO
         !
