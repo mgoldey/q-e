@@ -3,9 +3,8 @@
   prefix       = "zn",
   pseudo_dir   = "./",
   outdir       = "./out",
-!  wf_collect   = .TRUE.
-!  restart_mode = 'restart'
-  tefield = .true.
+  do_epcdft    = .true.,
+  tefield      = .true.
 /
 &SYSTEM
   nosym = .true.
@@ -14,15 +13,13 @@
   nat       = 2,
   ntyp      = 1,
   ecutwfc   = 110,
-  !ecutrho  = 300,
-  assume_isolated='mp'
   tot_charge = +1
   nspin   = 2,
   tot_magnetization = 1
-  edir = 1,
-  emaxpos = 0.25,
-  eamp = -0.52,
-  eopreg = 12
+  fragment_atom1    = 1,
+  fragment_atom2    = 1,
+  epcdft_amp        = -0.52,
+  epcdft_electrons  = 12
 /
 &ELECTRONS
  ! startingpot = 'file'

@@ -216,6 +216,7 @@ PROGRAM epcdft_coupling
   !
   ! this call only calulates vpoten
   CALL add_efield( vxp1, dtmp, rho%of_r, .true. )
+  ! write(*,*) "VXP1", vxp1(1:5)
   !
   ! gather the potentials
 #ifdef __MPI
@@ -364,7 +365,7 @@ PROGRAM epcdft_coupling
   !
   ! Processing matrix results
   !
-  IF(debug) THEN
+  IF(.true.) THEN
      !
      ! print matrices
      CALL print_cmat ( " S_row,col <psi1(row)|psi2(col)>", smat, SUM(occ(1,:)) )
@@ -721,6 +722,7 @@ SUBROUTINE get_det_from_zgedi(a, n, det)
   ! factor "a" by gaussian elimination
   ! a will be upper trianglular
   CALL zgefa(a, n, n, ivpt, info)  
+  write(*,*) "Info is ", info
   !
   CALL errore( 'epcdft_coupling', 'error in zgefa', abs(info))
   !
@@ -737,8 +739,6 @@ SUBROUTINE get_det_from_zgedi(a, n, det)
   RETURN
   !
 END SUBROUTINE get_det_from_zgedi
-!
-!
 !
 !
 !-----------------------------------------------------------------------

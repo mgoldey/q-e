@@ -335,6 +335,31 @@ END MODULE extfield
 !
 !
 !
+MODULE epcdft
+!
+! ... The quantities needed in calculations with epcdft
+!
+USE kinds, ONLY : DP
+!
+SAVE
+!
+LOGICAL :: &
+     do_epcdft         ! if .TRUE. a finite electric field is added to the
+                       ! local potential
+INTEGER :: &
+     fragment_atom1,  &! first atom of fragment
+     fragment_atom2    ! last atom of fragment
+REAL(DP) :: &
+     epcdft_electrons,&! number of electrons
+     epcdft_amp,      &! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
+     epcdft_shift      ! energy correction due to the field
+REAL(DP), ALLOCATABLE :: &
+     epcdft_forces(:,:)
+!
+END MODULE epcdft
+!
+!
+!
 MODULE fixed_occ
   !
   ! ... The quantities needed in calculations with fixed occupations

@@ -72,6 +72,14 @@ SUBROUTINE iosys()
                             eamp_     => eamp, &
                             forcefield
   !
+  USE epcdft,        ONLY : do_epcdft_       => do_epcdft,        &  
+                            fragment_atom1_  => fragment_atom1,   &
+                            fragment_atom2_  => fragment_atom2,   &
+                            epcdft_electrons_=> epcdft_electrons, &
+                            epcdft_amp_      => epcdft_amp,       &
+                            epcdft_shift_    => epcdft_shift,     &
+                            epcdft_forces
+  !
   USE io_files,      ONLY : input_drho, output_drho, &
                             psfile, tmp_dir, wfc_dir, &
                             prefix_     => prefix, &
@@ -201,9 +209,9 @@ SUBROUTINE iosys()
                                pseudo_dir, disk_io, tefield, dipfield, lberry, &
                                gdir, nppstr, wf_collect,lelfield,lorbm,efield, &
                                nberrycyc, lkpoint_dir, efield_cart, lecrpa,    &
-                               vdw_table_name, memory, tqmmm,                  &
+                               vdw_table_name, memory, tqmmm, do_epcdft,       &
                                lcalc_z2, z2_m_threshold, z2_z_threshold,       &
-                               efield_phase
+                               efield_phase, do_epcdft
 
   !
   ! ... SYSTEM namelist
@@ -225,6 +233,8 @@ SUBROUTINE iosys()
                                exx_fraction, screening_parameter, ecutfock, &
                                gau_parameter,                               &
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
+                               epcdft_amp, epcdft_shift, epcdft_electrons,    &
+                               fragment_atom1,  fragment_atom2,               &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
                                starting_spin_angle, assume_isolated,spline_ps,&
@@ -1086,6 +1096,12 @@ SUBROUTINE iosys()
   emaxpos_ = emaxpos
   eopreg_  = eopreg
   eamp_    = eamp
+  do_epcdft_       = do_epcdft        
+  fragment_atom1_  = fragment_atom1   
+  fragment_atom2_  = fragment_atom2   
+  epcdft_electrons_= epcdft_electrons 
+  epcdft_amp_      = epcdft_amp       
+  epcdft_shift_    = epcdft_shift     
   dfftp%nr1     = nr1
   dfftp%nr2     = nr2
   dfftp%nr3     = nr3
@@ -1314,6 +1330,7 @@ SUBROUTINE iosys()
   ENDIF
   !
   IF ( tefield ) ALLOCATE( forcefield( 3, nat_ ) )
+  IF ( do_epcdft ) ALLOCATE( epcdft_forces( 3, nat_ ) )
   !
   ! ... note that read_cards_pw no longer reads cards!
   !

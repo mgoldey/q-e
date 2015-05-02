@@ -668,6 +668,7 @@ MODULE read_namelists_module
        CALL mp_bcast( refg,          ionode_id, intra_image_comm )
        CALL mp_bcast( disk_io,       ionode_id, intra_image_comm )
        CALL mp_bcast( tefield,       ionode_id, intra_image_comm )
+       CALL mp_bcast( do_epcdft,     ionode_id, intra_image_comm )
        CALL mp_bcast( tefield2,      ionode_id, intra_image_comm )
        CALL mp_bcast( dipfield,      ionode_id, intra_image_comm )
        CALL mp_bcast( lberry,        ionode_id, intra_image_comm )

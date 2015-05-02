@@ -6,9 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 ! ... poorly written by N. P. Brawand
-!
-! Changes 01/02/2015 (ADC) : 
-!               Stuff
+! ... and poorly modified by M. B. Goldey
 !
 !
 !--------------------------------------------------------------------------
@@ -30,6 +28,8 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   USE cell_base,     ONLY : alat, at, omega, bg, saw
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
                             eopreg, forcefield
+  USE epcdft,        ONLY : do_epcdft, fragment_atom1, fragment_atom2, &
+                            epcdft_amp, epcdft_shift
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode
   USE control_flags, ONLY : mixing_beta
@@ -56,7 +56,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   ! local variables
   !
   INTEGER :: index0, i, j, k
-  INTEGER :: ir, na, ipol
+  INTEGER :: ir, na, ipol, iatom
   REAL(DP) :: length, vamp, value, sawarg, e_dipole, ion_dipole
   REAL(DP) :: tot_dipole, bmod
   
@@ -66,9 +66,12 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   ! ... Coulomb Vars
   !
   INTEGER      :: ip
-  REAL( DP )   :: dist
-  REAL( DP )   :: r( 3 ), s( 3 ), cm( 3 )
+  REAL( DP )   :: dist, mindist
+  REAL( DP )   :: r( 3 ), myr(3), s( 3 ), cm(3)
   REAL( DP )   :: inv_nr1, inv_nr2, inv_nr3
+  
+  LOGICAL :: on_frag = .TRUE.
+
   inv_nr1 = 1.D0 / DBLE( dfftp%nr1 )
   inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
   inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
@@ -77,11 +80,12 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !  Execution control
   !---------------------
 
-  IF (.NOT.tefield) RETURN
-  ! efield only needs to be added on the first iteration, if dipfield
-  ! is not used. note that for relax calculations it has to be added
-  ! again on subsequent relax steps.
-  IF ((.NOT.dipfield).AND.(.NOT.first) .AND..NOT. iflag) RETURN
+  IF (.NOT. do_epcdft) RETURN
+  IF ((.NOT.first) .AND..NOT. iflag) RETURN
+  ! efield only needs to be added on the first iteration, but
+  ! this should be changed to be self-consistent soon -MBG
+  ! note that for relax calculations it has to be added
+  ! again on subsequent relax steps. 
   first=.FALSE.
 
   !---------------------
@@ -95,9 +99,9 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
     !
     WRITE( stdout,*)
     WRITE( stdout,'(5x,"Adding potential well":)')
-    WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') eamp 
-    WRITE( stdout,'(8x,"Postion on atom # : ", I11.1)') edir
-    WRITE( stdout,'(8x,"Well radius [bohr] : ", es11.4)') emaxpos * alat
+    WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
+    WRITE( stdout,'(8x,"Fragment start : ", I11.1)') fragment_atom1
+    WRITE( stdout,'(8x,"Fragment end : ", I11.1)') fragment_atom2
     WRITE( stdout,*)     
     !
   ENDIF
@@ -116,13 +120,12 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   END DO
   !
 #endif
-  !
-  ! ... set center of well on edir atom
-  !
-  cm(:) = tau(:,edir)
+
+  write(*,*) "atom data ",nat, fragment_atom1, fragment_atom2
   !
   ! ... Loop over position grid
   !
+  
   DO ir = 1, dfftp%nnr
     !
     ! ... three dimensional indexes
@@ -142,24 +145,78 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
       !
     END DO
     !
-    ! translate potential well to atom center
-    !
-    r(:) = r(:) - cm(:)
-    !
-    ! ... minimum image convention for periodic BC
-    !
-    s(:) = MATMUL( r(:), bg(:,:) )
-    s(:) = s(:) - ANINT(s(:))
-    r(:) = MATMUL( at(:,:), s(:) )
-    !
-    dist = SQRT( SUM( r * r ) ) 
-    !
+    mindist=5.D0
+    DO iatom= fragment_atom1, fragment_atom2
+      ! write(*,*) "atom ",iatom, fragment_atom1, fragment_atom2
+      !
+      ! GRAB iatom xyzs
+      !
+      cm(:) = tau(:,iatom)
+      ! get 3-space (r) vector between position and atom center
+      !
+      myr(:) = r(:) - cm(:)
+      !
+      ! ... minimum image convention for periodic BC
+      !
+      s(:) = MATMUL( myr(:), bg(:,:) )
+      s(:) = s(:) - ANINT(s(:))
+      myr(:) = MATMUL( at(:,:), s(:) )
+      !
+      dist = SQRT( SUM( myr * myr ) ) 
+      !
+      IF(dist .le. mindist) THEN
+        !
+        mindist=dist
+        !
+      END IF
+    END DO
+
+    on_frag = .TRUE.
+
+    DO iatom=1, nat
+      !
+      ! CYCLE if wrong set of atoms
+      !
+      IF ((iatom.ge.fragment_atom1) .AND. (iatom.le.fragment_atom2) ) THEN
+        ! write(*,*) "Skipping this atom"
+        CYCLE
+      END IF
+      !
+      ! GRAB iatom xyzs
+      !
+      cm(:) = tau(:,iatom)
+      !
+      ! Get 3-space (r) vector between position and atom center
+      !
+      myr(:) = r(:) - cm(:)
+      !
+      ! ... minimum image convention for periodic BC
+      !
+      s(:) = MATMUL( myr(:), bg(:,:) )
+      s(:) = s(:) - ANINT(s(:))
+      myr(:) = MATMUL( at(:,:), s(:) )
+      !
+      dist = SQRT( SUM( myr * myr ) ) 
+      !
+      IF(dist .lt. mindist) THEN
+        !
+        mindist = dist
+        on_frag = .FALSE.
+        ! write(*,*) "Here"
+        EXIT
+        !
+      ENDIF
+      !
+    END DO
     ! if within emaxpos add potential 
     !
-    IF(dist <= emaxpos) THEN
+    IF(on_frag) THEN
       !
-      vpoten(ir) = vpoten(ir) + eamp
+      ! write(*,*) "Applying the potential",mindist
+      vpoten(ir) = vpoten(ir) + epcdft_amp
       !
+    ELSE
+      ! write(*,*) "Not applying",mindist
     ENDIF
     !
   END DO 

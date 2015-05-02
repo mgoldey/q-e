@@ -36,6 +36,9 @@ SUBROUTINE plugin_print_energies()
   USE cell_base,     ONLY : alat, at, omega, bg, saw
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
                             eopreg, forcefield, etotefield
+  USE epcdft,        ONLY : do_epcdft, fragment_atom1, &
+                            fragment_atom2, epcdft_electrons, &
+                            epcdft_amp, epcdft_shift
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -55,7 +58,7 @@ SUBROUTINE plugin_print_energies()
   REAL(DP) :: tmp
   REAL(DP) :: dv
   REAL(DP) :: einwell                              ! number of electrons in well
-  REAL(DP) :: enumerr                              ! eopreg - einwell  (e number error)
+  REAL(DP) :: enumerr                              ! epcdft_electrons - einwell  (e number error)
   LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotens   ! ef is added to this potential serial
   REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotenp   ! ef is added to this potential parll
@@ -82,10 +85,11 @@ SUBROUTINE plugin_print_energies()
   tmp      = 0.D0
   elocflag = .TRUE.
   etotefield = 0.D0
+  epcdft_shift = 0.D0
   !
   !
   ! this call only calulates vpoten
-  CALL add_efield(vpotenp, etotefield, rho%of_r, .true. )
+  CALL add_efield(vpotenp, epcdft_shift, rho%of_r, .true. )
   !
   ! gather the grids for serial calculation
 #ifdef __MPI
@@ -112,7 +116,7 @@ SUBROUTINE plugin_print_energies()
       !
       ! calculate energy correction
       !
-      etotefield = etotefield + vpotens(i) * rhosup(i) * dv
+      epcdft_shift = epcdft_shift + vpotens(i) * rhosup(i) * dv
       !
       ! count number of electrons in well for localization condition check
       !
@@ -125,18 +129,18 @@ SUBROUTINE plugin_print_energies()
     ENDDO
     !
     ! the correction is - of the energy
-    etotefield = -1.D0 * etotefield
+    epcdft_shift = -1.D0 * epcdft_shift
     !
-    WRITE(*,*)"    E field correction : ",etotefield," Ry"
+    WRITE(*,*)"    E field correction : ",epcdft_shift," Ry"
     WRITE(*,*)"    #e's   in well     : ",einwell," electrons"
     !
     ! is there a localization condition?
     !
-    IF(eopreg .NE. 0.D0)THEN
+    IF(epcdft_electrons .NE. 0.D0)THEN
       !
       ! is the localization condition satisfied?
       !
-      enumerr = eopreg - einwell 
+      enumerr = epcdft_electrons - einwell 
         ! conv_ions = false will restart scf
       IF( ABS(enumerr) .GE. 0.05D0 ) conv_ions = .FALSE.
       !
@@ -153,7 +157,7 @@ SUBROUTINE plugin_print_energies()
   !
   ! if the charge is not localized
   !
-  IF(.NOT.conv_ions .AND. eopreg .NE. 0)THEN
+  IF(.NOT.conv_ions .AND. epcdft_electrons .NE. 0)THEN
     !
     ! update applied field and restart scf
     !
@@ -170,11 +174,11 @@ SUBROUTINE plugin_print_energies()
       !
     ENDIF
     !
-    eamp = eamp - enumerr * ABS(eamp) 
-    IF(ionode) WRITE(*,*)"    New field Amp      : ",eamp," Ry"
+    epcdft_amp = epcdft_amp - enumerr * ABS(epcdft_amp) 
+    IF(ionode) WRITE(*,*)"    New field Amp      : ",epcdft_amp," Ry"
     !
-    etotefield = 0.D0 ! this var is added to etot before 
-    !                 ! this routine is called during next scf loop
+    epcdft_shift = 0.D0 ! this var is added to etot before 
+    !                   ! this routine is called during next scf loop
   ENDIF
   !
 END SUBROUTINE plugin_print_energies

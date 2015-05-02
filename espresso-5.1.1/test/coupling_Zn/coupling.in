@@ -8,6 +8,6 @@
   occdown1     = 11
   occdown2     = 11
   debug        = .false.
-  s_spin       = .false.
+  s_spin       = .true.
   det_by_zgedi = .true.
 /

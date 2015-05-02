@@ -193,13 +193,15 @@ MODULE input_parameters
           ! if .TRUE. a sawtooth potential simulating a finite electric field
           ! is added to the local potential = only used in PW
 
-          LOGICAL :: tefield2  = .false.
+        LOGICAL :: tefield2  = .false.
           ! if .TRUE. a second finite electric field is added to the local potential
           ! only used in CP
-
+        
         LOGICAL :: lelfield = .false.
           ! if .TRUE. a static homogeneous electric field is present
           ! via the modern theory of polarizability - differs from tefield!
+
+        LOGICAL :: do_epcdft =.FALSE.
 
         LOGICAL :: lorbm = .false.
           ! if .TRUE. an orbital magnetization is computed (Kubo terms)
@@ -279,7 +281,7 @@ MODULE input_parameters
           gdir, nppstr, wf_collect, printwfc, lelfield, nberrycyc, refg,  &
           tefield2, saverho, tabps, lkpoint_dir, use_wannier, lecrpa,     &
           tqmmm, vdw_table_name, lorbm, memory, point_label_type,         &
-          lcalc_z2, z2_m_threshold, z2_z_threshold
+          lcalc_z2, z2_m_threshold, z2_z_threshold, do_epcdft
 
 !
 !=----------------------------------------------------------------------------=!
@@ -438,6 +440,15 @@ MODULE input_parameters
         REAL(DP) :: eopreg = 0.0_DP
         REAL(DP) :: eamp = 0.0_DP
 
+          ! parameters for epcdft
+        INTEGER  :: fragment_atom1 = 0
+        INTEGER  :: fragment_atom2 = 0
+        REAL(DP) :: epcdft_electrons = 0.0_DP
+        REAL(DP) :: epcdft_amp = 0.0_DP
+        REAL(DP) :: epcdft_shift = 0.0_DP
+
+
+
           ! Various parameters for noncollinear calculations
         LOGICAL  :: noncolin = .false.
         LOGICAL  :: lspinorb = .false.
@@ -552,7 +563,8 @@ MODULE input_parameters
              occupations, degauss, nspin, ecfixed,                            &
              qcutz, q2sigma, lda_plus_U, lda_plus_u_kind,                     &
              Hubbard_U, Hubbard_J, Hubbard_alpha,                             &
-             Hubbard_J0, Hubbard_beta,                                        &
+             Hubbard_J0, Hubbard_beta, fragment_atom1,                        &
+             fragment_atom2, epcdft_electrons, epcdft_amp, epcdft_shift,      &
              edir, emaxpos, eopreg, eamp, smearing, starting_ns_eigenvalue,   &
              U_projection_type, input_dft, la2F, assume_isolated,             &
              nqx1, nqx2, nqx3, ecutfock,                                      &

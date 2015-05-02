@@ -37,6 +37,7 @@ SUBROUTINE run_pwscf ( exit_status )
   USE qmmm,             ONLY : qmmm_initialization, qmmm_shutdown, &
                                qmmm_update_positions, qmmm_update_forces
   USE extfield,         ONLY : tefield, eopreg
+  USE epcdft,           ONLY : do_epcdft, epcdft_amp
   !
   IMPLICIT NONE
   INTEGER, INTENT(OUT) :: exit_status
@@ -148,7 +149,7 @@ SUBROUTINE run_pwscf ( exit_status )
      !
      ! check if charge is localized if not conv_ion set to false
      !
-     IF(eopreg .NE. 0) CALL plugin_print_energies()
+     IF(do_epcdft) CALL plugin_print_energies()
      !
      ! ... exit condition (ionic convergence) is checked here
      !
