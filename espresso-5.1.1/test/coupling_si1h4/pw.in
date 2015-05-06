@@ -5,6 +5,7 @@
   outdir       = "./out",
 !  wf_collect   = .TRUE.
   tefield = .true.
+  do_epcdft = .true.
 /
 &SYSTEM
   ibrav     = 1,
@@ -15,10 +16,11 @@
   !ecutrho  = 300,
    nspin   = 2,
    tot_magnetization = 0
-  edir = 1,
-  emaxpos = 0.2,
-  eamp = -1.676,
-  eopreg = 6
+  fragment_atom1 = 1,
+  fragment_atom2 = 0,
+  epcdft_width = 0.2,
+  epcdft_amp = -1.676,
+  epcdft_electrons=6
 /
 &ELECTRONS
   conv_thr    = 1.D-6,
