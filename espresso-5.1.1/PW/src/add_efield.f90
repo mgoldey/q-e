@@ -102,6 +102,15 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !---------------------
   !  Execution control
   !---------------------
+  !write(*,*) "do_epcdft is ",do_epcdft
+  !write(*,*) "tefield is ",tefield
+
+  !WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
+  !WRITE( stdout,'(8x,"Fragment start : ", I11.1)') fragment_atom1
+  !WRITE( stdout,'(8x,"Fragment end   : ", I11.1)') fragment_atom2
+  !WRITE( stdout,'(8x,"Well size     : ", es11.4)') epcdft_width
+
+  ! write(*,*) iflag, first, sum(rho(:,1)), sum(vpoten(:,1))
   IF (.NOT. do_epcdft) RETURN
   IF (.NOT. iflag) RETURN  !TURN OFF SELF-CONSISTENCY INSIDE SCF CYCLE OR ELSE!
   if (iflag) first=.true.

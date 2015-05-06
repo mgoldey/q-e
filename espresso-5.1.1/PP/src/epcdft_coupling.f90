@@ -55,6 +55,9 @@ PROGRAM epcdft_coupling
   USE gvect,                ONLY : ngm, g, gstart
   USE gvecs,                ONLY : nls, nlsm
   USE noncollin_module,     ONLY : npol, nspin_mag, noncolin
+  USE lsda_mod,      ONLY : nspin
+  USE epcdft, only : do_epcdft, fragment_atom1, fragment_atom2, epcdft_electrons,&
+          epcdft_amp, epcdft_shift, epcdft_width
   USE cell_base,            ONLY : tpiba2, omega
   USE environment,          ONLY : environment_start, environment_end
   USE fft_base,             ONLY : dfftp, dffts, cgather_smooth, grid_gather
@@ -100,12 +103,15 @@ PROGRAM epcdft_coupling
   COMPLEX(DP), ALLOCATABLE     :: smat(:,:)      ! S_ij matrix <wfc1_i|wfc2_j>
   COMPLEX(DP), ALLOCATABLE     :: smat_spinup(:,:)! S_ij matrix <wfc1_i|wfc2_j> for each spin
   COMPLEX(DP), ALLOCATABLE     :: smat_spindown(:,:)! S_ij matrix <wfc1_i|wfc2_j> for each spin
-  COMPLEX(DP), ALLOCATABLE     :: vex1_smat(:,:) ! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vxs1    ! Vx1 is added to this potential (serial)
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vxp1    ! Vx1 is added to this potential (parallel)
+  COMPLEX(DP), ALLOCATABLE     :: vex1_smat(:,:)   ! vex1*s_ij matrix <vex1*wfc1_i|wfc2_j>
+  REAL(DP), DIMENSION(:),   ALLOCATABLE :: vxs1    ! Vx1 is added to this potential (serial)
+  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vxp1    ! Vx1 is added to this potential (parallel)
+  INTEGER  :: fragment1_atom1, fragment1_atom2, fragment2_atom1, fragment2_atom2
+  REAL(DP) :: fragment1_amp, fragment2_amp
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
-                       debug,  s_spin, det_by_zgedi
+                       debug,  s_spin, det_by_zgedi, do_epcdft, fragment1_atom1, fragment1_atom2,&
+                       fragment2_atom1, fragment2_atom2, fragment1_amp, fragment2_amp
   !
 #ifdef __MPI
   CALL mp_startup ( )
@@ -152,8 +158,9 @@ PROGRAM epcdft_coupling
   iunwfc = iunwfc2
   prefix = prefix2
   !
-     WRITE(*,*)"    ======================================================================= "
+   WRITE(*,*)"    ======================================================================= "
   WRITE(*,*) "    SYSTEM 2 INFO"
+  do_epcdft=.false.
   CALL read_file()  ! read , wfc, eigenvals, potential for system 2
   !
   ! now put system 2's vecs into system 2's vars
@@ -167,13 +174,14 @@ PROGRAM epcdft_coupling
   CALL diropn_gw ( iunwfc2, tmp_dir2, trim( prefix2 )//'.wfc', 2*nwordwfc, exst2, 1 ) ! below 
   !
   ! restore sys 1's vars and read sys 1's data
-     WRITE(*,*)"    ======================================================================= "
+   WRITE(*,*)"    ======================================================================= "
   WRITE(*,*) "    SYSTEM 1 INFO"
   tmp_dir = tmp_dir_pass
   iunwfc = iunwfc_pass
   prefix = prefix_pass
+  do_epcdft=.true.
   CALL read_file()  
-     WRITE(*,*)"    ======================================================================= "
+   WRITE(*,*)"    ======================================================================= "
   !
   CALL openfil_pp() ! open all files for scf run set filenames/units
   !
@@ -184,7 +192,7 @@ PROGRAM epcdft_coupling
   occ(2,1) = occup2
   occ(2,2) = occdown2
   !
-  ALLOCATE( vxp1( dfftp%nnr  ) )
+  ALLOCATE( vxp1( dfftp%nnr, nspin  ) )
   ALLOCATE( vex1_evc1( npwx  ) )
   ALLOCATE( smat( SUM(occ(1,:)), SUM(occ(2,:)) ) )
   ALLOCATE( vex1_smat( SUM(occ(1,:)), SUM(occ(2,:)) ) )
@@ -215,14 +223,21 @@ PROGRAM epcdft_coupling
                           occ(1,1), occ(1,2), occ(2,1), occ(2,2), debug,  s_spin, det_by_zgedi )
   !
   ! this call only calulates vpoten
+  ! write(*,*) "CALLING add_efield"
+  fragment_atom1=fragment1_atom1
+  fragment_atom2=fragment1_atom2
+  write(*,*) fragment_atom1, fragment_atom2
+  epcdft_amp=fragment1_amp
   CALL add_efield( vxp1, dtmp, rho%of_r, .true. )
   ! write(*,*) "VXP1", vxp1(1:5)
   !
   ! gather the potentials
+  !
+
 #ifdef __MPI
-    CALL grid_gather ( vxp1, vxs1 )
+    CALL grid_gather ( vxp1(:,1), vxs1(:))
 #else
-    vxs1(:)=vxp1(:)
+    vxs1(:)=vxp1(:,1)
 #endif
   !
   ! Start calculating evc, vex1_evc and evc2 overlaps over kpnts and bands
@@ -368,10 +383,12 @@ PROGRAM epcdft_coupling
   IF(.true.) THEN
      !
      ! print matrices
-     CALL print_cmat ( " S_row,col <psi1(row)|psi2(col)>", smat, SUM(occ(1,:)) )
-     CALL print_cmat ( " <Vex1*psi1(row)|psi2(col)>", vex1_smat, SUM(occ(1,:)) )
-     IF(s_spin) CALL print_cmat (" S_ij_up", smat_spinup, occ(1,1) )
-     IF(s_spin) CALL print_cmat (" S_ij_down", smat_spindown, occ(1,2) )
+     if (debug) THEN
+      CALL print_cmat ( " S_row,col <psi1(row)|psi2(col)>", smat, SUM(occ(1,:)) )
+      CALL print_cmat ( " <Vex1*psi1(row)|psi2(col)>", vex1_smat, SUM(occ(1,:)) )
+      IF(s_spin) CALL print_cmat (" S_ij_up", smat_spinup, occ(1,1) )
+      IF(s_spin) CALL print_cmat (" S_ij_down", smat_spindown, occ(1,2) )
+     ENDIF
      !
      ! print trace of coupling matrix
      vex1_test = 0.d0
@@ -567,14 +584,14 @@ SUBROUTINE print_cmat (aname, a, lda)
     WRITE(*,1)REAL(a(j,:))
   ENDDO
   !
-  WRITE(*,*)""
-  WRITE(*,*)" The IMG part of : "
-  WRITE(*,*)aname
-  WRITE(*,*)"-------------------------------------"
+!  WRITE(*,*)""
+!  WRITE(*,*)" The IMG part of : "
+!  WRITE(*,*)aname
+!  WRITE(*,*)"-------------------------------------"
   !
-  DO j = 1, lda
-    WRITE(*,1)AIMAG(a(j,:))
-  ENDDO
+!  DO j = 1, lda
+!    WRITE(*,1)AIMAG(a(j,:))
+!  ENDDO
   !
   1 FORMAT(8E12.3)
   !
@@ -722,7 +739,7 @@ SUBROUTINE get_det_from_zgedi(a, n, det)
   ! factor "a" by gaussian elimination
   ! a will be upper trianglular
   CALL zgefa(a, n, n, ivpt, info)  
-  write(*,*) "Info is ", info
+  ! write(*,*) "Info is ", info
   !
   CALL errore( 'epcdft_coupling', 'error in zgefa', abs(info))
   !

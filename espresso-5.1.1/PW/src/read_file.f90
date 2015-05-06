@@ -307,9 +307,7 @@ SUBROUTINE read_xml_file()
   !
   CALL v_of_rho( rho, rho_core, rhog_core, &
                  ehart, etxc, vtxc, eth, etotefield, charge, v )
-  IF (do_epcdft) THEN 
-    CALL add_efield(v, etotefield, rho%of_r, .true. )
-  END IF
+  IF (do_epcdft) CALL add_efield(v, etotefield, rho%of_r, .true. )
   !
   RETURN
   !

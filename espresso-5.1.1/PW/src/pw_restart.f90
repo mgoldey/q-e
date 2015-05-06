@@ -1707,9 +1707,9 @@ MODULE pw_restart
       !
       IF ( ionode ) THEN
          CALL qexml_read_epcdft(DO_EPCDFT=do_epcdft, FRAGMENT_ATOM1=fragment_atom1, &
-                             FRAGMENT_ATOM2=fragment_atom2, EPCDFT_ELECTRONS=epcdft_electrons, &
-                  EPCDFT_AMP=epcdft_amp, EPCDFT_WIDTH=epcdft_width, EPCDFT_SHIFT=epcdft_shift, &
-                                                                      FOUND=found, IERR=ierr )
+                 FRAGMENT_ATOM2=fragment_atom2, EPCDFT_ELECTRONS=epcdft_electrons, &
+      EPCDFT_AMP=epcdft_amp, EPCDFT_WIDTH=epcdft_width, EPCDFT_SHIFT=epcdft_shift, &
+                                                          FOUND=found, IERR=ierr )
       ENDIF
       !
       CALL mp_bcast( ierr, ionode_id, intra_image_comm )

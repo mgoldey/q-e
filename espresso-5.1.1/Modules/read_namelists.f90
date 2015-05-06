@@ -212,6 +212,15 @@ MODULE read_namelists_module
        emaxpos = 0.5_DP
        eopreg = 0.1_DP
        eamp = 0.0_DP
+
+       ! epcdft variables
+       fragment_atom1 = 0
+       fragment_atom2 = 0
+       epcdft_electrons = 0.0_DP
+       epcdft_amp = 0.0_DP
+       epcdft_width = 0.0_DP
+       epcdft_shift = 0.0_DP
+
        !
        !  ... postprocessing of DOS & phonons & el-ph
        la2F = .FALSE.
@@ -778,6 +787,15 @@ MODULE read_namelists_module
        CALL mp_bcast( emaxpos,                ionode_id, intra_image_comm )
        CALL mp_bcast( eopreg,                 ionode_id, intra_image_comm )
        CALL mp_bcast( eamp,                   ionode_id, intra_image_comm )
+       
+       ! epcdft variables
+       CALL mp_bcast( fragment_atom1,         ionode_id, intra_image_comm )
+       CALL mp_bcast( fragment_atom2,         ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_amp,             ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_electrons,       ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_shift,           ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_width,           ionode_id, intra_image_comm )
+
        CALL mp_bcast( la2F,                   ionode_id, intra_image_comm )
        !
        ! ... non collinear broadcast
