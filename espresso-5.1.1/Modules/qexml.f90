@@ -1070,7 +1070,7 @@ CONTAINS
     !
 
     SUBROUTINE qexml_write_epcdft( do_epcdft, fragment_atom1, fragment_atom2, &
-                          epcdft_electrons, epcdft_amp, epcdft_shift)
+                      epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift)
       !------------------------------------------------------------------------
       !
       LOGICAL, INTENT(in)   :: do_epcdft      ! 
@@ -1078,6 +1078,7 @@ CONTAINS
       INTEGER, INTENT(in)   :: fragment_atom2 ! 
       REAL(DP), INTENT(in) :: epcdft_electrons! 
       REAL(DP), INTENT(in) :: epcdft_amp      ! 
+      REAL(DP), INTENT(in) :: epcdft_width    ! 
       REAL(DP), INTENT(in) :: epcdft_shift    ! 
       !
       !
@@ -1092,6 +1093,8 @@ CONTAINS
       CALL iotk_write_dat( ounit, "FRAGMENT_ELECTRONS", epcdft_electrons )
       !
       CALL iotk_write_dat( ounit, "EPCDFT_AMP", epcdft_amp )
+      !
+      CALL iotk_write_dat( ounit, "EPCDFT_WIDTH", epcdft_width )
       !
       CALL iotk_write_dat( ounit, "ENERGY_SHIFT", epcdft_shift )
       !
@@ -2969,7 +2972,7 @@ CONTAINS
     END SUBROUTINE qexml_read_efield
 
     SUBROUTINE qexml_read_epcdft(do_epcdft, fragment_atom1, fragment_atom2, &
-                          & epcdft_electrons, epcdft_amp, epcdft_shift, found, ierr)
+      & epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, found, ierr)
       IMPLICIT NONE
       !------------------------------------------------------------------------
       !
@@ -2978,6 +2981,7 @@ CONTAINS
       INTEGER, OPTIONAL, INTENT(out)   :: fragment_atom2 ! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_electrons! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_amp      ! 
+      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_width    ! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_shift    ! 
       LOGICAL,             INTENT(out) :: found
       INTEGER,             INTENT(out) :: ierr
@@ -2987,6 +2991,7 @@ CONTAINS
       INTEGER   :: fragment_atom2_ ! 
       REAL(DP) :: epcdft_electrons_! 
       REAL(DP) :: epcdft_amp_      ! 
+      REAL(DP) :: epcdft_width_    ! 
       REAL(DP) :: epcdft_shift_    ! 
       ierr=0
       !
@@ -3008,6 +3013,9 @@ CONTAINS
       CALL iotk_scan_dat( ounit, "EPCDFT_AMP", epcdft_amp_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
+      CALL iotk_scan_dat( ounit, "EPCDFT_WIDTH", epcdft_width_ , IERR=ierr)
+      IF ( ierr /= 0 ) RETURN
+      !
       CALL iotk_scan_dat( ounit, "ENERGY_SHIFT", epcdft_shift_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
@@ -3018,6 +3026,7 @@ CONTAINS
       IF ( present(fragment_atom1) )       fragment_atom1     = fragment_atom1_
       IF ( present(fragment_atom2) )       fragment_atom2     = fragment_atom2_
       IF ( present(epcdft_amp) )           epcdft_amp         = epcdft_amp_
+      IF ( present(epcdft_width) )           epcdft_width         = epcdft_width_
       IF ( present(epcdft_shift) )           epcdft_shift         = epcdft_shift_
       IF ( present(epcdft_electrons) )           epcdft_electrons         = epcdft_electrons_
       
