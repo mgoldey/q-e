@@ -36,8 +36,8 @@ SUBROUTINE run_pwscf ( exit_status )
   USE mp_images,        ONLY : intra_image_comm
   USE qmmm,             ONLY : qmmm_initialization, qmmm_shutdown, &
                                qmmm_update_positions, qmmm_update_forces
-  USE extfield,         ONLY : tefield, eopreg
-  USE epcdft,           ONLY : do_epcdft, epcdft_amp
+  USE extfield,         ONLY : tefield
+  USE epcdft,           ONLY : do_epcdft
   !
   IMPLICIT NONE
   INTEGER, INTENT(OUT) :: exit_status
@@ -162,7 +162,7 @@ SUBROUTINE run_pwscf ( exit_status )
      ! ... terms of the hamiltonian depending upon nuclear positions
      ! ... are reinitialized here
      !
-     IF ( lmd .OR. lbfgs .OR. tefield ) CALL hinit1()
+     IF ( lmd .OR. lbfgs .OR. tefield .OR. do_epcdft ) CALL hinit1()
      !
   END DO main_loop
   !
