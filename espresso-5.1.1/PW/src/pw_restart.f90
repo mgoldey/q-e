@@ -128,7 +128,7 @@ MODULE pw_restart
                                        emaxpos, eopreg, eamp
       USE epcdft,               ONLY : do_epcdft, fragment_atom1,&
                 fragment_atom2, epcdft_electrons, epcdft_amp, &
-                epcdft_shift
+                epcdft_width, epcdft_shift
       USE io_rho_xml,           ONLY : write_rho
       USE mp_world,             ONLY : nproc
       USE mp_images,            ONLY : nproc_image
@@ -409,7 +409,7 @@ MODULE pw_restart
 !-------------------------------------------------------------------------------
          !
          CALL qexml_write_epcdft(do_epcdft, fragment_atom1, fragment_atom2, &
-                          epcdft_electrons, epcdft_amp, epcdft_shift)
+                    epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift)
          !
 !
 !-------------------------------------------------------------------------------
@@ -1694,7 +1694,7 @@ MODULE pw_restart
       !----------------------------------------------------------------------
       !
       USE epcdft, ONLY : do_epcdft, fragment_atom1, fragment_atom2, epcdft_electrons,&
-                         epcdft_amp, epcdft_shift
+                         epcdft_amp, epcdft_width, epcdft_shift
 
       !
       IMPLICIT NONE
@@ -1707,9 +1707,9 @@ MODULE pw_restart
       !
       IF ( ionode ) THEN
          CALL qexml_read_epcdft(DO_EPCDFT=do_epcdft, FRAGMENT_ATOM1=fragment_atom1, &
-                                FRAGMENT_ATOM2=fragment_atom2, EPCDFT_ELECTRONS=epcdft_electrons, &
-                                EPCDFT_AMP=epcdft_amp, EPCDFT_SHIFT=epcdft_shift, &
-                                 FOUND=found, IERR=ierr )
+                             FRAGMENT_ATOM2=fragment_atom2, EPCDFT_ELECTRONS=epcdft_electrons, &
+                  EPCDFT_AMP=epcdft_amp, EPCDFT_WIDTH=epcdft_width, EPCDFT_SHIFT=epcdft_shift, &
+                                                                      FOUND=found, IERR=ierr )
       ENDIF
       !
       CALL mp_bcast( ierr, ionode_id, intra_image_comm )
@@ -1722,11 +1722,12 @@ MODULE pw_restart
          !
       END IF
       !
-      CALL mp_bcast( do_epcdft,  ionode_id, intra_image_comm )
-      CALL mp_bcast( fragment_atom1, ionode_id, intra_image_comm )
-      CALL mp_bcast( fragment_atom2, ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_electrons,     ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_amp,     ionode_id, intra_image_comm )
+      CALL mp_bcast( do_epcdft,        ionode_id, intra_image_comm )
+      CALL mp_bcast( fragment_atom1,   ionode_id, intra_image_comm )
+      CALL mp_bcast( fragment_atom2,   ionode_id, intra_image_comm )
+      CALL mp_bcast( epcdft_electrons, ionode_id, intra_image_comm )
+      CALL mp_bcast( epcdft_amp,       ionode_id, intra_image_comm )
+      CALL mp_bcast( epcdft_width,     ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_shift,     ionode_id, intra_image_comm )
       !
       !

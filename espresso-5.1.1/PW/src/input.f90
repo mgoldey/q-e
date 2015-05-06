@@ -77,6 +77,7 @@ SUBROUTINE iosys()
                             fragment_atom2_  => fragment_atom2,   &
                             epcdft_electrons_=> epcdft_electrons, &
                             epcdft_amp_      => epcdft_amp,       &
+                            epcdft_width_    => epcdft_width,     &
                             epcdft_shift_    => epcdft_shift,     &
                             epcdft_forces
   !
@@ -233,8 +234,8 @@ SUBROUTINE iosys()
                                exx_fraction, screening_parameter, ecutfock, &
                                gau_parameter,                               &
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
-                               epcdft_amp, epcdft_shift, epcdft_electrons,    &
-                               fragment_atom1,  fragment_atom2,               &
+                               epcdft_amp, epcdft_width, epcdft_shift,        & 
+                               epcdft_electrons,fragment_atom1,fragment_atom2,&
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
                                starting_spin_angle, assume_isolated,spline_ps,&
@@ -1101,6 +1102,7 @@ SUBROUTINE iosys()
   fragment_atom2_  = fragment_atom2   
   epcdft_electrons_= epcdft_electrons 
   epcdft_amp_      = epcdft_amp       
+  epcdft_width_    = epcdft_width
   epcdft_shift_    = epcdft_shift     
   dfftp%nr1     = nr1
   dfftp%nr2     = nr2
