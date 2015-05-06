@@ -38,7 +38,7 @@ SUBROUTINE plugin_print_energies()
                             eopreg, forcefield, etotefield
   USE epcdft,        ONLY : do_epcdft, fragment_atom1, &
                             fragment_atom2, epcdft_electrons, &
-                            epcdft_amp, epcdft_shift
+                            epcdft_amp, epcdft_width, epcdft_shift
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -60,8 +60,8 @@ SUBROUTINE plugin_print_energies()
   REAL(DP) :: einwell                              ! number of electrons in well
   REAL(DP) :: enumerr                              ! epcdft_electrons - einwell  (e number error)
   LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotens   ! ef is added to this potential serial
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: vpotenp   ! ef is added to this potential parll
+  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotens   ! ef is added to this potential serial
+  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp   ! ef is added to this potential parll
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosup    ! rho serial
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosdown  ! rho serial
   !
@@ -72,8 +72,8 @@ SUBROUTINE plugin_print_energies()
   ! calc is converged lets compute and print the correction
   !
   ! first setup vars
-  ALLOCATE(vpotenp(dfftp%nnr))
-  ALLOCATE(vpotens( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
+  ALLOCATE(vpotenp(dfftp%nnr, nspin))
+  ALLOCATE(vpotens(dfftp%nr1x * dfftp%nr2x * dfftp%nr3x,nspin ))
   ALLOCATE(rhosup( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   ALLOCATE(rhosdown( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
@@ -87,40 +87,45 @@ SUBROUTINE plugin_print_energies()
   etotefield = 0.D0
   epcdft_shift = 0.D0
   !
-  !
+  ! gather the grids for serial calculation
+
   ! this call only calulates vpoten
   CALL add_efield(vpotenp, epcdft_shift, rho%of_r, .true. )
-  !
-  ! gather the grids for serial calculation
+
+
 #ifdef __MPI
-    CALL grid_gather ( vpotenp, vpotens )
+    CALL grid_gather ( vpotenp(:,1), vpotens(:,1) )
     CALL grid_gather ( rho%of_r(:,1), rhosup )
     IF(nspin > 1)THEN
       CALL grid_gather ( rho%of_r(:,2), rhosdown )
+      CALL grid_gather ( vpotenp(:,2), vpotens(:,2) )
     ENDIF
 #else
-    vpotens(:)=vpotenp(:)
+    vpotens(:,1)=vpotenp(:,1)
     rhosup(:) = rho%of_r(:,1)
     IF(nspin > 1)THEN
       rhosdown(:) = rho%of_r(:,2)
+      vpotens(:,2)=vpotenp(:,2)
     ENDIF
 #endif
+
   !
   ! begin calculation of the correction 
   IF(ionode) THEN
     !
     ! combine up and down parts of rho
     rhosup(:) = rhosup(:) + rhosdown(:) 
+    ! vpotens(:,1)=vpotens(:,1)+vpotens(:,2)
     !
     DO i=1, dfftp%nr1x*dfftp%nr2x*dfftp%nr3x
       !
       ! calculate energy correction
       !
-      epcdft_shift = epcdft_shift + vpotens(i) * rhosup(i) * dv
+      epcdft_shift = epcdft_shift + (vpotens(i,1)) * rhosup(i) * dv
       !
       ! count number of electrons in well for localization condition check
       !
-      IF(vpotens(i) .NE. 0.D0)THEN
+      IF(vpotens(i,1) .NE. 0.D0)THEN
         !
         einwell = einwell + rhosup(i) * dv
         !
@@ -142,7 +147,7 @@ SUBROUTINE plugin_print_energies()
       !
       enumerr = epcdft_electrons - einwell 
         ! conv_ions = false will restart scf
-      IF( ABS(enumerr) .GE. 0.05D0 ) conv_ions = .FALSE.
+      IF( ABS(enumerr) .GE. 5.D-3 ) conv_ions = .FALSE.
       !
     ENDIF
     !
