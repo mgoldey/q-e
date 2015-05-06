@@ -179,7 +179,6 @@ PROGRAM epcdft_coupling
   tmp_dir = tmp_dir_pass
   iunwfc = iunwfc_pass
   prefix = prefix_pass
-  do_epcdft=.true.
   CALL read_file()  
    WRITE(*,*)"    ======================================================================= "
   !
@@ -224,6 +223,7 @@ PROGRAM epcdft_coupling
   !
   ! this call only calulates vpoten
   ! write(*,*) "CALLING add_efield"
+  do_epcdft=.true.
   fragment_atom1=fragment1_atom1
   fragment_atom2=fragment1_atom2
   write(*,*) fragment_atom1, fragment_atom2
