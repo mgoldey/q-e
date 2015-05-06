@@ -103,12 +103,11 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !  Execution control
   !---------------------
   IF (.NOT. do_epcdft) RETURN
-  ! IF (.NOT. iflag) RETURN
+  IF (.NOT. iflag) RETURN  !TURN OFF SELF-CONSISTENCY INSIDE SCF CYCLE OR ELSE!
   if (iflag) first=.true.
 
   
-  ! efield only needs to be added on the first iteration, but
-  ! this should be changed to be self-consistent soon -MBG
+  ! efield only needs to be added on the first iteration (of each SCF call)
   ! note that for relax calculations it has to be added
   ! again on subsequent relax steps. 
 
@@ -297,7 +296,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   endif
 
 #ifdef __MPI
-!  CALL MP_SUM(einwell,intra_image_comm) ! FIX ME
+  CALL MP_SUM(einwellp,intra_image_comm) ! FIX ME?
   einwells=einwellp
 #else
   einwells=einwellp
