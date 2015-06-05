@@ -60,6 +60,7 @@ SUBROUTINE plugin_print_energies()
   REAL(DP) :: einwell                              ! number of electrons in well
   REAL(DP) :: enumerr                              ! epcdft_electrons - einwell  (e number error)
   LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
+  LOGICAL  :: ZERO
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotens   ! ef is added to this potential serial
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp   ! ef is added to this potential parll
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosup    ! rho serial
@@ -86,12 +87,18 @@ SUBROUTINE plugin_print_energies()
   elocflag = .TRUE.
   etotefield = 0.D0
   epcdft_shift = 0.D0
+  zero =.false.
   !
   ! gather the grids for serial calculation
 
-  ! this call only calulates vpoten
+  
+  if (epcdft_amp .eq. 0d0) THEN
+    zero=.true.
+    epcdft_amp=1d0
+  ENDIF
+! this call only calulates vpoten
   CALL add_efield(vpotenp, epcdft_shift, rho%of_r, .true. )
-
+  if (zero) epcdft_amp=0d0
 
 #ifdef __MPI
     CALL grid_gather ( vpotenp(:,1), vpotens(:,1) )
@@ -147,10 +154,20 @@ SUBROUTINE plugin_print_energies()
       !
       enumerr = epcdft_electrons - einwell 
         ! conv_ions = false will restart scf
-      IF( ABS(enumerr) .GE. 5.D-3 ) conv_ions = .FALSE.
+      IF( ABS(enumerr) .GE. 1.D-2 ) THEN
+       conv_ions = .FALSE.
+       WRITE(*,*) "    Numerical error    :  ",enumerr, "electrons"
+      ELSE 
+      !  conv_ions = .TRUE.
+      ENDIF
       !
     ENDIF
     !
+  ENDIF
+
+  if (zero) THEN
+    write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
+    conv_ions =.true.
   ENDIF
   !
   CALL mp_bcast( conv_ions, ionode_id, intra_image_comm )
@@ -179,7 +196,7 @@ SUBROUTINE plugin_print_energies()
       !
     ENDIF
     !
-    epcdft_amp = epcdft_amp - enumerr * ABS(epcdft_amp) 
+    epcdft_amp = epcdft_amp - enumerr * ABS(epcdft_amp) * 5d0
     IF(ionode) WRITE(*,*)"    New field Amp      : ",epcdft_amp," Ry"
     !
     epcdft_shift = 0.D0 ! this var is added to etot before 

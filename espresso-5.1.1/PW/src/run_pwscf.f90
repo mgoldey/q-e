@@ -127,6 +127,17 @@ SUBROUTINE run_pwscf ( exit_status )
      ! ... send out forces to MM code in QM/MM run
      !
      CALL qmmm_update_forces(force)
+
+     !
+     ! check if charge is localized if not conv_ion set to false
+     !
+     conv_ions = .TRUE.  !MBG changed this
+     IF(do_epcdft) CALL plugin_print_energies()
+     !
+     IF (do_epcdft .and. .not. conv_ions ) THEN
+      CALL hinit1()
+      CYCLE
+     ENDIF
      !
      IF ( lmd .OR. lbfgs ) THEN
         !
@@ -146,11 +157,6 @@ SUBROUTINE run_pwscf ( exit_status )
      END IF
      !
      CALL stop_clock( 'ions' )
-     !
-     ! check if charge is localized if not conv_ion set to false
-     !
-     IF(do_epcdft) CALL plugin_print_energies()
-     !
      ! ... exit condition (ionic convergence) is checked here
      !
      IF ( conv_ions ) EXIT main_loop
