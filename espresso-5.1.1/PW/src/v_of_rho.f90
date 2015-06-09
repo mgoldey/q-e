@@ -79,10 +79,10 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
   !
   ! ... add an electric field
   ! 
-  CALL add_efield(v%of_r, etotefield, rho%of_r, .false. )
-  !DO is = 1, nspin_lsda
-  !   CALL add_efield(v%of_r(1,is), etotefield, rho%of_r, .false. )
-  !END DO
+  !CALL add_efield(v%of_r, etotefield, rho%of_r, .false. )
+  DO is = 1, nspin_lsda
+     CALL add_efield(v%of_r(1,is), etotefield, rho%of_r, .false. )
+  END DO
   !
   ! ... add Tkatchenko-Scheffler potential (factor 2: Ha -> Ry)
   ! 
@@ -353,6 +353,7 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
   COMPLEX(DP), INTENT(IN) :: rhog_core(ngm)
     ! input: the core charge in reciprocal space
   REAL(DP), INTENT(OUT) :: v(dfftp%nnr,nspin), vtxc, etxc
+  REAL(DP) :: foo
     ! V_xc potential
     ! integral V_xc * rho
     ! E_xc energy
@@ -379,8 +380,15 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
   !
   etxc   = 0.D0
   vtxc   = 0.D0
+  
   v(:,:) = 0.D0
   rhoneg = 0.D0
+
+  write(*,*) "etxc is ", etxc
+  foo= SUM( rho%of_r(:,:) )
+  write(*,*) "rho is ",foo
+  foo=SUM( v(:,:) )
+  write(*,*) "v is ",foo
   !
   IF ( nspin == 1 .OR. ( nspin == 4 .AND. .NOT. domag ) ) THEN
      !
@@ -410,6 +418,8 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
         !
      END DO
 !$omp end parallel do
+    foo=SUM( v(:,:) )
+    write(*,*) "v is ",foo
      !
   ELSE IF ( nspin == 2 ) THEN
      !
@@ -444,6 +454,9 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
         !
      END DO
 !$omp end parallel do
+    foo=SUM( v(:,:) )
+    write(*,*) "v is ",foo
+     
      !
   ELSE IF ( nspin == 4 ) THEN
      !
@@ -513,7 +526,6 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
   ! ... add gradient corrections (if any)
   !
   CALL gradcorr( rho%of_r, rho%of_g, rho_core, rhog_core, etxc, vtxc, v )
- 
   !
   ! ... add non local corrections (if any)
   !
@@ -521,6 +533,11 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
   !
   CALL mp_sum(  vtxc , intra_bgrp_comm )
   CALL mp_sum(  etxc , intra_bgrp_comm )
+  write(*,*) "etxc is ", etxc
+  foo= SUM(rho%of_r(:,:))
+  write(*,*) "rho is ",foo
+  foo=SUM(v(:,:))
+  write(*,*) "v is ",foo
   !
   CALL stop_clock( 'v_xc' )
   !

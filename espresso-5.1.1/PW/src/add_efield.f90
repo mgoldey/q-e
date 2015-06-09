@@ -50,7 +50,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !
   ! I/O variables
   !
-  REAL(DP),INTENT(INOUT) :: vpoten(dfftp%nnr,nspin)! ef is added to this potential
+  REAL(DP),INTENT(INOUT) :: vpoten(dfftp%nnr)! ef is added to this potential
   REAL(DP) :: dv                             ! volume element
   REAL(DP) :: einwellp                       ! number of electrons in well
   REAL(DP) :: einwells                       ! number of electrons in well
@@ -114,7 +114,8 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   IF (.NOT. do_epcdft) RETURN
   IF (.NOT. iflag) RETURN  !TURN OFF SELF-CONSISTENCY INSIDE SCF CYCLE OR ELSE!
   if (iflag) first=.true.
-
+   
+  if (.not. first) RETURN
   
   ! efield only needs to be added on the first iteration (of each SCF call)
   ! note that for relax calculations it has to be added
@@ -152,84 +153,9 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
 #else
   ir_end = dfftp%nnr
 #endif
-  
-  ! catch first call or call with zero density
-  if (first .or. sum(rho) .lt.1e-3) THEN
-    if (fragment_atom2 .ne. 0) then
-      DO ir = 1, dfftp%nnr
-        i = index0 + ir - 1
-        k = i / (dfftp%nr1x*dfftp%nr2x)
-        i = i - (dfftp%nr1x*dfftp%nr2x)*k
-        j = i / dfftp%nr1x
-        i = i - dfftp%nr1x*j
-        DO ip = 1, 3
-          r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
-                  DBLE( j )*inv_nr2*at(ip,2) + &
-                  DBLE( k )*inv_nr3*at(ip,3)
-        END DO
-        mindist=5.D6
-        DO iatom= fragment_atom1, fragment_atom2
-          cm(:) = tau(:,iatom)
-          myr(:) = r(:) - cm(:)
-          s(:) = MATMUL( myr(:), bg(:,:) )
-          s(:) = s(:) - ANINT(s(:))
-          myr(:) = MATMUL( at(:,:), s(:) )
-          dist = SQRT( SUM( myr * myr ) )*alat
-          IF(dist .le. mindist) THEN
-            mindist=dist
-          END IF
-        END DO
-        on_frag = .TRUE.
-        DO iatom=1, nat
-          IF ((iatom.ge.fragment_atom1) .AND. (iatom.le.fragment_atom2) ) THEN
-            CYCLE
-          END IF
-          cm(:) = tau(:,iatom)
-          myr(:) = r(:) - cm(:)
-          s(:) = MATMUL( myr(:), bg(:,:) )
-          s(:) = s(:) - ANINT(s(:))
-          myr(:) = MATMUL( at(:,:), s(:) )
-          dist = SQRT( SUM( myr * myr ) )*alat
-          IF(dist .lt. mindist) THEN
-            mindist = dist
-            on_frag = .FALSE.
-            EXIT
-          ENDIF
-        END DO
-        IF(on_frag) THEN
-            vpoten(ir,1) = vpoten(ir,1) + epcdft_amp
-            if (nspin.ne.1) vpoten(ir,2) = vpoten(ir,2) + epcdft_amp
-        ENDIF
-      END DO 
-    else ! APPLY POTENTIAL WITHIN WELL OF SIZE EPCDFT_WIDTH
-      DO ir = 1, dfftp%nnr
-        i = index0 + ir - 1
-        k = i / (dfftp%nr1x*dfftp%nr2x)
-        i = i - (dfftp%nr1x*dfftp%nr2x)*k
-        j = i / dfftp%nr1x
-        i = i - dfftp%nr1x*j
-        DO ip = 1, 3
-          r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
-                  DBLE( j )*inv_nr2*at(ip,2) + &
-                  DBLE( k )*inv_nr3*at(ip,3)
-        END DO
-        iatom= fragment_atom1
-        cm(:) = tau(:,iatom)
-        myr(:) = r(:) - cm(:)
-        s(:) = MATMUL( myr(:), bg(:,:) )
-        s(:) = s(:) - ANINT(s(:))
-        myr(:) = MATMUL( at(:,:), s(:) )
-        dist = SQRT( SUM( myr * myr ) )*alat
-        IF(dist .le. epcdft_width) THEN
-          vpoten(ir,1) = vpoten(ir,1) + epcdft_amp
-            if (nspin.ne.1) vpoten(ir,2) = vpoten(ir,2) + epcdft_amp        
-        ENDIF
-      END DO 
-    ENDIF
-    first=.FALSE.
-    RETURN
-  ENDIF !END IF FIRST
-
+  if (sum(rho).lt.1e-3) THEN
+  !  write(*,*) "Density is really small. I forget why this matters."
+  ENDIF
   if (fragment_atom2 .ne. 0) then
     DO ir = 1, dfftp%nnr
       i = index0 + ir - 1
@@ -272,9 +198,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
         ENDIF
       END DO
       IF(on_frag) THEN
-        vpoten(ir,1) = vpoten(ir,1) + (epcdft_amp-oldamp)
-          if (nspin.ne.1) vpoten(ir,2) = vpoten(ir,2) + (epcdft_amp-oldamp)
-        einwellp=einwellp+(rho(ir,1)+rho(ir,2)) * dv
+          vpoten(ir) = vpoten(ir) + epcdft_amp
       ENDIF
     END DO 
   else ! APPLY POTENTIAL WITHIN WELL OF SIZE EPCDFT_WIDTH
@@ -297,12 +221,10 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
       myr(:) = MATMUL( at(:,:), s(:) )
       dist = SQRT( SUM( myr * myr ) )*alat
       IF(dist .le. epcdft_width) THEN
-        vpoten(ir,1) = vpoten(ir,1) + (epcdft_amp-oldamp)
-          if (nspin.ne.1) vpoten(ir,2) = vpoten(ir,2) + (epcdft_amp-oldamp)
-        einwellp=einwellp+(rho(ir,1)+rho(ir,2)) * dv
+        vpoten(ir) = vpoten(ir) + epcdft_amp
       ENDIF
     END DO 
-  endif
+  ENDIF
 
 #ifdef __MPI
   CALL MP_SUM(einwellp,intra_image_comm) ! FIX ME?
@@ -310,6 +232,11 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
 #else
   einwells=einwellp
 #endif
+  
+  !dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
+
+  RETURN
+
   oldamp = epcdft_amp
   IF (ionode) WRITE(*,*)"    #e's   in well     : ",einwells," electrons"
   enumerr = epcdft_electrons - einwells

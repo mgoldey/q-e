@@ -44,7 +44,7 @@ SUBROUTINE plugin_print_energies()
   USE control_flags, ONLY : mixing_beta
   USE lsda_mod,      ONLY : nspin
   USE mp_images,     ONLY : intra_image_comm
-  USE mp_bands,      ONLY : me_bgrp
+  USE mp_bands,      ONLY : me_bgrp, intra_bgrp_comm
   USE fft_base,      ONLY : dfftp, grid_gather
   USE mp,            ONLY : mp_bcast, mp_sum
   USE control_flags, ONLY : iverbosity, conv_elec, conv_ions
@@ -97,7 +97,8 @@ SUBROUTINE plugin_print_energies()
     epcdft_amp=1d0
   ENDIF
 ! this call only calulates vpoten
-  CALL add_efield(vpotenp, epcdft_shift, rho%of_r, .true. )
+  CALL add_efield(vpotenp(:,1), epcdft_shift, rho%of_r, .true. )
+  CALL add_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
   if (zero) epcdft_amp=0d0
 
 #ifdef __MPI
@@ -164,6 +165,7 @@ SUBROUTINE plugin_print_energies()
     ENDIF
     !
   ENDIF
+  ! CALL mp_bcast( enumerr, ionode_id, intra_bgrp_comm )
 
   if (zero) THEN
     write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
@@ -196,10 +198,12 @@ SUBROUTINE plugin_print_energies()
       !
     ENDIF
     !
-    epcdft_amp = epcdft_amp - enumerr * ABS(epcdft_amp) * 5d0
+    epcdft_amp = epcdft_amp - enumerr * ABS(epcdft_amp) 
+    CALL mp_bcast( epcdft_amp, ionode_id, intra_image_comm )
+
     IF(ionode) WRITE(*,*)"    New field Amp      : ",epcdft_amp," Ry"
     !
-    epcdft_shift = 0.D0 ! this var is added to etot before 
+    ! epcdft_shift = 0.D0 ! this var is added to etot before 
     !                   ! this routine is called during next scf loop
   ENDIF
   !
