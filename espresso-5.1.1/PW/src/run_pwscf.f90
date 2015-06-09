@@ -34,6 +34,7 @@ SUBROUTINE run_pwscf ( exit_status )
   USE force_mod,        ONLY : lforce, lstres, sigma, force
   USE check_stop,       ONLY : check_stop_init, check_stop_now
   USE mp_images,        ONLY : intra_image_comm
+  USE mp,               ONLY : mp_bcast, mp_sum
   USE qmmm,             ONLY : qmmm_initialization, qmmm_shutdown, &
                                qmmm_update_positions, qmmm_update_forces
   USE extfield,         ONLY : tefield
@@ -132,7 +133,11 @@ SUBROUTINE run_pwscf ( exit_status )
      ! check if charge is localized if not conv_ion set to false
      !
      conv_ions = .TRUE.  !MBG changed this
+     
      IF(do_epcdft) CALL plugin_print_energies()
+
+	 CALL mp_bcast( conv_ions, ionode_id, intra_image_comm )
+     
      !
      IF (do_epcdft .and. .not. conv_ions ) THEN
       CALL hinit1()
