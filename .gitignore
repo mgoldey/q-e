@@ -1,5 +1,6 @@
 *.o
 *.x
+*.a
 *.mod
 make.sys
 *.out
@@ -7,3 +8,8 @@ make.sys
 out
 pwscf.save
 old
+config.*
+*.inc
+*.sys
+foo
+configure.msg

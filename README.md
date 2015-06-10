@@ -10,10 +10,9 @@ This README would normally document whatever steps are necessary to get your app
 ### How do I get set up? ###
 
 * Clone the repo
-* download QE 5.1.1
-* tar -zxvf the QE  inside the repo you just downloaded
-* run "git checkout ." inside the repo and this will restore the EPCDFT files
-* install QE
+* cd espresso-5.1.1
+* ./configure -enable-openmp=yes -enable-parallel=yes
+* make pw
 
 ### INPUT Flags ###
 * tefield - needs to be set to .true.
