@@ -1,6 +1,0 @@
-&INPUTPP
-  prefix       = "si",
-  outdir       = "./out",
-  prefix2       = "si2",
-  outdir2       = "./out2",
-/

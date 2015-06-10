@@ -1,10 +1,10 @@
 &CONTROL
   calculation  = "scf",
   prefix       = "zn",
-  pseudo_dir   = "./",
   outdir       = "./out",
   do_epcdft    = .true.,
   tefield      = .true.
+  verbosity = "high" 
 /
 &SYSTEM
   nosym = .true.
@@ -18,8 +18,9 @@
   tot_magnetization = 1
   fragment_atom1    = 1,
   fragment_atom2    = 1,
-  epcdft_amp        = -0.52,
-  epcdft_electrons  = 12
+  epcdft_amp        = -0.32,
+  epcdft_electrons  = 12,
+  epcdft_width = 2.5
 /
 &ELECTRONS
  ! startingpot = 'file'
@@ -30,6 +31,7 @@
 &IONS
 /
 K_POINTS {Gamma}
+
 ATOMIC_SPECIES
 Zn 0.0 Zn.pbe-mt_fhi.UPF
 ATOMIC_POSITIONS (angstrom)

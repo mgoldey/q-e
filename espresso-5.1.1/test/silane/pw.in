@@ -1,7 +1,6 @@
 &CONTROL
   calculation  = "scf",
   prefix       = "si",
-  pseudo_dir   = "./",
   outdir       = "./out",
 !  wf_collect   = .TRUE.
   tefield = .true.
@@ -9,18 +8,18 @@
 /
 &SYSTEM
   ibrav     = 1,
-  a         = 7,
+  a = 7,
   nat       = 5,
   ntyp      = 2,
-  ecutwfc   = 40,
-  !ecutrho  = 300,
-   nspin   = 2,
-   tot_magnetization = 0
-  fragment_atom1 = 1,
-  fragment_atom2 = 0,
-  epcdft_width = 0.2,
-  epcdft_amp = -1.676,
-  epcdft_electrons=6
+  ecutwfc   = 18,
+  !ecutrho   = 300,
+   nspin     = 1,
+  fragment_atom1    = 1,    
+  fragment_atom2    = 0,    ! set to max atom in fragment
+  epcdft_amp        = -1, !ampl in rydberg
+  epcdft_electrons  = 6    ! electrons at the site
+  epcdft_width = 2.645616384
+  
 /
 &ELECTRONS
   conv_thr    = 1.D-6,
@@ -30,8 +29,8 @@
 /
 K_POINTS {Gamma}
 ATOMIC_SPECIES
-Si 28.0855 Si.pbe-rrkj.UPF
-H 1.00794 H_HSCV_PBE-1.0.UPF
+Si 28.0855 Si.pbe-n-van.UPF
+H 1.00794 H.pbe-rrkjus.UPF
 ATOMIC_POSITIONS (angstrom)
 Si        -0.19448        2.43790        0.00000
 H          1.27605        2.43790       -0.00000

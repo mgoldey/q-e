@@ -144,7 +144,7 @@ SUBROUTINE plugin_print_energies()
     ! the correction is - of the energy
     epcdft_shift = -1.D0 * epcdft_shift
     !
-    WRITE(*,*)"    E field correction : ",epcdft_shift," Ry"
+    if (.not.zero) WRITE(*,*)"    E field correction : ",epcdft_shift," Ry"
     WRITE(*,*)"    #e's   in well     : ",einwell," electrons"
     !
     ! is there a localization condition?
@@ -155,7 +155,7 @@ SUBROUTINE plugin_print_energies()
       !
       enumerr = epcdft_electrons - einwell 
         ! conv_ions = false will restart scf
-      IF( ABS(enumerr) .GE. 1.D-2 ) THEN
+      IF( ABS(enumerr) .GE. 1.D-2 .and. .not. zero) THEN
        conv_ions = .FALSE.
        WRITE(*,*) "    Numerical error    :  ",enumerr, "electrons"
       ELSE 
@@ -168,7 +168,7 @@ SUBROUTINE plugin_print_energies()
   ! CALL mp_bcast( enumerr, ionode_id, intra_bgrp_comm )
 
   if (zero) THEN
-    write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
+      ! IF(ionode) write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
     conv_ions =.true.
   ENDIF
   !

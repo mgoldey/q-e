@@ -383,12 +383,6 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
   
   v(:,:) = 0.D0
   rhoneg = 0.D0
-
-  write(*,*) "etxc is ", etxc
-  foo= SUM( rho%of_r(:,:) )
-  write(*,*) "rho is ",foo
-  foo=SUM( v(:,:) )
-  write(*,*) "v is ",foo
   !
   IF ( nspin == 1 .OR. ( nspin == 4 .AND. .NOT. domag ) ) THEN
      !
@@ -418,8 +412,6 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
         !
      END DO
 !$omp end parallel do
-    foo=SUM( v(:,:) )
-    write(*,*) "v is ",foo
      !
   ELSE IF ( nspin == 2 ) THEN
      !
@@ -453,10 +445,7 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
         END IF
         !
      END DO
-!$omp end parallel do
-    foo=SUM( v(:,:) )
-    write(*,*) "v is ",foo
-     
+!$omp end parallel do     
      !
   ELSE IF ( nspin == 4 ) THEN
      !
@@ -533,11 +522,6 @@ SUBROUTINE v_xc( rho, rho_core, rhog_core, etxc, vtxc, v )
   !
   CALL mp_sum(  vtxc , intra_bgrp_comm )
   CALL mp_sum(  etxc , intra_bgrp_comm )
-  write(*,*) "etxc is ", etxc
-  foo= SUM(rho%of_r(:,:))
-  write(*,*) "rho is ",foo
-  foo=SUM(v(:,:))
-  write(*,*) "v is ",foo
   !
   CALL stop_clock( 'v_xc' )
   !

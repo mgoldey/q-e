@@ -3,3 +3,8 @@
 *.mod
 Makefile
 make.sys
+*.out
+*.tar.gz
+out
+pwscf.save
+old
