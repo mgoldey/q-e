@@ -18,7 +18,7 @@
   tot_magnetization = 1
   fragment_atom1    = 1,
   fragment_atom2    = 1,
-  epcdft_amp        = -0.32,
+  epcdft_amp        = -3.8717E-01,
   epcdft_electrons  = 12,
   epcdft_width = 2.5
 /
@@ -27,8 +27,6 @@
  ! startingwfc = 'file'
   conv_thr    = 1.D-8,
   mixing_beta = 0.30,
-/
-&IONS
 /
 K_POINTS {Gamma}
 

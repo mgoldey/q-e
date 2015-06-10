@@ -1,5 +1,5 @@
 
-     Program PWSCF v.5.1.1 starts on 10Jun2015 at 11:48:17 
+     Program PWSCF v.5.1.1 starts on 10Jun2015 at 12: 5:46 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -155,7 +155,7 @@ Warning: card / ignored
      negative rho (up, down):  6.546E-07 6.546E-07
      Starting wfc are    8 randomized atomic wfcs
 
-     total cpu time spent up to now is        0.4 secs
+     total cpu time spent up to now is        0.3 secs
 
      per-process dynamical memory:     8.7 Mb
 
@@ -174,7 +174,7 @@ Warning: card / ignored
      atom:    4    charge:    0.4654    magn:   -0.0002    constr:    0.0000
      atom:    5    charge:    0.4638    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        0.5 secs
+     total cpu time spent up to now is        0.4 secs
 
      The total energy is the sum of the following terms:
 
@@ -232,7 +232,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6970    magn:   -0.0001    constr:    0.0000
      atom:    5    charge:    0.6916    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        0.6 secs
+     total cpu time spent up to now is        0.5 secs
 
      The total energy is the sum of the following terms:
 
@@ -664,7 +664,7 @@ Warning: card / ignored
 
      total cpu time spent up to now is        1.4 secs
 
-     per-process dynamical memory:    10.5 Mb
+     per-process dynamical memory:    10.6 Mb
 
      Self-consistent Calculation
 
@@ -710,7 +710,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6295    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6186    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        1.5 secs
+     total cpu time spent up to now is        1.6 secs
 
      The total energy is the sum of the following terms:
 
@@ -768,7 +768,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6434    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6322    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        1.6 secs
+     total cpu time spent up to now is        1.7 secs
 
      The total energy is the sum of the following terms:
 
@@ -826,7 +826,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6503    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6387    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        1.7 secs
+     total cpu time spent up to now is        1.8 secs
 
      The total energy is the sum of the following terms:
 
@@ -1055,7 +1055,7 @@ Warning: card / ignored
 
      total cpu time spent up to now is        2.1 secs
 
-     per-process dynamical memory:    10.5 Mb
+     per-process dynamical memory:    10.6 Mb
 
      Self-consistent Calculation
 
@@ -1072,7 +1072,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6455    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6338    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        2.1 secs
+     total cpu time spent up to now is        2.2 secs
 
      The total energy is the sum of the following terms:
 
@@ -1188,7 +1188,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6428    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6307    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        2.4 secs
+     total cpu time spent up to now is        2.5 secs
 
      The total energy is the sum of the following terms:
 
@@ -1217,7 +1217,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6428    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6306    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        2.5 secs
+     total cpu time spent up to now is        2.6 secs
 
      End of self-consistent calculation
 
@@ -1299,9 +1299,9 @@ Warning: card / ignored
         Well size     :  2.6456E+00
  
 
-     total cpu time spent up to now is        2.5 secs
+     total cpu time spent up to now is        2.6 secs
 
-     per-process dynamical memory:    10.5 Mb
+     per-process dynamical memory:    10.6 Mb
 
      Self-consistent Calculation
 
@@ -1318,7 +1318,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6444    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6324    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        2.6 secs
+     total cpu time spent up to now is        2.7 secs
 
      The total energy is the sum of the following terms:
 
@@ -1376,7 +1376,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6462    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6343    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        2.7 secs
+     total cpu time spent up to now is        2.8 secs
 
      The total energy is the sum of the following terms:
 
@@ -1434,7 +1434,7 @@ Warning: card / ignored
      atom:    4    charge:    0.6454    magn:    0.0000    constr:    0.0000
      atom:    5    charge:    0.6335    magn:    0.0000    constr:    0.0000
 
-     total cpu time spent up to now is        2.8 secs
+     total cpu time spent up to now is        2.9 secs
 
      End of self-consistent calculation
 
@@ -1496,47 +1496,47 @@ Warning: card / ignored
 
      Writing output data file si.save
  
-     init_run     :      0.18s CPU      0.26s WALL (       1 calls)
-     electrons    :      2.17s CPU      2.22s WALL (       4 calls)
-     update_pot   :      0.08s CPU      0.11s WALL (       3 calls)
+     init_run     :      0.16s CPU      0.17s WALL (       1 calls)
+     electrons    :      2.30s CPU      2.39s WALL (       4 calls)
+     update_pot   :      0.09s CPU      0.09s WALL (       3 calls)
 
      Called by init_run:
-     wfcinit      :      0.00s CPU      0.01s WALL (       1 calls)
+     wfcinit      :      0.01s CPU      0.01s WALL (       1 calls)
      potinit      :      0.02s CPU      0.02s WALL (       1 calls)
 
      Called by electrons:
-     c_bands      :      0.37s CPU      0.41s WALL (      37 calls)
-     sum_band     :      0.58s CPU      0.58s WALL (      37 calls)
-     v_of_rho     :      0.56s CPU      0.61s WALL (      41 calls)
-     newd         :      0.56s CPU      0.57s WALL (      41 calls)
-     mix_rho      :      0.08s CPU      0.08s WALL (      37 calls)
+     c_bands      :      0.36s CPU      0.40s WALL (      37 calls)
+     sum_band     :      0.68s CPU      0.70s WALL (      37 calls)
+     v_of_rho     :      0.66s CPU      0.70s WALL (      41 calls)
+     newd         :      0.48s CPU      0.52s WALL (      41 calls)
+     mix_rho      :      0.10s CPU      0.09s WALL (      37 calls)
 
      Called by c_bands:
-     init_us_2    :      0.02s CPU      0.02s WALL (     150 calls)
-     regterg      :      0.33s CPU      0.37s WALL (      74 calls)
+     init_us_2    :      0.01s CPU      0.02s WALL (     150 calls)
+     regterg      :      0.30s CPU      0.36s WALL (      74 calls)
 
      Called by *egterg:
-     h_psi        :      0.16s CPU      0.20s WALL (     218 calls)
-     s_psi        :      0.01s CPU      0.01s WALL (     218 calls)
+     h_psi        :      0.18s CPU      0.22s WALL (     218 calls)
+     s_psi        :      0.00s CPU      0.01s WALL (     218 calls)
      g_psi        :      0.00s CPU      0.00s WALL (     142 calls)
-     rdiaghg      :      0.11s CPU      0.11s WALL (     210 calls)
+     rdiaghg      :      0.08s CPU      0.10s WALL (     210 calls)
 
      Called by h_psi:
-     add_vuspsi   :      0.01s CPU      0.01s WALL (     218 calls)
+     add_vuspsi   :      0.00s CPU      0.01s WALL (     218 calls)
 
      General routines
-     calbec       :      0.01s CPU      0.02s WALL (     292 calls)
-     fft          :      0.41s CPU      0.44s WALL (    1003 calls)
-     fftw         :      0.16s CPU      0.20s WALL (    1012 calls)
+     calbec       :      0.03s CPU      0.04s WALL (     292 calls)
+     fft          :      0.60s CPU      0.65s WALL (    1003 calls)
+     fftw         :      0.20s CPU      0.19s WALL (    1012 calls)
      davcio       :      0.00s CPU      0.00s WALL (       2 calls)
  
      Parallel routines
-     fft_scatter  :      0.28s CPU      0.30s WALL (    2015 calls)
+     fft_scatter  :      0.46s CPU      0.50s WALL (    2015 calls)
  
-     PWSCF        :     2.60s CPU         2.85s WALL
+     PWSCF        :     2.72s CPU         2.91s WALL
 
  
-   This run was terminated on:  11:48:19  10Jun2015            
+   This run was terminated on:  12: 5:49  10Jun2015            
 
 =------------------------------------------------------------------------------=
    JOB DONE.
