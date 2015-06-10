@@ -1,7 +1,6 @@
 *.o
 *.x
 *.mod
-Makefile
 make.sys
 *.out
 *.tar.gz
