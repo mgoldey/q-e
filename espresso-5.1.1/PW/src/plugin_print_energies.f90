@@ -38,7 +38,8 @@ SUBROUTINE plugin_print_energies()
                             eopreg, forcefield, etotefield
   USE epcdft,        ONLY : do_epcdft, fragment_atom1, &
                             fragment_atom2, epcdft_electrons, &
-                            epcdft_amp, epcdft_width, epcdft_shift
+                            epcdft_amp, epcdft_width, epcdft_shift, &
+                            epcdft_thr
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -166,9 +167,10 @@ SUBROUTINE plugin_print_energies()
       !
       enumerr = epcdft_electrons - einwell 
         ! conv_ions = false will restart scf
-      IF( ABS(enumerr) .GE. 1.D-2 .and. .not. zero) THEN
+      IF( ABS(enumerr) .GE. epcdft_thr .and. .not. zero) THEN
        conv_ions = .FALSE.
        WRITE(*,*) "    Surplus/deficit electrons    :  ",enumerr, "electrons"
+       WRITE(*,*) "    epcdft_thr                   :  ",epcdft_thr, "electrons"
       ELSE 
       !  conv_ions = .TRUE.
       ENDIF

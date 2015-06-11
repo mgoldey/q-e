@@ -353,7 +353,8 @@ REAL(DP) :: &
      epcdft_electrons,&! number of electrons
      epcdft_amp,      &! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
      epcdft_width,    &! field width (in a.u.) 
-     epcdft_shift      ! energy correction due to the field
+     epcdft_shift,    &! energy correction due to the field
+     epcdft_thr        ! threshold on # of electrons in well
 REAL(DP), ALLOCATABLE :: &
      epcdft_forces(:,:)
 !

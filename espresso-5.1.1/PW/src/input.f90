@@ -79,6 +79,7 @@ SUBROUTINE iosys()
                             epcdft_amp_      => epcdft_amp,       &
                             epcdft_width_    => epcdft_width,     &
                             epcdft_shift_    => epcdft_shift,     &
+                            epcdft_thr_      => epcdft_thr,       &
                             epcdft_forces
   !
   USE io_files,      ONLY : input_drho, output_drho, &
@@ -234,7 +235,7 @@ SUBROUTINE iosys()
                                exx_fraction, screening_parameter, ecutfock, &
                                gau_parameter,                               &
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
-                               epcdft_amp, epcdft_width, epcdft_shift,        & 
+                               epcdft_amp, epcdft_width, epcdft_shift,epcdft_thr, & 
                                epcdft_electrons,fragment_atom1,fragment_atom2,&
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
@@ -1104,6 +1105,7 @@ SUBROUTINE iosys()
   epcdft_amp_      = epcdft_amp       
   epcdft_width_    = epcdft_width
   epcdft_shift_    = epcdft_shift     
+  epcdft_thr_    = epcdft_thr    
   dfftp%nr1     = nr1
   dfftp%nr2     = nr2
   dfftp%nr3     = nr3

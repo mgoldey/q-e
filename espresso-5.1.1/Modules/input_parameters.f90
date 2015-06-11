@@ -447,6 +447,7 @@ MODULE input_parameters
         REAL(DP) :: epcdft_amp = 0.0_DP
         REAL(DP) :: epcdft_width = 0.0_DP
         REAL(DP) :: epcdft_shift = 0.0_DP
+        REAL(DP) :: epcdft_thr = 1.0D-4
 
 
 
@@ -565,7 +566,7 @@ MODULE input_parameters
              qcutz, q2sigma, lda_plus_U, lda_plus_u_kind,                     &
              Hubbard_U, Hubbard_J, Hubbard_alpha,                             &
              Hubbard_J0, Hubbard_beta, fragment_atom1, fragment_atom2,        &
-             epcdft_electrons, epcdft_amp,epcdft_width,epcdft_shift,          &
+             epcdft_electrons, epcdft_amp,epcdft_width,epcdft_shift,epcdft_thr,&
              edir, emaxpos, eopreg, eamp, smearing, starting_ns_eigenvalue,   &
              U_projection_type, input_dft, la2F, assume_isolated,             &
              nqx1, nqx2, nqx3, ecutfock,                                      &
