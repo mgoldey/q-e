@@ -65,6 +65,16 @@ SUBROUTINE plugin_print_energies()
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp   ! ef is added to this potential parll
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosup    ! rho serial
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosdown  ! rho serial
+  REAL(DP) :: next_epcdft_amp ! guess of amp for next iteration
+  !
+  ! SAVED VARS
+  !
+  REAL(DP) :: last_epcdft_amp = 0.D0 ! used to determine next guess for potential
+  REAL(DP) :: last_einwell = 0.D0    ! used to determine next guess for potential
+  LOGICAL :: first = .TRUE.          ! used to determine next guess for potential
+  SAVE last_epcdft_amp
+  SAVE last_einwell 
+  SAVE first
   !
   ! dont do anything unless the calculation is converged
   !
@@ -88,6 +98,7 @@ SUBROUTINE plugin_print_energies()
   etotefield = 0.D0
   epcdft_shift = 0.D0
   zero =.false.
+  next_epcdft_amp = 0.D0
   !
   ! gather the grids for serial calculation
 
@@ -198,9 +209,32 @@ SUBROUTINE plugin_print_energies()
       !
     ENDIF
     !
-    epcdft_amp = epcdft_amp - enumerr * ABS(epcdft_amp) 
-    CALL mp_bcast( epcdft_amp, ionode_id, intra_image_comm )
-
+    ! find next guess for epcdft_amp
+    !
+    IF(first) THEN
+       !
+       first = .FALSE.
+       !
+       next_epcdft_amp = epcdft_amp - enumerr * ABS(epcdft_amp) 
+       !
+    ELSE
+       !
+       CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
+                          einwell,         last_einwell, epcdft_electrons)
+       !
+    ENDIF
+    !
+    ! save this iteration's einwell and amp
+    ! for the next iteration
+    last_einwell    = einwell
+    last_epcdft_amp = epcdft_amp
+    !
+    ! The old iteration has passed away;
+    ! behold, the new iteration has come 
+    epcdft_amp = next_epcdft_amp
+    !
+    CALL mp_bcast( epcdft_amp, ionode_id, intra_image_comm ) ! what is best bcast this or enumerr?
+    !
     IF(ionode) WRITE(*,*)"    New field Amp      : ",epcdft_amp," Ry"
     !
     ! epcdft_shift = 0.D0 ! this var is added to etot before 
@@ -208,3 +242,32 @@ SUBROUTINE plugin_print_energies()
   ENDIF
   !
 END SUBROUTINE plugin_print_energies
+!----------------------------------------------------------------------------
+!
+!
+SUBROUTINE secant_method(vnext, v, vold, e, eold, egoal)
+  !----------------------------------------------------------------------------
+  !
+  ! This routine uses secant method to determine the next 
+  ! estimation of the root of an equation.
+  !
+  ! Numerical Mathematics and Computing Sixth Edition
+  !  Ward Cheney & David Kincaid Pg 112, eqn. 3
+  !
+  !     vnext = v - \left( \frac{v-vold}{e-eold} \right) * (e-egoal)
+  !
+  ! In this case the function we want to minmize is:
+  !          e*(v) = e(v) - egoal
+  ! this is why the formual has egoal in it
+  !
+  USE kinds,            ONLY : DP
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP), INTENT(INOUT) :: vnext
+  REAL(DP), INTENT(IN) :: v, vold, e, eold, egoal
+  !
+  vnext = v - ( (v-vold) / (e-eold)  ) * (e-egoal)
+  !
+END SUBROUTINE secant_method
+!----------------------------------------------------------------------------
