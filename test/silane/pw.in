@@ -1,6 +1,7 @@
 &CONTROL
   calculation  = "scf",
   prefix       = "si",
+  pseudo_dir   = "../pseudo",
   outdir       = "./out",
 !  wf_collect   = .TRUE.
   tefield = .true.

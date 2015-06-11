@@ -168,7 +168,7 @@ SUBROUTINE plugin_print_energies()
         ! conv_ions = false will restart scf
       IF( ABS(enumerr) .GE. 1.D-2 .and. .not. zero) THEN
        conv_ions = .FALSE.
-       WRITE(*,*) "    Numerical error    :  ",enumerr, "electrons"
+       WRITE(*,*) "    Surplus/deficit electrons    :  ",enumerr, "electrons"
       ELSE 
       !  conv_ions = .TRUE.
       ENDIF
@@ -207,31 +207,31 @@ SUBROUTINE plugin_print_energies()
       WRITE(*,*)"    restarting scf with different applied potential"
       WRITE(*,*)""
       !
+      ! find next guess for epcdft_amp
+      !
+      IF(first) THEN
+         !
+         first = .FALSE.
+         !
+         next_epcdft_amp = epcdft_amp - SIGN(0.001D0, enumerr) 
+         !
+      ELSE
+         !
+         CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
+                            einwell,         last_einwell, epcdft_electrons)
+         !
+      ENDIF
+      !
+      ! save this iteration's einwell and amp
+      ! for the next iteration
+      last_einwell    = einwell
+      last_epcdft_amp = epcdft_amp
+      !
+      ! The old iteration has passed away;
+      ! behold, the new iteration has come 
+      epcdft_amp = next_epcdft_amp
+      !
     ENDIF
-    !
-    ! find next guess for epcdft_amp
-    !
-    IF(first) THEN
-       !
-       first = .FALSE.
-       !
-       next_epcdft_amp = epcdft_amp - SIGN(0.001D0, enumerr) 
-       !
-    ELSE
-       !
-       CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
-                          einwell,         last_einwell, epcdft_electrons)
-       !
-    ENDIF
-    !
-    ! save this iteration's einwell and amp
-    ! for the next iteration
-    last_einwell    = einwell
-    last_epcdft_amp = epcdft_amp
-    !
-    ! The old iteration has passed away;
-    ! behold, the new iteration has come 
-    epcdft_amp = next_epcdft_amp
     !
     CALL mp_bcast( epcdft_amp, ionode_id, intra_image_comm ) ! what is best bcast this or enumerr?
     !

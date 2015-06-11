@@ -2,6 +2,7 @@
   calculation  = "scf",
   prefix       = "h2o",
   outdir       = "./out",
+  pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,
   tefield      = .true.
 /

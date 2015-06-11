@@ -2,6 +2,7 @@
   calculation  = "scf",
   prefix       = "zn",
   outdir       = "./out",
+  pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,
   tefield      = .true.
   verbosity = "high" 
