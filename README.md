@@ -22,6 +22,7 @@ This README would normally document whatever steps are necessary to get your app
 * epcdft_width - radius of potential well in bohr (for only one atom)
 * epcdft_amp - strength of potential in Ry a.u.
 * epcdft_electrons - number of electrons needed in well
+* epcdft_thr - threshold on number of electrons in well (default 1.D-4)
 * examples in test - run all using make
 
 ### Contribution guidelines ###
