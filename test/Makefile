@@ -1,4 +1,4 @@
-testdirs:= zn silane zero
+testdirs:= zn silane 
 all:
 	for d in $(testdirs); do (cd $$d; $(MAKE)); done
 clean:
