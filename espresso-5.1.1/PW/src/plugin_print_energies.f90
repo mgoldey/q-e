@@ -55,7 +55,7 @@ SUBROUTINE plugin_print_energies()
   !
   ! local variables
   !
-  INTEGER  :: i, is 
+  INTEGER  :: i, is, iatom
   REAL(DP) :: tmp
   REAL(DP) :: dv
   REAL(DP) :: einwell                              ! number of electrons in well
@@ -149,9 +149,29 @@ SUBROUTINE plugin_print_energies()
         !
         einwell = einwell + rhosup(i) * dv
         !
+	  ELSE
+	  	!
+        einwell = einwell - rhosup(i) * dv
+        !
       ENDIF
+
       !
     ENDDO
+	DO iatom=1, nat
+		IF (fragment_atom2.ne.0) THEN
+			IF ((iatom.ge.fragment_atom1) .AND. (iatom.le.fragment_atom2) ) THEN
+				einwell = einwell - zv(ityp(iatom))
+			ELSE
+				einwell = einwell + zv(ityp(iatom))
+			ENDIF
+		ELSE
+			IF (iatom.eq.fragment_atom1) THEN
+				einwell = einwell - zv(ityp(iatom))
+			ELSE
+				einwell = einwell + zv(ityp(iatom))
+			ENDIF
+		ENDIF
+	ENDDO
     !
     ! the correction is - of the energy
     epcdft_shift = -1.D0 * epcdft_shift

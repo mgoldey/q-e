@@ -20,13 +20,14 @@
   fragment_atom1    = 1,
   fragment_atom2    = 1,
   epcdft_amp        = -3.8717E-01,
-  epcdft_electrons  = 12,
+  epcdft_electrons  = 1.,
   epcdft_width = 2.5
+  epcdft_thr = 1e-6
 /
 &ELECTRONS
  ! startingpot = 'file'
  ! startingwfc = 'file'
-  conv_thr    = 1.D-8,
+  conv_thr    = 1.D-10,
   mixing_beta = 0.30,
 /
 K_POINTS {Gamma}
