@@ -221,6 +221,7 @@ MODULE read_namelists_module
        epcdft_width = 0.0_DP
        epcdft_shift = 0.0_DP
        epcdft_thr = 1.0D-4
+       epcdft_old_amp = 0.0_DP
 
        !
        !  ... postprocessing of DOS & phonons & el-ph
@@ -796,6 +797,7 @@ MODULE read_namelists_module
        CALL mp_bcast( epcdft_electrons,       ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_shift,           ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_thr,             ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_old_amp,             ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_width,           ionode_id, intra_image_comm )
 
        CALL mp_bcast( la2F,                   ionode_id, intra_image_comm )

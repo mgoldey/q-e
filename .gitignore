@@ -13,3 +13,5 @@ config.*
 *.sys
 foo
 configure.msg
+*.swp
+CRASH

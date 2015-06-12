@@ -35,3 +35,11 @@ This README would normally document whatever steps are necessary to get your app
 
 * Repo owner or admin
 * Other community or team contact
+
+
+### What to do if it doesn't work? ###
+* Try diagonalization='cg'
+* Try fewer electrons - compare with the N-1 electron system?
+* Reduce beta mixing parameter
+
+

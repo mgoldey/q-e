@@ -374,6 +374,9 @@ CONTAINS
     CASE ( 'epcdft_thr' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, epcdft_thr, ierr = ierr )
        !
+    CASE ( 'epcdft_old_amp' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_old_amp, ierr = ierr )
+       !
     CASE ( 'etot_conv_thr' )
        CALL iotk_scan_dat_inside( xmlinputunit, etot_conv_thr, ierr = ierr )
        !

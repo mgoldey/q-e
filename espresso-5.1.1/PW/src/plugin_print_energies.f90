@@ -241,6 +241,9 @@ SUBROUTINE plugin_print_energies()
          !
          CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
                             einwell,         last_einwell, epcdft_electrons)
+         if (abs(next_epcdft_amp) .gt. abs(epcdft_amp)*1.1) THEN
+         	next_epcdft_amp=epcdft_amp*1.1
+         ENDIF
          !
       ENDIF
       !

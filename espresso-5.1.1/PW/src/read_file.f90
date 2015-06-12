@@ -93,7 +93,7 @@ SUBROUTINE read_xml_file()
   USE ktetra,               ONLY : tetra, ntetra 
   USE extfield,             ONLY : forcefield, tefield
   USE epcdft,               ONLY : do_epcdft, fragment_atom1, fragment_atom2, &
-                            epcdft_amp, epcdft_width, epcdft_shift,epcdft_thr
+              epcdft_amp, epcdft_width, epcdft_shift,epcdft_thr, epcdft_old_amp
   USE cellmd,               ONLY : cell_factor, lmovecell
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
