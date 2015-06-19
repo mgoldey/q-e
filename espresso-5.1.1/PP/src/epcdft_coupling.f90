@@ -228,7 +228,8 @@ PROGRAM epcdft_coupling
   fragment_atom2=fragment1_atom2
   write(*,*) fragment_atom1, fragment_atom2
   epcdft_amp=fragment1_amp
-  CALL add_efield( vxp1, dtmp, rho%of_r, .true. )
+  CALL add_efield( vxp1(:,1), dtmp, rho%of_r, .true. )
+  CALL add_efield( vxp1(:,2), dtmp, rho%of_r, .true. )
   ! write(*,*) "VXP1", vxp1(1:5)
   !
   ! gather the potentials

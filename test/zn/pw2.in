@@ -1,7 +1,7 @@
 &CONTROL
   calculation  = "scf",
   prefix       = "zn",
-  outdir       = "./out",
+  outdir       = "./out2",
   pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,
   tefield      = .true.
@@ -19,9 +19,9 @@
   tot_magnetization = 1
   fragment_atom1    = 1,
   fragment_atom2    = 1,
-  epcdft_amp        = -6.0E-01,
+  epcdft_amp        = 0.0,
   epcdft_electrons  = 1.,
-  !epcdft_width = 2.5
+!  epcdft_width = 2.5
   epcdft_thr = 1e-6
 /
 &ELECTRONS

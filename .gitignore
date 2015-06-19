@@ -5,7 +5,7 @@
 make.sys
 *.out
 *.tar.gz
-out
+out*
 pwscf.save
 old
 config.*
@@ -15,3 +15,8 @@ foo
 configure.msg
 *.swp
 CRASH
+bin/
+*.wfc*
+*.igk* 
+*.dat
+*.save/*
