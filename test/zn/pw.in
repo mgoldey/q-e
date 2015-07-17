@@ -6,6 +6,7 @@
   do_epcdft    = .true.,
   tefield      = .true.
   verbosity = "high" 
+  wf_collect = .true.
 /
 &SYSTEM
   nosym = .true.
@@ -22,12 +23,12 @@
   epcdft_amp        = -6.0E-01,
   epcdft_electrons  = 1.,
   !epcdft_width = 2.5
-  epcdft_thr = 1e-6
+  epcdft_thr = 1e-4
 /
 &ELECTRONS
  ! startingpot = 'file'
  ! startingwfc = 'file'
-  conv_thr    = 1.D-10,
+  conv_thr    = 1.D-8,
   mixing_beta = 0.30,
 /
 K_POINTS {Gamma}
