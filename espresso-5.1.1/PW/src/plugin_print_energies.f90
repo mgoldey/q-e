@@ -181,7 +181,7 @@ SUBROUTINE plugin_print_energies()
     !
     ! is there a localization condition?
     !
-    IF(epcdft_electrons .NE. 0.D0)THEN
+    IF(epcdft_amp .NE. 0.D0)THEN
       !
       ! is the localization condition satisfied?
       !
@@ -214,7 +214,7 @@ SUBROUTINE plugin_print_energies()
   !
   ! if the charge is not localized
   !
-  IF(.NOT.conv_ions .AND. epcdft_electrons .NE. 0)THEN
+  IF(.NOT.conv_ions .AND. epcdft_amp .NE. 0)THEN
     !
     ! update applied field and restart scf
     !

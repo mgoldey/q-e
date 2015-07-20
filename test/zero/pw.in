@@ -12,7 +12,7 @@
 !  a         = 10,
   nat       = 6,
   ntyp      = 2,
-  ecutwfc   = 90,
+  ecutwfc   = 80,
   tot_charge = 0
   nspin   = 2,
   tot_magnetization = 0

@@ -16,8 +16,8 @@
     tot_magnetization = 0.,
     fragment_atom1    = 1,
     fragment_atom2    = 1,
-    epcdft_amp        = 0.0,
-    epcdft_electrons  = 0.2,
+    epcdft_amp        = 0.1,
+    epcdft_electrons  = 0.0,
     input_dft='pbe'
 /
 &ELECTRONS
