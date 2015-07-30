@@ -17,6 +17,7 @@ This README would normally document whatever steps are necessary to get your app
 ### INPUT Flags ###
 * tefield - needs to be set to .true.
 * do_epcdft - needs to be set to .true.
+* hirshfeld - if set to .true. then hirshfeld partitioning is used rather than voronoi cell (default .false.)
 * fragment_atom1 - atom # to designate start of fragment
 * fragment_atom2 - atom # to designate end of fragment (set to zero if only one atom)
 * epcdft_width - radius of potential well in bohr (for only one atom)
@@ -41,5 +42,3 @@ This README would normally document whatever steps are necessary to get your app
 * Try diagonalization='cg'
 * Try fewer electrons - compare with the N-1 electron system?
 * Reduce beta mixing parameter
-
-
