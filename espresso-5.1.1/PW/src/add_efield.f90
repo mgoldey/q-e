@@ -31,7 +31,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
                             eopreg, forcefield
   USE epcdft,        ONLY : do_epcdft, fragment_atom1, fragment_atom2, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_electrons
+                            epcdft_electrons, hirshfeld
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode
   USE control_flags, ONLY : mixing_beta
@@ -120,30 +120,54 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   ! efield only needs to be added on the first iteration (of each SCF call)
   ! note that for relax calculations it has to be added
   ! again on subsequent relax steps. 
-
+  !
   !---------------------
   !  Variable initialization
   !---------------------
   cm(:) = 0.D0
+  !
+  ! print potential type used for cdft
+  !
   IF (ionode) THEN
     !
     WRITE( stdout,*)
-    if (fragment_atom2 .ne. 0) then
-      write( stdout,'(5x,"Using Voronoi cells")')
-      WRITE( stdout,'(5x,"Adding the potential well":)')
+    !
+    IF (hirshfeld) THEN
+      !
+      WRITE( stdout,'(5x,"Using Hirshfeld")')
       WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
       WRITE( stdout,'(8x,"Fragment start : ", I11.1)') fragment_atom1
       WRITE( stdout,'(8x,"Fragment end   : ", I11.1)') fragment_atom2
       WRITE( stdout,*)     
-    else
-      write( stdout,'(5x,"Using a distance-based cell")')
-      WRITE( stdout,'(5x,"Adding the potential well":)')
-      WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-      WRITE( stdout,'(8x,"Atom selected : ", I11.1)') fragment_atom1
-      WRITE( stdout,'(8x,"Well size     : ", es11.4)') epcdft_width
-      WRITE( stdout,*)     
-    endif
-  ENDIF
+      !
+    ELSE ! not hirshfeld then voronoi or user well
+      !
+      if (fragment_atom2 .ne. 0) then
+        !
+        write( stdout,'(5x,"Using Voronoi cells")')
+        WRITE( stdout,'(5x,"Adding the potential well":)')
+        WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
+        WRITE( stdout,'(8x,"Fragment start : ", I11.1)') fragment_atom1
+        WRITE( stdout,'(8x,"Fragment end   : ", I11.1)') fragment_atom2
+        WRITE( stdout,*)     
+        !
+      else
+        !
+        write( stdout,'(5x,"Using a distance-based cell")')
+        WRITE( stdout,'(5x,"Adding the potential well":)')
+        WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
+        WRITE( stdout,'(8x,"Atom selected : ", I11.1)') fragment_atom1
+        WRITE( stdout,'(8x,"Well size     : ", es11.4)') epcdft_width
+        WRITE( stdout,*)     
+        !
+      endif ! end if voronoi or user well
+      !
+    ENDIF !end if hirshfeld
+    !
+  ENDIF 
+  !
+  ! end print
+  !
   index0 = 0
 #if defined (__MPI)
   DO i = 1, me_bgrp
