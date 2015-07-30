@@ -359,6 +359,9 @@ CONTAINS
     CASE ( 'fragment_atom2' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, fragment_atom2, ierr = ierr )
        !
+    CASE ( 'hirshfeld' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, hirshfeld, ierr = ierr )
+       !
     CASE ( 'epcdft_electrons' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, epcdft_electrons, ierr = ierr )
        !

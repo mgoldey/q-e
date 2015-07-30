@@ -75,6 +75,7 @@ SUBROUTINE iosys()
   USE epcdft,        ONLY : do_epcdft_       => do_epcdft,        &  
                             fragment_atom1_  => fragment_atom1,   &
                             fragment_atom2_  => fragment_atom2,   &
+                            hirshfeld_       => hirshfeld,        &
                             epcdft_electrons_=> epcdft_electrons, &
                             epcdft_amp_      => epcdft_amp,       &
                             epcdft_width_    => epcdft_width,     &
@@ -248,7 +249,7 @@ SUBROUTINE iosys()
                                one_atom_occupations,                          &
                                esm_bc, esm_efield, esm_w, esm_nfit,           &
                                space_group, uniqueb, origin_choice,           &
-                               rhombohedral
+                               rhombohedral, hirshfeld
   !
   ! ... ELECTRONS namelist
   !
@@ -1103,6 +1104,7 @@ SUBROUTINE iosys()
   do_epcdft_       = do_epcdft        
   fragment_atom1_  = fragment_atom1   
   fragment_atom2_  = fragment_atom2   
+  hirshfeld_       = hirshfeld  
   epcdft_electrons_= epcdft_electrons 
   epcdft_amp_      = epcdft_amp       
   epcdft_width_    = epcdft_width

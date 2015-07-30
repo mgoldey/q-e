@@ -127,8 +127,9 @@ MODULE pw_restart
       USE extfield,             ONLY : tefield, dipfield, edir, &
                                        emaxpos, eopreg, eamp
       USE epcdft,               ONLY : do_epcdft, fragment_atom1,&
-                fragment_atom2, epcdft_electrons, epcdft_amp, &
-                epcdft_width, epcdft_shift, epcdft_thr, epcdft_old_amp
+                                       fragment_atom2, epcdft_electrons, &
+                                       epcdft_amp, epcdft_width, epcdft_shift, &
+                                       epcdft_thr, epcdft_old_amp, hirshfeld
       USE io_rho_xml,           ONLY : write_rho
       USE mp_world,             ONLY : nproc
       USE mp_images,            ONLY : nproc_image
@@ -409,7 +410,7 @@ MODULE pw_restart
 !-------------------------------------------------------------------------------
          !
          CALL qexml_write_epcdft(do_epcdft, fragment_atom1, fragment_atom2, &
-              epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift,     &
+              hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
               epcdft_thr,epcdft_old_amp)
          !
 !
@@ -1694,8 +1695,9 @@ MODULE pw_restart
     SUBROUTINE read_epcdft( ierr )
       !----------------------------------------------------------------------
       !
-      USE epcdft, ONLY : do_epcdft, fragment_atom1, fragment_atom2, epcdft_electrons,&
-                         epcdft_amp, epcdft_width, epcdft_shift, epcdft_thr, epcdft_old_amp
+      USE epcdft, ONLY : do_epcdft, fragment_atom1, fragment_atom2, hirshfeld, &
+                         epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
+                         epcdft_thr, epcdft_old_amp
 
       !
       IMPLICIT NONE
@@ -1708,7 +1710,7 @@ MODULE pw_restart
       !
       IF ( ionode ) THEN
          CALL qexml_read_epcdft(DO_EPCDFT=do_epcdft, FRAGMENT_ATOM1=fragment_atom1, &
-                 FRAGMENT_ATOM2=fragment_atom2, EPCDFT_ELECTRONS=epcdft_electrons, &
+      FRAGMENT_ATOM2=fragment_atom2, HIRSHFELD=hirshfeld, EPCDFT_ELECTRONS=epcdft_electrons, &
       EPCDFT_AMP=epcdft_amp, EPCDFT_WIDTH=epcdft_width, EPCDFT_SHIFT=epcdft_shift, &
       EPCDFT_THR=epcdft_thr, EPCDFT_OLD_AMP=epcdft_old_amp,FOUND=found, IERR=ierr )
       ENDIF
@@ -1726,6 +1728,7 @@ MODULE pw_restart
       CALL mp_bcast( do_epcdft,        ionode_id, intra_image_comm )
       CALL mp_bcast( fragment_atom1,   ionode_id, intra_image_comm )
       CALL mp_bcast( fragment_atom2,   ionode_id, intra_image_comm )
+      CALL mp_bcast( hirshfeld,        ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_electrons, ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_amp,       ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_width,     ionode_id, intra_image_comm )

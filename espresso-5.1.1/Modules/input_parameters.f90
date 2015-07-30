@@ -443,6 +443,7 @@ MODULE input_parameters
           ! parameters for epcdft
         INTEGER  :: fragment_atom1 = 0
         INTEGER  :: fragment_atom2 = 0
+        LOGICAL  :: hirshfeld = .FALSE.
         REAL(DP) :: epcdft_electrons = 0.0_DP
         REAL(DP) :: epcdft_amp = 0.0_DP
         REAL(DP) :: epcdft_width = 0.0_DP
@@ -567,8 +568,8 @@ MODULE input_parameters
              qcutz, q2sigma, lda_plus_U, lda_plus_u_kind,                     &
              Hubbard_U, Hubbard_J, Hubbard_alpha,                             &
              Hubbard_J0, Hubbard_beta, fragment_atom1, fragment_atom2,        &
-             epcdft_electrons, epcdft_amp,epcdft_width,epcdft_shift,          &
-             epcdft_thr,epcdft_old_amp,                                       &
+             hirshfeld, epcdft_electrons, epcdft_amp,epcdft_width,            &
+             epcdft_shift, epcdft_thr,epcdft_old_amp,                         &
              edir, emaxpos, eopreg, eamp, smearing, starting_ns_eigenvalue,   &
              U_projection_type, input_dft, la2F, assume_isolated,             &
              nqx1, nqx2, nqx3, ecutfock,                                      &

@@ -1070,13 +1070,14 @@ CONTAINS
     !
 
     SUBROUTINE qexml_write_epcdft( do_epcdft, fragment_atom1, fragment_atom2, &
-         epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, epcdft_thr,&
-         epcdft_old_amp)
+         hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
+         epcdft_thr, epcdft_old_amp)
       !------------------------------------------------------------------------
       !
       LOGICAL, INTENT(in)   :: do_epcdft      ! 
       INTEGER, INTENT(in)   :: fragment_atom1 ! 
       INTEGER, INTENT(in)   :: fragment_atom2 ! 
+      LOGICAL, INTENT(in)   :: hirshfeld      ! 
       REAL(DP), INTENT(in) :: epcdft_electrons! 
       REAL(DP), INTENT(in) :: epcdft_amp      ! 
       REAL(DP), INTENT(in) :: epcdft_width    ! 
@@ -1092,6 +1093,8 @@ CONTAINS
       CALL iotk_write_dat( ounit, "FRAGMENT_ATOM_START", fragment_atom1)
       !
       CALL iotk_write_dat( ounit, "FRAGMENT_ATOM_END", fragment_atom2)
+      !
+      CALL iotk_write_dat( ounit, "HIRSHFELD", hirshfeld)
       !
       CALL iotk_write_dat( ounit, "FRAGMENT_ELECTRONS", epcdft_electrons )
       !
@@ -2979,14 +2982,15 @@ CONTAINS
     END SUBROUTINE qexml_read_efield
 
     SUBROUTINE qexml_read_epcdft(do_epcdft, fragment_atom1, fragment_atom2,  &
-      & epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, epcdft_thr,&
-      & epcdft_old_amp, found, ierr)
+      & hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
+      & epcdft_thr, epcdft_old_amp, found, ierr)
       IMPLICIT NONE
       !------------------------------------------------------------------------
       !
       LOGICAL, OPTIONAL, INTENT(out)   :: do_epcdft      ! 
       INTEGER, OPTIONAL, INTENT(out)   :: fragment_atom1 ! 
       INTEGER, OPTIONAL, INTENT(out)   :: fragment_atom2 ! 
+      LOGICAL, OPTIONAL, INTENT(out)   :: hirshfeld      ! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_electrons! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_amp      ! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_width    ! 
@@ -2999,6 +3003,7 @@ CONTAINS
       LOGICAL   :: do_epcdft_      ! 
       INTEGER   :: fragment_atom1_ ! 
       INTEGER   :: fragment_atom2_ ! 
+      LOGICAL   :: hirshfeld_      ! 
       REAL(DP) :: epcdft_electrons_! 
       REAL(DP) :: epcdft_amp_      ! 
       REAL(DP) :: epcdft_width_    ! 
@@ -3017,6 +3022,9 @@ CONTAINS
       IF ( ierr /= 0 ) RETURN
       !
       CALL iotk_scan_dat( ounit, "FRAGMENT_ATOM_END", fragment_atom2_, IERR=ierr)
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( ounit, "HIRSHFELD", hirshfeld_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
       CALL iotk_scan_dat( ounit, "FRAGMENT_ELECTRONS", epcdft_electrons_ , IERR=ierr)
@@ -3043,6 +3051,7 @@ CONTAINS
       IF ( present(do_epcdft) )     do_epcdft      = do_epcdft_
       IF ( present(fragment_atom1) )       fragment_atom1     = fragment_atom1_
       IF ( present(fragment_atom2) )       fragment_atom2     = fragment_atom2_
+      IF ( present(hirshfeld) )            hirshfeld     = hirshfeld_
       IF ( present(epcdft_amp) )           epcdft_amp         = epcdft_amp_
       IF ( present(epcdft_width) )           epcdft_width         = epcdft_width_
       IF ( present(epcdft_shift) )           epcdft_shift         = epcdft_shift_

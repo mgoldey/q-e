@@ -216,6 +216,7 @@ MODULE read_namelists_module
        ! epcdft variables
        fragment_atom1 = 0
        fragment_atom2 = 0
+       hirshfeld = .FALSE.
        epcdft_electrons = 0.0_DP
        epcdft_amp = 0.0_DP
        epcdft_width = 0.0_DP
@@ -793,6 +794,7 @@ MODULE read_namelists_module
        ! epcdft variables
        CALL mp_bcast( fragment_atom1,         ionode_id, intra_image_comm )
        CALL mp_bcast( fragment_atom2,         ionode_id, intra_image_comm )
+       CALL mp_bcast( hirshfeld,              ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_amp,             ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_electrons,       ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_shift,           ionode_id, intra_image_comm )
