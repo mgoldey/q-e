@@ -1,34 +1,48 @@
 !
-! Copyright (C) 2010 Quantum ESPRESSO group
-! This file is distributed under the terms of the
-! GNU General Public License. See the file `License'
-! in the root directory of the present distribution,
-! or http://www.gnu.org/copyleft/gpl.txt .
+! ==============================================================
+! Developer info: 
+! Matthew Goldey & Nicholas Brawand
+! The University of Chicago, Institute for Molecular Engineering
+! matthew.goldey@gmail.com nicholasbrawand@gmail.com
+! ==============================================================
 !
 !----------------------------------------------------------------------------
 SUBROUTINE plugin_print_energies()
   !----------------------------------------------------------------------------
   !
-  ! This routine is used for printing energy contrib from plugins
-  ! DO NOT REMOVE THE TAGS ! ***ADDSON_NAME KIND_OF_PATCH***
+  !   CDFT
   !
   !   This routine calculates the correction to the total energy
-  !   and prints it. It also calculates the total number of 
+  !   due to the constraining potential from cdft and prints it. 
+  !   It also calculates the total number of 
   !   electrons within the applied well. If this number is not
-  !   equal to that of eopreg the amplitude of the well is changed
-  !   and the scf loop is restarted. 
+  !   equal to that of epcdft_electrons within epcdft_thr, 
+  !   the amplitude of the well is changed and the scf loop is restarted. 
   !
-  !   edir - atom to center potential well around 
-  !   emaxpos - radius of potential well in alat
-  !   eamp - strength of potential in Ry a.u.
-  !   eopreg - number of electrons that should be in well
+  !   do_epcdft - flag to do cdft
+  !
+  !   fragment_atom1 - first atom in voronoi cell or in acceptor (if hirshfeld)
+  !
+  !   fragment_atom2 - last atom in voronoi cell or in acceptor (if hirshfeld)
+  !                    if zero user defined well is used (not working right now)
+  !
+  !   epcdft_electrons - number of electrons in voronoi cell or on acceptor
+  !
+  !   epcdft_amp - amplitude of voronoi cell or lagrange multiplier for hirshfeld
+  !
+  !   epcdft_width - width of the user defined well (not working right now
+  !
+  !   epcdft_shift -  energy correction to etot due to constraining potential
+  !
+  !   epcdft_thr - threshold on number of electrons to match epcdft_electrons
+  !
+  !   hirshfeld - if .true. hirshfeld is used rather than voronoi cells
   !
   !
   !
-  USE io_global,        ONLY : stdout, ionode
-  USE kinds,            ONLY : DP
-  USE io_files,         ONLY : tmp_dir
-  !
+  USE io_global,     ONLY : stdout, ionode
+  USE kinds,         ONLY : DP
+  USE io_files,      ONLY : tmp_dir
   USE plugin_flags
   USE kinds,         ONLY : DP
   USE constants,     ONLY : fpi, eps8, e2, au_debye
@@ -61,7 +75,7 @@ SUBROUTINE plugin_print_energies()
   REAL(DP) :: einwell                              ! number of electrons in well
   REAL(DP) :: enumerr                              ! epcdft_electrons - einwell  (e number error)
   LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
-  LOGICAL  :: ZERO
+  LOGICAL  :: zero
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotens   ! ef is added to this potential serial
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp   ! ef is added to this potential parll
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosup    ! rho serial
@@ -102,17 +116,21 @@ SUBROUTINE plugin_print_energies()
   next_epcdft_amp = 0.D0
   !
   ! gather the grids for serial calculation
-
-  
-  if (epcdft_amp .eq. 0d0) THEN
+  !
+  IF (epcdft_amp .eq. 0.D0) THEN
     zero=.true.
     epcdft_amp=1d0
   ENDIF
-! this call only calulates vpoten
+  !
+  ! this call only calulates vpoten
+  !
   CALL add_efield(vpotenp(:,1), epcdft_shift, rho%of_r, .true. )
   CALL add_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
-  if (zero) epcdft_amp=0d0
-
+  !
+  IF (zero) epcdft_amp=0.D0
+  !
+  ! gather the grids for serial calculation
+  !
 #ifdef __MPI
     CALL grid_gather ( vpotenp(:,1), vpotens(:,1) )
     CALL grid_gather ( rho%of_r(:,1), rhosup )
@@ -128,9 +146,9 @@ SUBROUTINE plugin_print_energies()
       vpotens(:,2)=vpotenp(:,2)
     ENDIF
 #endif
-
   !
   ! begin calculation of the correction 
+  !
   IF(ionode) THEN
     !
     ! combine up and down parts of rho
@@ -143,7 +161,7 @@ SUBROUTINE plugin_print_energies()
       !
       epcdft_shift = epcdft_shift + (vpotens(i,1)) * rhosup(i) * dv
       !
-      ! count number of electrons in well for localization condition check
+      ! count number of electrons in well 
       !
       IF(hirshfeld) THEN
         ! need number of electrons on 
@@ -165,21 +183,31 @@ SUBROUTINE plugin_print_energies()
       ENDIF
       !
     ENDDO
-	DO iatom=1, nat
-		IF (fragment_atom2.ne.0) THEN
-			IF ((iatom.ge.fragment_atom1) .AND. (iatom.le.fragment_atom2) ) THEN
-				einwell = einwell - zv(ityp(iatom))
-			ELSE
-				einwell = einwell + zv(ityp(iatom))
-			ENDIF
-		ELSE
-			IF (iatom.eq.fragment_atom1) THEN
-				einwell = einwell - zv(ityp(iatom))
-			ELSE
-				einwell = einwell + zv(ityp(iatom))
-			ENDIF
-		ENDIF
-	ENDDO
+    !
+    ! count nuc charge
+    !
+    DO iatom=1, nat
+      !
+      ! user well condition
+      IF (fragment_atom2.ne.0) THEN
+        !
+        IF ((iatom.ge.fragment_atom1) .AND. (iatom.le.fragment_atom2) ) THEN
+          einwell = einwell - zv(ityp(iatom))
+        ELSE
+          einwell = einwell + zv(ityp(iatom))
+        ENDIF
+        !
+      ELSE ! voronoi cells
+        !
+        IF (iatom.eq.fragment_atom1) THEN
+          einwell = einwell - zv(ityp(iatom))
+        ELSE
+          einwell = einwell + zv(ityp(iatom))
+        ENDIF
+        !
+      ENDIF
+      !
+    ENDDO ! atoms
     !
     ! the correction is - of the energy
     epcdft_shift = -1.D0 * epcdft_shift
@@ -194,21 +222,23 @@ SUBROUTINE plugin_print_energies()
       ! is the localization condition satisfied?
       !
       enumerr = epcdft_electrons - einwell 
-        ! conv_ions = false will restart scf
+      !
+      ! conv_ions = false will restart scf
+      !
       IF( ABS(enumerr) .GE. epcdft_thr .and. .not. zero) THEN
-       conv_ions = .FALSE.
-       WRITE(*,*) "    Surplus/deficit electrons    :  ",enumerr, "electrons"
-       WRITE(*,*) "    epcdft_thr                   :  ",epcdft_thr, "electrons"
-      ELSE 
-      !  conv_ions = .TRUE.
+        !
+        conv_ions = .FALSE.
+        !
+        WRITE(*,*) "    Surplus/deficit electrons    :  ", enumerr,    "electrons"
+        WRITE(*,*) "    epcdft_thr                   :  ", epcdft_thr, "electrons"
+        !
       ENDIF
       !
-    ENDIF
+    ENDIF ! localization condition
     !
-  ENDIF
-  ! CALL mp_bcast( enumerr, ionode_id, intra_bgrp_comm )
-
-  if (zero) THEN
+  ENDIF ! io node
+  !
+  IF (zero) THEN
       ! IF(ionode) write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
     conv_ions =.true.
   ENDIF
@@ -249,8 +279,8 @@ SUBROUTINE plugin_print_energies()
          !
          CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
                             einwell,         last_einwell, epcdft_electrons)
-         if (abs(next_epcdft_amp) .gt. abs(epcdft_amp)*1.1) THEN
-         	next_epcdft_amp=epcdft_amp*1.1
+         IF (abs(next_epcdft_amp) .gt. abs(epcdft_amp)*1.1) THEN
+           next_epcdft_amp=epcdft_amp*1.1
          ENDIF
          !
       ENDIF
