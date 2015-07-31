@@ -20,7 +20,7 @@
   tot_magnetization = 1
   fragment_atom1    = 1,
   fragment_atom2    = 1,
-  epcdft_amp        = -6.0E-01,
+  epcdft_amp        = 6.0E-01,
   epcdft_electrons  = 1.,
   epcdft_thr = 1e-4
 /

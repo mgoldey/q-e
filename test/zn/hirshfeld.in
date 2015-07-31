@@ -21,7 +21,7 @@
   hirshfeld = .TRUE.
   fragment_atom1    = 1,
   fragment_atom2    = 1,
-  epcdft_amp        = -3.0E-01,
+  epcdft_amp        = 3.36E-01,
   epcdft_electrons  = 1.,
   epcdft_thr = 1e-4
 /

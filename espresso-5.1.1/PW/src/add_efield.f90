@@ -253,7 +253,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
         ENDIF
       END DO
       IF(on_frag) THEN
-          vpoten(ir) = vpoten(ir) + epcdft_amp
+          vpoten(ir) = vpoten(ir) - epcdft_amp
       ENDIF
     END DO 
   else ! APPLY POTENTIAL WITHIN WELL OF SIZE EPCDFT_WIDTH
