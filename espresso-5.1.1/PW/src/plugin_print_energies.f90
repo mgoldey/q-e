@@ -75,12 +75,13 @@ SUBROUTINE plugin_print_energies()
   REAL(DP) :: einwell                              ! number of electrons in well
   REAL(DP) :: enumerr                              ! epcdft_electrons - einwell  (e number error)
   LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
-  LOGICAL  :: zero
-  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotens   ! ef is added to this potential serial
-  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp   ! ef is added to this potential parll
+  LOGICAL  :: zero                                 ! used to run cdft with zero constraining potential
+  REAL(DP) :: safe_epcdft_amp                      ! used for zero constraining potential run 
+  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotens ! ef is added to this potential serial
+  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp ! ef is added to this potential parll
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosup    ! rho serial
   REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosdown  ! rho serial
-  REAL(DP) :: next_epcdft_amp ! guess of amp for next iteration
+  REAL(DP) :: next_epcdft_amp                      ! guess of amp for next iteration
   !
   ! SAVED VARS
   !
@@ -119,8 +120,10 @@ SUBROUTINE plugin_print_energies()
   !
   IF (epcdft_amp .eq. 0.D0) THEN
     zero=.true.
-    epcdft_amp=1d0
+    epcdft_amp=1.D0 
   ENDIF
+  !
+  safe_epcdft_amp = epcdft_amp
   !
   ! this call only calulates vpoten
   !
@@ -166,11 +169,7 @@ SUBROUTINE plugin_print_energies()
       IF(hirshfeld) THEN
         ! need number of electrons on 
         ! acceptor so negetive of vpotens is used
-        IF (vpotens(i,1).lt.0d0) THEN
-          einwell = einwell +  rhosup(i) * dv
-        ELSE 
-          einwell = einwell -  rhosup(i) * dv
-        ENDIF
+        einwell = einwell - ( vpotens(i,1) / safe_epcdft_amp ) * rhosup(i) * dv
         !
       ELSE
         !
@@ -212,7 +211,7 @@ SUBROUTINE plugin_print_energies()
     ! the correction is - of the energy
     epcdft_shift = -1.D0 * epcdft_shift
     !
-    if (.not.zero) WRITE(*,*)"    E field correction : ",epcdft_shift," Ry"
+    IF (.not.zero) WRITE(*,*)"    E field correction : ",epcdft_shift," Ry"
     WRITE(*,*)"    #e's   in well     : ",einwell," electrons"
     !
     ! is there a localization condition?
