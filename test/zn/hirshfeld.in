@@ -21,9 +21,9 @@
   hirshfeld = .TRUE.
   fragment_atom1    = 1,
   fragment_atom2    = 1,
-  epcdft_amp        = 3.36E-01,
+  epcdft_amp        = 3.30E-01,
   epcdft_electrons  = 1.,
-  epcdft_thr = 1e-4
+  epcdft_thr = 5.0E-03
 /
 &ELECTRONS
  ! startingpot = 'file'
