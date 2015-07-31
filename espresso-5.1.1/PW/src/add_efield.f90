@@ -13,13 +13,32 @@
 SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !--------------------------------------------------------------------------
   !
-  !   This routine adds stuff to the local potential. 
+  !   This routine adds constraining potential for cdft to the local potential. 
   !
-  !   fragment_atom1 - first atom in fragment to center potential well around 
-  !   fragment_atom2 - last atom  in fragment to center potential well around 
-  !   epccdft_width  - radius of potential well in alat
-  !   epcdft_amp - strength of potential in Ry a.u.
-  !   epcdft_electrons - number of electrons that should be in well
+  !   Voronoi cells:
+  !
+  !     fragment_atom1 - first atom in fragment to center potential well around 
+  !     fragment_atom2 - last atom  in fragment to center potential well around 
+  !     epcdft_amp - strength of potential in Ry a.u.
+  !     epcdft_electrons - number of electrons that should be in well
+  !
+  !   User defined well around single atom:
+  !
+  !     fragment_atom1 - only atom to center potential well around 
+  !     fragment_atom2 - = 0
+  !     epccdft_width  - radius of potential well in alat
+  !     epcdft_amp - strength of potential in Ry a.u.
+  !     epcdft_electrons - number of electrons that should be in well
+  !
+  !   Hirshfeld partitioning following :
+  !
+  !     J. Chem. Phys. 133, 244105 (2010); http://dx.doi.org/10.1063/1.3507878 
+  !     eqs. 6 & 7
+  !
+  !     fragment_atom1 - first atom in fragment in acceptor
+  !     fragment_atom2 - last atom  in fragment in acceptor (all others are donors)
+  !     epcdft_amp - strength of potential in Ry a.u. 
+  !     epcdft_electrons - ?? not sure yet
   !
   !
   !
@@ -73,7 +92,8 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   INTEGER :: ix(-1:1),iy(-1:1),iz(-1:1)
   REAL( DP ), DIMENSION( :, : ), ALLOCATABLE :: gradtmp
   REAL( DP ), DIMENSION( :, : ), ALLOCATABLE :: grad
-
+  REAL(DP) :: hirshv(dfftp%nnr) ! constraining potential from hirshfeld partitioning
+  !
   LOGICAL :: first=.TRUE.
   SAVE first
   !
@@ -124,6 +144,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   !---------------------
   !  Variable initialization
   !---------------------
+  !
   cm(:) = 0.D0
   !
   ! print potential type used for cdft
@@ -136,8 +157,8 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
       !
       WRITE( stdout,'(5x,"Using Hirshfeld")')
       WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-      WRITE( stdout,'(8x,"Fragment start : ", I11.1)') fragment_atom1
-      WRITE( stdout,'(8x,"Fragment end   : ", I11.1)') fragment_atom2
+      WRITE( stdout,'(8x,"Acceptor Fragment start : ", I11.1)') fragment_atom1
+      WRITE( stdout,'(8x,"Acceptor Fragment end   : ", I11.1)') fragment_atom2
       WRITE( stdout,*)     
       !
     ELSE ! not hirshfeld then voronoi or user well
@@ -167,6 +188,16 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   ENDIF 
   !
   ! end print
+  !
+  ! calculate hirshfeld potential array
+  !
+  IF (hirshfeld) THEN 
+    CALL calc_hirshfeld_v(hirshv, dfftp%nnr)
+    vpoten = vpoten + epcdft_amp * hirshv
+    RETURN
+  ENDIF
+  !
+  !
   !
   index0 = 0
 #if defined (__MPI)
@@ -270,3 +301,121 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
   RETURN
   !
 END SUBROUTINE add_efield
+!
+!
+!
+!--------------------------------------------------------------------------
+SUBROUTINE calc_hirshfeld_v( v, n )
+  !--------------------------------------------------------------------------
+  ! 
+  !  Gamma only
+  !
+  !  calculate hirshfeld potential and put into v following :
+  !
+  !     J. Chem. Phys. 133, 244105 (2010); http://dx.doi.org/10.1063/1.3507878 
+  !     eqs. 6 & 7
+  !
+  USE kinds,                ONLY : DP
+  USE control_flags,        ONLY : gamma_only
+  USE basis,                ONLY : natomwfc
+  USE wvfct,                ONLY : npw, npwx, ecutwfc, igk, g2kin
+  USE klist,                ONLY : xk, nks
+  USE gvect,                ONLY : ngm, g
+  USE cell_base,            ONLY : tpiba2
+  USE uspp_param,           ONLY : upf
+  USE ions_base,            ONLY : nat, ityp
+  USE epcdft,               ONLY : fragment_atom1, fragment_atom2
+  USE fft_base,             ONLY : dfftp, dffts
+  USE gvect,                ONLY : nl, nlm
+  USE gvecs,                ONLY : nls, nlsm
+  USE fft_interfaces,       ONLY : invfft
+  USE wavefunctions_module, ONLY : psic
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP), INTENT(INOUT) :: v(n) ! the hirshfeld potential
+  INTEGER, INTENT(IN) :: n
+  ! 
+  INTEGER :: s, na, nt, nb, l, m
+  COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g
+  COMPLEX(DP), ALLOCATABLE :: wfcatomr (:,:) ! atomic wfcs in r
+  INTEGER :: orbi ! orbital index for wfcatom
+  REAL(DP) :: orboc ! occupation of orbital
+  COMPLEX(DP) :: vtop(n) ! top of the hirshfeld potential fraction
+  COMPLEX(DP) :: vbot(n) ! bottom of the hirshfeld potential fraction
+  !
+  ALLOCATE( wfcatomg(npwx, natomwfc) )
+  ALLOCATE( wfcatomr(n, natomwfc) )
+  !
+  wfcatomg = 0.D0
+  wfcatomr = 0.D0
+  vtop = 0.D0
+  vbot = 0.D0
+  v = 0.D0
+  psic = 0.D0
+  orbi = 0 
+  !
+  ! load atomic wfcs
+  CALL gk_sort (xk (1, 1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
+  CALL atomic_wfc (1, wfcatomg) 
+  !
+  ! convert atomic(g) -> |atomic(r)|^2
+  DO s = 1, natomwfc
+    !
+    wfcatomr(nl(igk(1:npw)),s)  = wfcatomg(1:npw,s)
+    IF(gamma_only) wfcatomr(nlm(igk(1:npw)),s) = CONJG( wfcatomg(1:npw,s) )
+    !
+    CALL invfft ('Dense', wfcatomr(:,s), dfftp)
+    wfcatomr(:,s) = wfcatomr(:,s) * CONJG(wfcatomr(:,s))
+    !
+  ENDDO
+  !
+  ! construct hirshfeld looping over all atomic states
+  !
+  !
+  DO na = 1, nat ! for each atom
+    nt = ityp (na) ! get atom type
+    DO nb = 1, upf(nt)%nwfc ! for each orbital
+      l = upf(nt)%lchi(nb) ! get l 
+      DO m = 1, 2*l+1 ! mag num
+        !  
+        ! add all orbitals 
+        ! each state weighted by orboc
+        !  
+        orbi = orbi + 1 ! update orbital index
+        !  
+        orboc = REAL( upf(nt)%oc(nb) ,KIND=DP) / REAL( 2*l+1 ,KIND=DP)
+        !
+        IF( na >= fragment_atom1 .and. na <= fragment_atom2 )THEN ! atom in acceptor
+          !
+          vtop(:) = vtop(:) - orboc * wfcatomr( : , orbi ) 
+          !
+        ELSE ! atom in donor
+          ! 
+          vtop(:) = vtop(:) + orboc * wfcatomr( : , orbi ) 
+          !
+        ENDIF 
+        !
+        vbot(:) = vbot(:) + orboc * wfcatomr( : , orbi ) 
+        !
+        !
+        !
+      ENDDO ! m
+    ENDDO ! l 
+  ENDDO ! atom
+  !
+  ! combine vtop and vbot and fft to v(r)
+  !
+  vtop = vtop / vbot
+  !
+  v(:) = REAL(vtop(:),KIND=DP)
+  !
+  !call write_wfc_cube_r ( 84332, 'v',  v )
+  !
+  DEALLOCATE( wfcatomg )
+  DEALLOCATE( wfcatomr )
+  !
+  RETURN
+  !
+END SUBROUTINE calc_hirshfeld_v
+!
