@@ -39,7 +39,7 @@ SUBROUTINE plugin_print_energies()
   USE epcdft,        ONLY : do_epcdft, fragment_atom1, &
                             fragment_atom2, epcdft_electrons, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_thr
+                            epcdft_thr, hirshfeld
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -145,16 +145,20 @@ SUBROUTINE plugin_print_energies()
       !
       ! count number of electrons in well for localization condition check
       !
-      IF(vpotens(i,1) .NE. 0.D0)THEN
+      IF(hirshfeld) THEN
+        ! need number of electrons on 
+        ! acceptor so negetive of vpotens is used
+        einwell = einwell - vpotens(i,1) * rhosup(i) * dv
         !
-        einwell = einwell + rhosup(i) * dv
+      ELSE
         !
-	  ELSE
-	  	!
-        einwell = einwell - rhosup(i) * dv
+        IF(vpotens(i,1) .NE. 0.D0)THEN
+          einwell = einwell + rhosup(i) * dv
+        ELSE
+          einwell = einwell - rhosup(i) * dv
+        ENDIF
         !
       ENDIF
-
       !
     ENDDO
 	DO iatom=1, nat
