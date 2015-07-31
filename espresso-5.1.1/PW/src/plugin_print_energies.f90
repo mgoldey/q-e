@@ -272,7 +272,7 @@ SUBROUTINE plugin_print_energies()
          !
          first = .FALSE.
          !
-         next_epcdft_amp = epcdft_amp - SIGN(0.001D0, enumerr) 
+         next_epcdft_amp = epcdft_amp + SIGN(0.001D0, enumerr) 
          !
       ELSE
          !

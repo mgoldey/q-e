@@ -276,7 +276,7 @@ SUBROUTINE add_efield(vpoten,etotefield,rho,iflag)
       myr(:) = MATMUL( at(:,:), s(:) )
       dist = SQRT( SUM( myr * myr ) )*alat
       IF(dist .le. epcdft_width) THEN
-        vpoten(ir) = vpoten(ir) + epcdft_amp
+        vpoten(ir) = vpoten(ir) - epcdft_amp
       ENDIF
     END DO 
   ENDIF
