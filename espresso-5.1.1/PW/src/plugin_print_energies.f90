@@ -148,7 +148,11 @@ SUBROUTINE plugin_print_energies()
       IF(hirshfeld) THEN
         ! need number of electrons on 
         ! acceptor so negetive of vpotens is used
-        einwell = einwell - vpotens(i,1) * rhosup(i) * dv
+        IF (vpotens(i,1).lt.0d0) THEN
+          einwell = einwell +  rhosup(i) * dv
+        ELSE 
+          einwell = einwell -  rhosup(i) * dv
+        ENDIF
         !
       ELSE
         !

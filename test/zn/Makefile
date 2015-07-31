@@ -1,18 +1,22 @@
-all: pw.out pw_rerun.out pw2.out coupling.out pp.out
+include ../Makefile.inc
+all: hirshfeld.out voronoi.out zero.out well.out
 clean: 
-	rm -rf out out2 pw.out pw2.out coupling.out pp.out wfc_spin1_band12 wfc_spin1_band12.cube
+	rm -rf out hirshfeld.out voronoi.out zero.out well.out
 
-pw.out: pw.in
-	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin/pw.x < $^ > $@
+hirshfeld.out: hirshfeld.in 
+	$(QE_CMD) < $^ > $@
 
-pw_rerun.out: pw_rerun.in
-	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin/pw.x < $^ > $@
+voronoi.out: voronoi.in
+	$(QE_CMD) < $^ > $@
 
-pw2.out: pw2.in
-	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin/pw.x < $^ > $@
+zero.out: zero.in
+	$(QE_CMD) < $^ > $@
 
-coupling.out: coupling.in
-	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin//epcdft_coupling.x < $^ > $@
+well.out: well.in
+	$(QE_CMD) < $^ > $@
 
-pp.out: pp.in
-	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin/pp.x < $^ > $@
+#coupling.out: coupling.in
+#	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin//epcdft_coupling.x < $^ > $@
+
+#pp.out: pp.in
+#	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin/pp.x < $^ > $@
