@@ -15,14 +15,13 @@ This README would normally document whatever steps are necessary to get your app
 * make pw
 
 ### INPUT Flags ###
-* tefield - needs to be set to .true.
 * do_epcdft - needs to be set to .true.
 * hirshfeld - if set to .true. then hirshfeld partitioning is used rather than voronoi cell (default .false.)
 * fragment_atom1 - atom # to designate start of fragment
 * fragment_atom2 - atom # to designate end of fragment (set to zero if only one atom)
 * epcdft_width - radius of potential well in bohr (for only one atom)
 * epcdft_amp - strength of potential in Ry a.u.
-* epcdft_electrons - number of electrons needed in well
+* epcdft_electrons - charge difference between inside the well/acceptor and outside. Example: epcdft_electrons = 1 will force one additional electron in well/on acceptor
 * epcdft_thr - threshold on number of electrons in well (default 1.D-4)
 * examples in test - run all using make
 
