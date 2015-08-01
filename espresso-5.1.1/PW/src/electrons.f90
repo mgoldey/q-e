@@ -1029,26 +1029,18 @@ SUBROUTINE electrons_scf ( no_printout )
      SUBROUTINE print_energies ( )
        !-----------------------------------------------------------------------
        !
-       USE constants, ONLY : eps8
+       USE constants,     ONLY : eps8
        USE control_flags, ONLY : lmd
-       USE extfield,             ONLY : eopreg
-       USE epcdft,             ONLY : do_epcdft,epcdft_electrons, epcdft_shift
+       USE extfield,      ONLY : eopreg
+       USE epcdft,        ONLY : do_epcdft
        !
        IF(do_epcdft) THEN
         WRITE( stdout, 9060 ) &
         ( eband + deband ), ehart, ( etxc - etxcc ), ewld
        ENDIF
+       !
        IF ( ( conv_elec .OR. MOD( iter, iprint ) == 0 ) .AND. .NOT. lmd ) THEN
           !
-
-          !
-          ! plugin is called in run_pwscf if electrons is
-          ! not zero meaning eamp is self consistent
-          !IF(do_epcdft) CALL plugin_print_energies()
-          !
-          ! etot=etot+epcdft_shift
-          !
-
           IF ( dr2 > eps8 ) THEN
              WRITE( stdout, 9081 ) etot, hwf_energy, dr2
           ELSE
@@ -1089,7 +1081,9 @@ SUBROUTINE electrons_scf ( no_printout )
              WRITE( stdout, 9082 ) etot, hwf_energy, dr2
           END IF
        END IF
-
+       !
+       CALL plugin_print_energies()
+       !
        IF ( lsda ) WRITE( stdout, 9017 ) magtot, absmag
        !
        IF ( noncolin .AND. domag ) &

@@ -1223,6 +1223,10 @@ plugin_print_energies.o : ../../Modules/io_files.o
 plugin_print_energies.o : ../../Modules/io_global.o
 plugin_print_energies.o : ../../Modules/kind.o
 plugin_print_energies.o : ../../Modules/plugin_flags.o
+epcdft.o : ../../Modules/io_files.o
+epcdft.o : ../../Modules/io_global.o
+epcdft.o : ../../Modules/kind.o
+epcdft.o : ../../Modules/plugin_flags.o
 plugin_read_input.o : ../../Modules/input_parameters.o
 plugin_read_input.o : ../../Modules/plugin_flags.o
 plugin_scf_energy.o : ../../Modules/fft_base.o

@@ -37,7 +37,6 @@ SUBROUTINE run_pwscf ( exit_status )
   USE mp,               ONLY : mp_bcast, mp_sum
   USE qmmm,             ONLY : qmmm_initialization, qmmm_shutdown, &
                                qmmm_update_positions, qmmm_update_forces
-  USE extfield,         ONLY : tefield
   USE epcdft,           ONLY : do_epcdft
   !
   IMPLICIT NONE
@@ -128,16 +127,12 @@ SUBROUTINE run_pwscf ( exit_status )
      ! ... send out forces to MM code in QM/MM run
      !
      CALL qmmm_update_forces(force)
-
      !
-     ! check if charge is localized if not conv_ion set to false
+     ! epcdft check if charge is localized if not conv_ion set to false
      !
      conv_ions = .TRUE.  !MBG changed this
-     
-     IF(do_epcdft) CALL plugin_print_energies()
-
-	 CALL mp_bcast( conv_ions, ionode_id, intra_image_comm )
-     
+     IF(do_epcdft) CALL epcdft_controller()
+     CALL mp_bcast( conv_ions, ionode_id, intra_image_comm )
      !
      IF (do_epcdft .and. .not. conv_ions ) THEN
       CALL hinit1()
@@ -173,7 +168,7 @@ SUBROUTINE run_pwscf ( exit_status )
      ! ... terms of the hamiltonian depending upon nuclear positions
      ! ... are reinitialized here
      !
-     IF ( lmd .OR. lbfgs .OR. tefield .OR. do_epcdft ) CALL hinit1()
+     IF ( lmd .OR. lbfgs .OR. do_epcdft ) CALL hinit1()
      !
   END DO main_loop
   !

@@ -144,6 +144,7 @@ paw_init.o \
 paw_onecenter.o \
 paw_symmetry.o \
 plugin_print_energies.o \
+epcdft.o \
 plugin_scf_energy.o \
 plugin_scf_potential.o \
 plugin_init_ions.o \
