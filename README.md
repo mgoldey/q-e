@@ -21,8 +21,7 @@ This README would normally document whatever steps are necessary to get your app
 * fragment_atom2 - atom # to designate end of fragment (set to zero if only one atom)
 * epcdft_width - radius of potential well in bohr (for only one atom)
 * epcdft_amp - strength of potential in Ry a.u.
-* epcdft_electrons - charge difference between inside the well/acceptor and outside
-*                    epcdft_electrons = 1 will force one additional electron in well/on acceptor
+* epcdft_electrons - charge difference between inside the well/acceptor and outside. Example: epcdft_electrons = 1 will force one additional electron in well/on acceptor
 * epcdft_thr - threshold on number of electrons in well (default 1.D-4)
 * examples in test - run all using make
 
