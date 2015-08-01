@@ -4,7 +4,6 @@
   outdir       = "./out2",
   pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,
-  tefield      = .true.
   verbosity = "high" 
 /
 &SYSTEM

@@ -4,7 +4,6 @@
   outdir       = "./out",
   pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,
-  tefield      = .true.
   verbosity = "high" 
   wf_collect = .true.
 /

@@ -127,8 +127,8 @@ SUBROUTINE plugin_print_energies()
   !
   ! this call only calulates vpoten
   !
-  CALL add_efield(vpotenp(:,1), epcdft_shift, rho%of_r, .true. )
-  CALL add_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
+  CALL add_epcdft_efield(vpotenp(:,1), epcdft_shift, rho%of_r, .true. )
+  CALL add_epcdft_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
   !
   IF (zero) epcdft_amp=0.D0
   !

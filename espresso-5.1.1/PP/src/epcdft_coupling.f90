@@ -222,14 +222,14 @@ PROGRAM epcdft_coupling
                           occ(1,1), occ(1,2), occ(2,1), occ(2,2), debug,  s_spin, det_by_zgedi )
   !
   ! this call only calulates vpoten
-  ! write(*,*) "CALLING add_efield"
+  ! write(*,*) "CALLING add_epcdft_efield"
   do_epcdft=.true.
   fragment_atom1=fragment1_atom1
   fragment_atom2=fragment1_atom2
   write(*,*) fragment_atom1, fragment_atom2
   epcdft_amp=fragment1_amp
-  CALL add_efield( vxp1(:,1), dtmp, rho%of_r, .true. )
-  CALL add_efield( vxp1(:,2), dtmp, rho%of_r, .true. )
+  CALL add_epcdft_efield( vxp1(:,1), dtmp, rho%of_r, .true. )
+  CALL add_epcdft_efield( vxp1(:,2), dtmp, rho%of_r, .true. )
   ! write(*,*) "VXP1", vxp1(1:5)
   !
   ! gather the potentials

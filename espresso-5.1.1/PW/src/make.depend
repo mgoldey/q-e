@@ -27,6 +27,17 @@ add_efield.o : ../../Modules/mp.o
 add_efield.o : ../../Modules/mp_bands.o
 add_efield.o : ../../Modules/mp_images.o
 add_efield.o : pwcom.o
+add_epcdft_efield.o : ../../Modules/cell_base.o
+add_epcdft_efield.o : ../../Modules/constants.o
+add_epcdft_efield.o : ../../Modules/control_flags.o
+add_epcdft_efield.o : ../../Modules/fft_base.o
+add_epcdft_efield.o : ../../Modules/io_global.o
+add_epcdft_efield.o : ../../Modules/ions_base.o
+add_epcdft_efield.o : ../../Modules/kind.o
+add_epcdft_efield.o : ../../Modules/mp.o
+add_epcdft_efield.o : ../../Modules/mp_bands.o
+add_epcdft_efield.o : ../../Modules/mp_images.o
+add_epcdft_efield.o : pwcom.o
 add_paw_to_deeq.o : ../../Modules/ions_base.o
 add_paw_to_deeq.o : ../../Modules/kind.o
 add_paw_to_deeq.o : ../../Modules/paw_variables.o

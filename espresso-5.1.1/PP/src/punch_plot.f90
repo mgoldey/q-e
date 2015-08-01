@@ -37,6 +37,7 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
   USE noncollin_module, ONLY : noncolin
   USE fft_base,         ONLY : grid_gather
   USE paw_postproc,     ONLY : PAW_make_ae_charge
+  USE epcdft,           ONLY : do_epcdft
 
   IMPLICIT NONE
   CHARACTER(len=*) :: filplot
@@ -207,6 +208,7 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
      ENDIF
      CALL v_h (rho%of_g, ehart, charge, raux)
      IF (tefield.and.dipfield) CALL add_efield(raux,dummy,rho%of_r,.true.)
+     IF (do_epcdft) CALL add_epcdft_efield(raux,dummy,rho%of_r,.true.)
 
   ELSEIF (plot_num == 12) THEN
 

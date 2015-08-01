@@ -4,7 +4,7 @@
   outdir       = "./out",
   pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,
-  tefield      = .true.
+  
   verbosity = "high" 
   wf_collect = .true.
 /
@@ -23,7 +23,7 @@
   fragment_atom2    = 1,
   epcdft_amp        = 3.30E-01,
   epcdft_electrons  = 1.,
-  epcdft_thr = 5.0E-03
+  epcdft_thr = 1.0E-02
 /
 &ELECTRONS
  ! startingpot = 'file'
