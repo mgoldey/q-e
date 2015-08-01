@@ -15,7 +15,6 @@ This README would normally document whatever steps are necessary to get your app
 * make pw
 
 ### INPUT Flags ###
-* tefield - needs to be set to .true.
 * do_epcdft - needs to be set to .true.
 * hirshfeld - if set to .true. then hirshfeld partitioning is used rather than voronoi cell (default .false.)
 * fragment_atom1 - atom # to designate start of fragment
