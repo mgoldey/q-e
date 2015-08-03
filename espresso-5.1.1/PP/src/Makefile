@@ -49,7 +49,10 @@ xk_et_collect.o \
 write_io_header.o \
 wannier_hamiltonians.o \
 wannier_umatrix_subroutines.o \
-wannier_u_matrix.o
+wannier_u_matrix.o \
+epcdft_mod.o \
+epcdft_get_s.o \
+epcdft_setup.o
 
 PWOBJS = ../../PW/src/libpw.a
 QEOBJS = ../../Modules/libqemod.a
@@ -64,7 +67,7 @@ all : tldeps average.x bands.x dos.x epsilon.x initial_state.x \
       plan_avg.x plotband.x plotproj.x plotrho.x pmw.x pp.x projwfc.x \
       pawplot.x sumpdos.x pw2wannier90.x pw_export.x pw2gw.x \
       wannier_ham.x wannier_plot.x \
-      pw2bgw.x bgw2pw.x wfck2r.x epcdft_coupling.x
+      pw2bgw.x bgw2pw.x wfck2r.x epcdft_coupling.x 
 
 
 libpp.a : $(PPOBJS) 
