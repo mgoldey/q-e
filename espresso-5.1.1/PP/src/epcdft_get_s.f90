@@ -13,8 +13,6 @@ SUBROUTINE epcdft_get_s
   USE klist, ONLY : xk
   USE epcdft_mod, ONLY : evc2, iunwfc2, occup1, occdown1, smat
   USE gvect, ONLY : ngm, g
-  USE becmod, ONLY : calbec
-  USE control_flags, ONLY : gamma_only
   !
   IMPLICIT NONE
   !
@@ -24,7 +22,7 @@ SUBROUTINE epcdft_get_s
   REAL(DP), ALLOCATABLE :: r_s_aux(:,:) ! real overlap matrix S_ij = <system 1_i | system 2_j>
   !
   ALLOCATE( c_s_aux(nbnd,nbnd) )
-  IF( gamma_only ) ALLOCATE( r_s_aux(nbnd,nbnd) )
+  ALLOCATE( r_s_aux(nbnd,nbnd) )
   !
   ! bounds for spin channels in S matrix
   !
@@ -43,55 +41,62 @@ SUBROUTINE epcdft_get_s
     CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
     CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik, -1 )
     !
-    IF( gamma_only ) THEN 
-      ! 
-      ! <1|2>
-      CALL calbec ( npw, evc, evc2, r_s_aux, occ(ik) ) ! get over laps of each state
-      c_s_aux = CMPLX(r_s_aux, 0.D0) ! pass real to complex
-      CALL get_det( c_s_aux, occ(ik), smat(1,2,ik) ) ! find det of overlap matrix
-      !
-      ! <2|1>
-      CALL calbec ( npw, evc2, evc, r_s_aux, occ(ik) )
-      c_s_aux = CMPLX(r_s_aux, 0.D0)
-      CALL get_det( c_s_aux, occ(ik), smat(2,1,ik) )
-      !
-      ! <1|1>
-      CALL calbec ( npw, evc, evc, r_s_aux, occ(ik) )
-      c_s_aux = CMPLX(r_s_aux, 0.D0)
-      CALL get_det( c_s_aux, occ(ik), smat(1,1,ik) )
-      !
-      ! <2|2>
-      CALL calbec ( npw, evc2, evc2, r_s_aux, occ(ik) )
-      c_s_aux = CMPLX(r_s_aux, 0.D0)
-      CALL get_det( c_s_aux, occ(ik), smat(2,2,ik) )
-      !
-    ELSE
-      !
-      CALL calbec ( npw, evc, evc2, c_s_aux, occ(ik) )
-      CALL get_det( c_s_aux, occ(ik), smat(1,2,ik) )
-      !
-      CALL calbec ( npw, evc2, evc, c_s_aux, occ(ik) )
-      CALL get_det( c_s_aux, occ(ik), smat(2,1,ik) )
-      !
-      CALL calbec ( npw, evc, evc, c_s_aux, occ(ik) )
-      CALL get_det( c_s_aux, occ(ik), smat(1,1,ik) )
-      !
-      CALL calbec ( npw, evc2, evc2, c_s_aux, occ(ik) )
-      CALL get_det( c_s_aux, occ(ik), smat(2,2,ik) )
-      !
-    ENDIF
+    ! <1|1>
+    CALL get_det( evc, evc, r_s_aux, c_s_aux, occ(ik), smat(1,1,ik) )
+    ! 
+    ! <1|2>
+    CALL get_det( evc, evc2, r_s_aux, c_s_aux, occ(ik), smat(1,2,ik) )
+    !
+    ! <2|1>
+    CALL get_det( evc2, evc, r_s_aux, c_s_aux, occ(ik), smat(2,1,ik) )
+    !
+    ! <2|2>
+    CALL get_det( evc2, evc2, r_s_aux, c_s_aux, occ(ik), smat(2,2,ik) )
     !
   ENDDO !ik
   !
   ! close shop
   !
-  IF( gamma_only ) DEALLOCATE( r_s_aux )
+  DEALLOCATE( r_s_aux )
   DEALLOCATE( c_s_aux )
   !
 END SUBROUTINE epcdft_get_s
 !
 !-----------------------------------------------------------------------------
-SUBROUTINE get_det(a, n, outdet)
+SUBROUTINE get_det(evc, evc2, r_s_aux, c_s_aux, occ, outdet)
+  !--------------------------------------------------------------------------
+  !
+  USE kinds, ONLY : DP
+  USE control_flags, ONLY : gamma_only
+  USE wvfct, ONLY : nbnd, npwx, npw
+  USE becmod, ONLY : calbec
+  !
+  IMPLICIT NONE
+  !
+  COMPLEX(DP), INTENT(IN) :: evc(npwx, nbnd), evc2(npwx, nbnd)
+  REAL(DP), INTENT(INOUT) :: r_s_aux(nbnd, nbnd)
+  COMPLEX(DP), INTENT(INOUT) :: c_s_aux(nbnd, nbnd)
+  INTEGER, INTENT(IN) :: occ
+  COMPLEX(DP) :: outdet
+  !
+  r_s_aux = 0.D0
+  c_s_aux = 0.D0
+  outdet = 0.D0
+  !
+  IF( gamma_only ) THEN 
+      CALL calbec ( npw, evc, evc2, r_s_aux, occ ) ! get over laps of each state
+      c_s_aux = CMPLX(r_s_aux, 0.D0) ! pass real to complex
+      CALL zgedi_wrap( c_s_aux, occ, outdet ) ! find det of overlap matrix
+  ELSE
+      CALL calbec ( npw, evc, evc2, c_s_aux, occ )
+      CALL zgedi_wrap( c_s_aux, occ, outdet )
+  ENDIF
+  !
+  !
+END SUBROUTINE get_det
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE zgedi_wrap(a, n, outdet)
   !--------------------------------------------------------------------------
   !
   !     this routine will solve for the determinant of a matrix "a"
@@ -135,4 +140,4 @@ SUBROUTINE get_det(a, n, outdet)
   !
   RETURN
   !
-END SUBROUTINE get_det
+END SUBROUTINE zgedi_wrap
