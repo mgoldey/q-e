@@ -46,8 +46,6 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   USE constants,     ONLY : fpi, eps8, e2, au_debye
   USE ions_base,     ONLY : nat, ityp, zv
   USE cell_base,     ONLY : alat, at, omega, bg, saw
-  USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
-                            eopreg, forcefield
   USE epcdft,        ONLY : do_epcdft, fragment_atom1, fragment_atom2, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
                             epcdft_electrons, hirshfeld
@@ -192,8 +190,10 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   ! calculate hirshfeld potential array
   !
   IF (hirshfeld) THEN 
+    hirshv=0d0
     CALL calc_hirshfeld_v(hirshv, dfftp%nnr)
     vpoten = vpoten + epcdft_amp * hirshv
+    write(*,*) "vpoten is ",sum(vpoten)
     RETURN
   ENDIF
   !
@@ -208,6 +208,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
 #else
   ir_end = dfftp%nnr
 #endif
+  write(*,*) "vpoten is ",sum(vpoten)
   if (sum(rho).lt.1e-3) THEN
   !  write(*,*) "Density is really small. I forget why this matters."
   ENDIF

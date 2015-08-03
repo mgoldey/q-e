@@ -92,9 +92,7 @@ SUBROUTINE read_xml_file()
   USE symm_base,            ONLY : irt, d1, d2, d3, checkallsym
   USE ktetra,               ONLY : tetra, ntetra 
   USE extfield,             ONLY : forcefield, tefield
-  USE epcdft,               ONLY : do_epcdft, fragment_atom1, fragment_atom2, &
-                                   epcdft_amp, epcdft_width, epcdft_shift, &
-                                   epcdft_thr, epcdft_old_amp, hirshfeld
+  USE epcdft,               ONLY : do_epcdft
   USE cellmd,               ONLY : cell_factor, lmovecell
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
@@ -308,7 +306,6 @@ SUBROUTINE read_xml_file()
   !
   CALL v_of_rho( rho, rho_core, rhog_core, &
                  ehart, etxc, vtxc, eth, etotefield, charge, v )
-  IF (do_epcdft) CALL add_epcdft_efield(v, etotefield, rho%of_r, .true. )
   !
   RETURN
   !

@@ -212,11 +212,22 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
 
   ELSEIF (plot_num == 12) THEN
 
-     raux=0.d0
      IF (tefield) THEN
          CALL add_efield(raux,dummy,rho%of_r,.true.)
      ELSE
          CALL infomsg ('punch_plot','e_field is not calculated')
+     ENDIF
+     IF (do_epcdft) THEN
+         raux=0.d0
+         allocate (raux2(dfftp%nnr,nspin))
+         raux2 = 0.d0
+         DO is = 1, nspin
+             CALL add_epcdft_efield(raux2(:,is),dummy,rho%of_r,.false.)
+         ENDDO
+         raux=raux2(:,1)
+         deallocate (raux2)
+     ELSE
+         CALL infomsg ('punch_plot','do_epcdft is not calculated')
      ENDIF
 
   ELSEIF (plot_num == 13) THEN

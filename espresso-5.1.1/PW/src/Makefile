@@ -16,7 +16,6 @@ PWLIBS = \
 a2fmod.o \
 add_bfield.o \
 add_efield.o \
-add_epcdft_efield.o \
 add_vuspsi.o \
 add_paw_to_deeq.o \
 add_vhub_to_deeq.o \
@@ -190,6 +189,7 @@ save_in_cbands.o \
 save_in_electrons.o \
 scale_h.o \
 scf_mod.o \
+add_epcdft_efield.o \
 set_kplusq.o \
 set_kup_and_kdw.o \
 set_rhoc.o \
