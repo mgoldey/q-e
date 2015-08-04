@@ -26,6 +26,8 @@ SUBROUTINE epcdft_setup
   CHARACTER (len=256) :: prefix_pass
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER :: ios
+!!!!!DELETE LATER
+integer :: i
   REAL(DP) :: dtmp ! temp variable
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
@@ -77,6 +79,7 @@ SUBROUTINE epcdft_setup
   WRITE(*,*) "    SYSTEM 2 INFO"
   do_epcdft=.false.
   CALL read_file()  ! for system 2
+  CALL init_at_1
   !
   ALLOCATE( w ( dfftp%nnr , 2 ) )
   !
@@ -87,6 +90,15 @@ SUBROUTINE epcdft_setup
   fragment_atom2=fragment2_atom2
   epcdft_amp=fragment2_amp
   CALL add_epcdft_efield( w(:,2), dtmp, rho%of_r, .true. )
+!!!!!DELETE LATER
+!!!!! system 1 has two spots with really large values not sure why
+do i = 1, dfftp%nnr
+if(w(i,2) > 1.0E+1 .or. isnan(w(i,2)) )then
+write(*,*) w(i,2) 
+w(i,2) = fragment2_amp
+endif
+enddo
+CALL write_wfc_1D_r ( 928375, 'v2', w(:,2), 1)
   !
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
@@ -103,6 +115,7 @@ SUBROUTINE epcdft_setup
   iunwfc = iunwfc_pass
   prefix = prefix_pass
   CALL read_file()  
+  CALL init_at_1
   !
   ! setup weight function for system 1
   !
@@ -111,11 +124,18 @@ SUBROUTINE epcdft_setup
   fragment_atom2=fragment1_atom2
   epcdft_amp=fragment1_amp
   CALL add_epcdft_efield( w(:,1), dtmp, rho%of_r, .true. )
+!!!!!DELETE LATER
+do i = 1, dfftp%nnr
+if(w(i,1) > 1.0E+1 .or. isnan(w(i,1)) )then
+write(*,*) w(i,1) 
+w(i,1) = fragment1_amp
+endif
+enddo
+CALL write_wfc_1D_r ( 928374, 'v1', w(:,1), 1)
   !
   WRITE(*,*)"    ======================================================================= "
   !
   CALL openfil_pp() ! open all files for scf run set filenames/units
-  !
   CALL init_us_1    ! compute pseduo pot stuff
   !
   ALLOCATE( evc2 ( npwx, nbnd ) )
