@@ -1,22 +1,31 @@
 include ../Makefile.inc
-all: hirshfeld.out voronoi.out zero.out 
+all: hirshfeld.out voronoi.out zero.out hirsh_homo.out voro_homo.out homo.out hirsh_poten.out voro_poten.out
 clean: 
-	rm -rf out hirshfeld.out voronoi.out zero.out well.out
+	rm -rf out *.out tmp.pp
 
 hirshfeld.out: hirshfeld.in 
-	$(QE_CMD) < $^ > $@
-
+	$(PW_CMD) < $^ > $@
 voronoi.out: voronoi.in
-	$(QE_CMD) < $^ > $@
-
+	$(PW_CMD) < $^ > $@
 zero.out: zero.in
-	$(QE_CMD) < $^ > $@
-
+	$(PW_CMD) < $^ > $@
 well.out: well.in
-	$(QE_CMD) < $^ > $@
+	$(PW_CMD) < $^ > $@
+
+hirsh_homo.out: hirsh_homo.in
+	$(PP_CMD) < $^ > $@
+voro_homo.out: voro_homo.in
+	$(PP_CMD) < $^ > $@
+homo.out: homo.in
+	$(PP_CMD) < $^ > $@
+hirsh_poten.out: hirsh_poten.in
+	$(PP_CMD) < $^ > $@
+voro_poten.out: voro_poten.in
+	$(PP_CMD) < $^ > $@
 
 #coupling.out: coupling.in
 #	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin//epcdft_coupling.x < $^ > $@
 
 #pp.out: pp.in
 #	export OMP_NUM_THREADS=1 ; mpirun -np 8 ../../espresso-5.1.1/bin/pp.x < $^ > $@
+

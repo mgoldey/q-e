@@ -1,9 +1,11 @@
 &CONTROL
   calculation  = "scf",
-  prefix       = "zn",
-  outdir       = "./out",
+  prefix       = "right",
+  outdir       = "out",
   pseudo_dir   = "../pseudo",
+  do_epcdft    = .true.,
   verbosity = "high" 
+  wf_collect = .true.
 /
 &SYSTEM
   nosym = .true.
@@ -15,11 +17,17 @@
   tot_charge = +1
   nspin   = 2,
   tot_magnetization = 1
+  hirshfeld = .TRUE.
+  fragment_atom1    = 2,
+  fragment_atom2    = 2,
+  epcdft_amp        = 3.30E-01,
+  epcdft_electrons  = 1.,
+  epcdft_thr = 1.0E-02
 /
 &ELECTRONS
-  startingpot = 'file'
-  startingwfc = 'file'
-  conv_thr    = 1.D+10,
+ ! startingpot = 'file'
+ ! startingwfc = 'file'
+  conv_thr    = 1.D-8,
   mixing_beta = 0.30,
 /
 K_POINTS {Gamma}

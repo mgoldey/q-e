@@ -1,0 +1,10 @@
+&INPUTPP
+prefix = 'voronoi'
+outdir = './out'
+plot_num = 12,
+/
+&PLOT
+iflag = 3
+output_format = 6
+fileout = 'voro_poten.cube'
+/

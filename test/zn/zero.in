@@ -1,7 +1,7 @@
 &CONTROL
   calculation  = "scf",
-  prefix       = "zn",
-  outdir       = "./out2",
+  prefix       = "zero",
+  outdir       = "./out",
   pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,
   verbosity = "high" 
