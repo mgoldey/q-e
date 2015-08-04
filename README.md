@@ -25,9 +25,12 @@ This README would normally document whatever steps are necessary to get your app
 * epcdft_thr - threshold on number of electrons in well (default 1.D-4)
 * examples in test - run all using make
 
+### PP Flags ###
+* Using plot_num = 12 will plot the weight times the lagrange multiplier (read from successful run)
+
 ### Contribution guidelines ###
 
-* Writing tests
+* Writing tests - as you go, make small working examples
 * Code review
 * Other guidelines
 
