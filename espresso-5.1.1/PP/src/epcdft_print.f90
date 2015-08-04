@@ -66,6 +66,7 @@ SUBROUTINE pcmat (title, m)
   WRITE(*,*)""
   !
   2 FORMAT(5x,A18)
-  3 FORMAT(5x,'(',E12.4,',',E12.4,')',2x,'(',E12.4,',',E12.4,')')
+  !3 FORMAT(5x,'(',E12.4,',',E12.4,')',2x,'(',E12.4,',',E12.4,')')
+  3 FORMAT(5x,'(',F14.6,',',F14.6,')',2x,'(',F14.6,',',F14.6,')')
   !
 END SUBROUTINE pcmat
