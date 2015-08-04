@@ -15,8 +15,8 @@ PROGRAM epcdft_coupling
   CALL epcdft_setup ( ) ! allocate and read vars
   !
   CALL epcdft_get_s ( ) ! create overlap matrix
- ! !
- ! CALL epcdft_get_w ( ) ! create weight matrix
+  !
+  CALL epcdft_get_w ( ) ! create weight matrix
  ! !
  ! CALL epcdft_get_diabatic ( ) ! create orthogonal diabatic hamiltonian
  ! !

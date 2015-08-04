@@ -27,7 +27,6 @@ SUBROUTINE epcdft_setup
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER :: ios
   REAL(DP) :: dtmp ! temp variable
-  REAL(DP), ALLOCATABLE :: aux(:)
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
                        debug,  s_spin, det_by_zgedi, do_epcdft, fragment1_atom1, fragment1_atom2,&
@@ -100,11 +99,9 @@ SUBROUTINE epcdft_setup
   ALLOCATE( evc2 ( npwx, nbnd ) )
   ALLOCATE( smat ( 2 , 2 , nks) )
   ALLOCATE( wmat ( 2 , 2 , nks) )
-  ALLOCATE( w ( dfftp%nr1x*dfftp%nr2x*dfftp%nr3x , nks ) )
-  ALLOCATE( aux( dfftp%nnr ) )
+  ALLOCATE( w ( dfftp%nnr , 2 ) )
   !
   evc2 = 0.d0
-  aux = 0.d0
   w = 0.d0
   smat = 0.d0
   w = 0.D0
@@ -116,31 +113,29 @@ SUBROUTINE epcdft_setup
   !
   do_epcdft=.true.
   ! 
-  aux = 0.D0
   fragment_atom1=fragment1_atom1
   fragment_atom2=fragment1_atom2
   epcdft_amp=fragment1_amp
-  CALL add_epcdft_efield( aux, dtmp, rho%of_r, .true. )
+  CALL add_epcdft_efield( w(:,1), dtmp, rho%of_r, .true. )
   !
-#ifdef __MPI
-    CALL grid_gather ( aux, w(:,1))
-#else
-    w(:,1)= aux(:)
-#endif
+!#ifdef __MPI
+!    CALL grid_gather ( aux, w(:,1))
+!#else
+!    w(:,1)= aux(:)
+!#endif
   !
   ! setup weight function for system 1
   !
-  aux = 0.D0
   fragment_atom1=fragment2_atom1
   fragment_atom2=fragment2_atom2
   epcdft_amp=fragment2_amp
-  CALL add_epcdft_efield( aux, dtmp, rho%of_r, .true. )
+  CALL add_epcdft_efield( w(:,2), dtmp, rho%of_r, .true. )
   !
-#ifdef __MPI
-    CALL grid_gather ( aux, w(:,2))
-#else
-    w(:,2)= aux(:)
-#endif
+!#ifdef __MPI
+!    CALL grid_gather ( aux, w(:,2))
+!#else
+!    w(:,2)= aux(:)
+!#endif
   !
 END SUBROUTINE epcdft_setup
 !
