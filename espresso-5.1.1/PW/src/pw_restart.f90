@@ -72,6 +72,7 @@ MODULE pw_restart
              lbz_read     = .FALSE., &
              lbs_read     = .FALSE., &
              lefield_read = .FALSE., &
+             lepcdft_read = .FALSE., &
              lwfc_read    = .FALSE., &
              lsymm_read   = .FALSE.
   !
@@ -919,6 +920,7 @@ MODULE pw_restart
          lbs     = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
+         lepcdft = .TRUE.
          need_qexml = .TRUE.
          !
       CASE( 'all' )
@@ -953,6 +955,7 @@ MODULE pw_restart
          lwfc_read    = .FALSE.
          lsymm_read   = .FALSE.
          lefield_read = .FALSE.
+         lepcdft_read = .FALSE.
          !
       CASE( 'ef' )
          !
@@ -1707,6 +1710,7 @@ MODULE pw_restart
       !
       ierr = 0
       !
+      IF ( lepcdft_read ) RETURN
       !
       IF ( ionode ) THEN
          CALL qexml_read_epcdft(DO_EPCDFT=do_epcdft, FRAGMENT_ATOM1=fragment_atom1, &
@@ -1736,6 +1740,7 @@ MODULE pw_restart
       CALL mp_bcast( epcdft_thr,       ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_old_amp,   ionode_id, intra_image_comm )
       !
+      lepcdft_read = .TRUE.
       !
       RETURN
       !

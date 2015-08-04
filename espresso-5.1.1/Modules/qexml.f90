@@ -3012,40 +3012,40 @@ CONTAINS
       REAL(DP) :: epcdft_old_amp_  ! 
       ierr=0
       !
-      CALL iotk_scan_begin( ounit, "EPCDFT", FOUND=found, IERR=ierr)
+      CALL iotk_scan_begin( iunit, "EPCDFT", FOUND=found, IERR=ierr)
       IF ( ( .NOT. found ).OR.( ierr /= 0 ) ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "HAS_EPCDFT", do_epcdft_, IERR=ierr)
+      CALL iotk_scan_dat( iunit, "HAS_EPCDFT", do_epcdft_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "FRAGMENT_ATOM_START", fragment_atom1_, IERR=ierr)
+      CALL iotk_scan_dat( iunit, "FRAGMENT_ATOM_START", fragment_atom1_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "FRAGMENT_ATOM_END", fragment_atom2_, IERR=ierr)
+      CALL iotk_scan_dat( iunit, "FRAGMENT_ATOM_END", fragment_atom2_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "HIRSHFELD", hirshfeld_, IERR=ierr)
+      CALL iotk_scan_dat( iunit, "HIRSHFELD", hirshfeld_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "FRAGMENT_ELECTRONS", epcdft_electrons_ , IERR=ierr)
+      CALL iotk_scan_dat( iunit, "FRAGMENT_ELECTRONS", epcdft_electrons_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "EPCDFT_AMP", epcdft_amp_ , IERR=ierr)
+      CALL iotk_scan_dat( iunit, "EPCDFT_AMP", epcdft_amp_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "EPCDFT_WIDTH", epcdft_width_ , IERR=ierr)
+      CALL iotk_scan_dat( iunit, "EPCDFT_WIDTH", epcdft_width_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "ENERGY_SHIFT", epcdft_shift_ , IERR=ierr)
+      CALL iotk_scan_dat( iunit, "ENERGY_SHIFT", epcdft_shift_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "ELECTRONS_IN_WELL_THR", epcdft_thr_ , IERR=ierr)
+      CALL iotk_scan_dat( iunit, "ELECTRONS_IN_WELL_THR", epcdft_thr_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( ounit, "EPCDFT_OLD_AMP", epcdft_old_amp_ , IERR=ierr)
+      CALL iotk_scan_dat( iunit, "EPCDFT_OLD_AMP", epcdft_old_amp_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_end( ounit, "EPCDFT" , IERR=ierr)
+      CALL iotk_scan_end( iunit, "EPCDFT" , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
 
       IF ( present(do_epcdft) )     do_epcdft      = do_epcdft_
