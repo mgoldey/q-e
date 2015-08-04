@@ -12,6 +12,7 @@
   det_by_zgedi = .true.
   do_epcdft = .true.
   hirshfeld = .true.
-  free2 = -220.49912608
+  free1 = -220.53294049
+  free2 = -220.53294049 
 /
 
