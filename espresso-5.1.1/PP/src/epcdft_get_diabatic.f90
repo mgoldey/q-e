@@ -25,4 +25,6 @@ SUBROUTINE epcdft_get_diabatic
     ENDDO
   ENDDO
   !
+  WRITE(*,*)"    H done"
+  !
 END SUBROUTINE epcdft_get_diabatic

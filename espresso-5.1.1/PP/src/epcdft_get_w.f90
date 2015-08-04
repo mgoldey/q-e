@@ -89,7 +89,8 @@ SUBROUTINE epcdft_get_w
     CALL get_det( evc2, aux, r_s_aux, c_s_aux, occ(ik), wmat(2,1,2,ik) )
     !
   ENDDO !ik
-  !write(*,*) wmat
+  !
+  WRITE(*,*)"    W done"
   !
   ! close shop
   !
