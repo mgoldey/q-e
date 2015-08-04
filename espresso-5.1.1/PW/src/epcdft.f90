@@ -231,6 +231,9 @@ SUBROUTINE epcdft_controller()
         WRITE(*,*) "    Surplus/deficit electrons    :  ", enumerr,    "electrons"
         WRITE(*,*) "    epcdft_thr                   :  ", epcdft_thr, "electrons"
         !
+      ELSE
+        ! WRITE OUT potential
+        !call write_wfc_cube_r ( 84332, 'v',  v )
       ENDIF
       !
     ENDIF ! localization condition

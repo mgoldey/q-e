@@ -489,6 +489,8 @@ SUBROUTINE chdens (filplot,plot_num)
         !
         ! GAUSSIAN CUBE FORMAT
         !
+        !write(*,*) "I am here"
+        !write(*,*) "vpoten is ",sum(rhor)
         IF (TRIM(interpolation) == 'fourier') THEN
            CALL write_cubefile (alat, at, bg, nat, tau, atm, ityp, rhor, &
              dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x, dfftp%nr2x, dfftp%nr3x, ounit)

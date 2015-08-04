@@ -934,9 +934,9 @@ MODULE pw_restart
          locc    = .TRUE.
          lbz     = .TRUE.
          lbs     = .TRUE.
-         lwfc    = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
+         lwfc    = .TRUE.
          lrho    = .TRUE.
          lepcdft = .TRUE. 
          need_qexml = .TRUE.

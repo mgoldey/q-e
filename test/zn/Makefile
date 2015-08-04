@@ -1,5 +1,5 @@
 include ../Makefile.inc
-all: hirshfeld.out voronoi.out zero.out well.out
+all: hirshfeld.out voronoi.out zero.out 
 clean: 
 	rm -rf out hirshfeld.out voronoi.out zero.out well.out
 

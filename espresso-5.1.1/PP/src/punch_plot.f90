@@ -214,20 +214,12 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
 
      IF (tefield) THEN
          CALL add_efield(raux,dummy,rho%of_r,.true.)
+     ELSE IF (do_epcdft) THEN
+         CALL init_at_1
+         CALL add_epcdft_efield(raux,dummy,rho%of_r,.true.)
+         !write(*,*) "vpoten is ",sum(raux)
      ELSE
          CALL infomsg ('punch_plot','e_field is not calculated')
-     ENDIF
-     IF (do_epcdft) THEN
-         raux=0.d0
-         allocate (raux2(dfftp%nnr,nspin))
-         raux2 = 0.d0
-         DO is = 1, nspin
-             CALL add_epcdft_efield(raux2(:,is),dummy,rho%of_r,.false.)
-         ENDDO
-         raux=raux2(:,1)
-         deallocate (raux2)
-     ELSE
-         CALL infomsg ('punch_plot','do_epcdft is not calculated')
      ENDIF
 
   ELSEIF (plot_num == 13) THEN

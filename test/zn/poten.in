@@ -1,0 +1,11 @@
+&INPUTPP
+prefix = 'zn'
+outdir = './out'
+filplot = 'potential'
+plot_num = 12,
+/
+&PLOT
+iflag = 3
+output_format = 6
+fileout = 'potential.cube'
+/

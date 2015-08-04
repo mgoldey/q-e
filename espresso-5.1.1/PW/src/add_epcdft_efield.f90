@@ -94,6 +94,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   !
   LOGICAL :: first=.TRUE.
   SAVE first
+
   !
   ! ... Coulomb Vars
   !
@@ -134,6 +135,9 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   if (iflag) first=.true.
    
   if (.not. first) RETURN
+
+  ! Necessary for restart/pp runs
+  CALL init_at_1
   
   ! efield only needs to be added on the first iteration (of each SCF call)
   ! note that for relax calculations it has to be added
@@ -166,8 +170,10 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
         write( stdout,'(5x,"Using Voronoi cells")')
         WRITE( stdout,'(5x,"Adding the potential well":)')
         WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-        WRITE( stdout,'(8x,"Fragment start : ", I11.1)') fragment_atom1
-        WRITE( stdout,'(8x,"Fragment end   : ", I11.1)') fragment_atom2
+        WRITE( stdout,'(8x,"Fragment start : ", I11.1: es11.4, es11.4, es11.4)') fragment_atom1,&
+        & tau(1,fragment_atom1),tau(2,fragment_atom1),tau(3,fragment_atom1)
+        WRITE( stdout,'(8x,"Fragment end   : ", I11.1: es11.4, es11.4, es11.4)') fragment_atom2,&
+        & tau(1,fragment_atom2),tau(2,fragment_atom2),tau(3,fragment_atom2)
         WRITE( stdout,*)     
         !
       else
@@ -193,7 +199,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
     hirshv=0d0
     CALL calc_hirshfeld_v(hirshv, dfftp%nnr)
     vpoten = vpoten + epcdft_amp * hirshv
-    write(*,*) "vpoten is ",sum(vpoten)
+    !write(*,*) "vpoten is ",sum(vpoten(:))
     RETURN
   ENDIF
   !
@@ -208,7 +214,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
 #else
   ir_end = dfftp%nnr
 #endif
-  write(*,*) "vpoten is ",sum(vpoten)
+  
   if (sum(rho).lt.1e-3) THEN
   !  write(*,*) "Density is really small. I forget why this matters."
   ENDIF
@@ -290,7 +296,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
 #endif
   
   !dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
-
+  !write(*,*) "vpoten is ",sum(vpoten(:))
   RETURN
 
   oldamp = epcdft_amp

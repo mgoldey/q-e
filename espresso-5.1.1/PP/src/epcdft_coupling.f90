@@ -26,6 +26,6 @@ PROGRAM epcdft_coupling
   !
   CALL stop_pp
   !
-  RETURN
+!  RETURN
   !
 END PROGRAM epcdft_coupling
