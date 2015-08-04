@@ -79,26 +79,26 @@ integer :: i
   WRITE(*,*) "    SYSTEM 2 INFO"
   do_epcdft=.false.
   CALL read_file()  ! for system 2
-  CALL init_at_1
+!  CALL init_at_1
   !
   ALLOCATE( w ( dfftp%nnr , 2 ) )
   !
   ! setup weight function for system 2
   !
-  do_epcdft=.true.
-  fragment_atom1=fragment2_atom1
-  fragment_atom2=fragment2_atom2
-  epcdft_amp=fragment2_amp
-  CALL add_epcdft_efield( w(:,2), dtmp, rho%of_r, .true. )
-!!!!!DELETE LATER
-!!!!! system 1 has two spots with really large values not sure why
-do i = 1, dfftp%nnr
-if(w(i,2) > 1.0E+1 .or. isnan(w(i,2)) )then
-write(*,*) w(i,2) 
-w(i,2) = fragment2_amp
-endif
-enddo
-CALL write_wfc_1D_r ( 928375, 'v2', w(:,2), 1)
+!  do_epcdft=.true.
+!  fragment_atom1=fragment2_atom1
+!  fragment_atom2=fragment2_atom2
+!  epcdft_amp=fragment2_amp
+!  CALL add_epcdft_efield( w(:,2), dtmp, rho%of_r, .true. )
+!!!!!!DELETE LATER
+!!!!!! system 1 has two spots with really large values not sure why
+!do i = 1, dfftp%nnr
+!if(w(i,2) > 1.0E+1 .or. isnan(w(i,2)) )then
+!write(*,*) w(i,2) 
+!w(i,2) = fragment2_amp
+!endif
+!enddo
+!CALL write_wfc_1D_r ( 928375, 'v2', w(:,2), 1)
   !
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
@@ -115,23 +115,23 @@ CALL write_wfc_1D_r ( 928375, 'v2', w(:,2), 1)
   iunwfc = iunwfc_pass
   prefix = prefix_pass
   CALL read_file()  
-  CALL init_at_1
+!  CALL init_at_1
   !
   ! setup weight function for system 1
   !
-  do_epcdft=.true.
-  fragment_atom1=fragment1_atom1
-  fragment_atom2=fragment1_atom2
-  epcdft_amp=fragment1_amp
-  CALL add_epcdft_efield( w(:,1), dtmp, rho%of_r, .true. )
-!!!!!DELETE LATER
-do i = 1, dfftp%nnr
-if(w(i,1) > 1.0E+1 .or. isnan(w(i,1)) )then
-write(*,*) w(i,1) 
-w(i,1) = fragment1_amp
-endif
-enddo
-CALL write_wfc_1D_r ( 928374, 'v1', w(:,1), 1)
+!  do_epcdft=.true.
+!  fragment_atom1=fragment1_atom1
+!  fragment_atom2=fragment1_atom2
+!  epcdft_amp=fragment1_amp
+!  CALL add_epcdft_efield( w(:,1), dtmp, rho%of_r, .true. )
+!!!!!!DELETE LATER
+!do i = 1, dfftp%nnr
+!if(w(i,1) > 1.0E+1 .or. isnan(w(i,1)) )then
+!write(*,*) w(i,1) 
+!w(i,1) = fragment1_amp
+!endif
+!enddo
+!CALL write_wfc_1D_r ( 928374, 'v1', w(:,1), 1)
   !
   WRITE(*,*)"    ======================================================================= "
   !
