@@ -55,10 +55,6 @@ SUBROUTINE epcdft_get_s
     !
   ENDDO !ik
   !
-  !
-  WRITE(*,*)smat(:,:,1)
-  WRITE(*,*)""
-  WRITE(*,*)smat(:,:,2)
   WRITE(*,*)"    S done"
   !
   ! close shop
