@@ -343,7 +343,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   REAL(DP), INTENT(INOUT) :: v(n) ! the hirshfeld potential
   INTEGER, INTENT(IN) :: n
   ! 
-  INTEGER :: s, na, nt, nb, l, m
+  INTEGER :: s, na, nt, nb, l, m,ir
   COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g
   COMPLEX(DP), ALLOCATABLE :: wfcatomr (:,:) ! atomic wfcs in r
   INTEGER :: orbi ! orbital index for wfcatom
@@ -411,9 +411,16 @@ SUBROUTINE calc_hirshfeld_v( v, n )
     ENDDO ! l 
   ENDDO ! atom
   !
-  ! combine vtop and vbot and fft to v(r)
+  ! combine vtop and vbot and fft(?) to v(r)
   !
-  vtop = vtop / vbot
+  DO ir = 1, n
+    if (abs(vbot(ir)).gt.1d-6) THEN 
+      vtop(ir)=vtop(ir)/vbot(ir)
+    ELSE 
+      vtop(ir)=0d0
+    ENDIF
+  ENDDO
+  !vtop = vtop / vbot
   !
   v(:) = REAL(vtop(:),KIND=DP)
   !

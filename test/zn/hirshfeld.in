@@ -13,14 +13,14 @@
   a         = 10,
   nat       = 2,
   ntyp      = 1,
-  ecutwfc   = 60,
+  ecutwfc   = 90,
   tot_charge = +1
   nspin   = 2,
   tot_magnetization = 1
   hirshfeld = .TRUE.
   fragment_atom1    = 1,
   fragment_atom2    = 1,
-  epcdft_amp        = 3.30E-01,
+  epcdft_amp        = 3.60E-01,
   epcdft_electrons  = 1.,
   epcdft_thr = 1.0E-02
 /
