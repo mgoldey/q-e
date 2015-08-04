@@ -19,6 +19,7 @@ SUBROUTINE epcdft_setup
   !
   IMPLICIT NONE
   !
+  CHARACTER(LEN=256) :: fil ! variable name to read cdft potential from output dir of run
   LOGICAL :: exst2 
   CHARACTER (len=256) :: tmp_dir2 ! temp variable to store system 2's dir info 
   CHARACTER (len=256) :: tmp_dir_pass   ! used to store tmp_dir during pass for reading two systems
@@ -79,26 +80,12 @@ integer :: i
   WRITE(*,*) "    SYSTEM 2 INFO"
   do_epcdft=.false.
   CALL read_file()  ! for system 2
-!  CALL init_at_1
   !
   ALLOCATE( w ( dfftp%nnr , 2 ) )
   !
   ! setup weight function for system 2
-  !
-!  do_epcdft=.true.
-!  fragment_atom1=fragment2_atom1
-!  fragment_atom2=fragment2_atom2
-!  epcdft_amp=fragment2_amp
-!  CALL add_epcdft_efield( w(:,2), dtmp, rho%of_r, .true. )
-!!!!!!DELETE LATER
-!!!!!! system 1 has two spots with really large values not sure why
-!do i = 1, dfftp%nnr
-!if(w(i,2) > 1.0E+1 .or. isnan(w(i,2)) )then
-!write(*,*) w(i,2) 
-!w(i,2) = fragment2_amp
-!endif
-!enddo
-!CALL write_wfc_1D_r ( 928375, 'v2', w(:,2), 1)
+  fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
+  CALL read_cube(239841274, fil, w(:,2) )
   !
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
@@ -115,23 +102,10 @@ integer :: i
   iunwfc = iunwfc_pass
   prefix = prefix_pass
   CALL read_file()  
-!  CALL init_at_1
   !
   ! setup weight function for system 1
-  !
-!  do_epcdft=.true.
-!  fragment_atom1=fragment1_atom1
-!  fragment_atom2=fragment1_atom2
-!  epcdft_amp=fragment1_amp
-!  CALL add_epcdft_efield( w(:,1), dtmp, rho%of_r, .true. )
-!!!!!!DELETE LATER
-!do i = 1, dfftp%nnr
-!if(w(i,1) > 1.0E+1 .or. isnan(w(i,1)) )then
-!write(*,*) w(i,1) 
-!w(i,1) = fragment1_amp
-!endif
-!enddo
-!CALL write_wfc_1D_r ( 928374, 'v1', w(:,1), 1)
+  fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
+  CALL read_cube(239841275, fil, w(:,1) )
   !
   WRITE(*,*)"    ======================================================================= "
   !
@@ -293,3 +267,93 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
   RETURN
   !
 END SUBROUTINE print_checks_warns 
+!
+!
+!-----------------------------------------------------------------------
+SUBROUTINE read_cube(iunps, appfile, cubedatout)
+  !-----------------------------------------------------------------------
+  !
+  USE kinds, ONLY : DP
+  USE fft_base,             ONLY : dfftp
+  USE mp,            ONLY : mp_bcast
+  USE mp_images,     ONLY : intra_image_comm
+  USE io_global,     ONLY : stdout, ionode, ionode_id
+  !
+  IMPLICIT NONE
+  !
+  INTEGER, INTENT(IN) :: iunps
+  CHARACTER(LEN=256), INTENT(IN) :: appfile
+  REAL(DP), INTENT(INOUT) :: cubedatout(dfftp%nnr)
+  !
+  INTEGER :: cnr1, cnr2, cnr3, cnat, i, j, ierr, k
+  REAL(DP) :: cubedat(dfftp%nr1x,dfftp%nr2x,dfftp%nr3x)
+  !
+  ! check for input file and handle errors
+  OPEN  (unit = iunps, file = appfile, status = 'old', &
+         form = 'formatted', action='read', iostat = ierr)
+  !
+  IF( ierr /= 0) THEN
+    !
+    ! if file failed stop QE
+    CALL mp_bcast( ierr, ionode_id, intra_image_comm )
+    CALL errore( 'add_efield ', &
+                 'can not find input cubefile for applied field', ierr )
+    !
+  ENDIF 
+  !
+  ! Found file continue to read
+  ! 
+  ! skip header
+  READ(iunps,*)
+  READ(iunps,*)
+  !
+  ! read cube data
+  READ(iunps, *) cnat
+  READ(iunps, *) cnr1
+  READ(iunps, *) cnr2
+  READ(iunps, *) cnr3
+  !
+  ! cube data must match scf data
+  IF(cnr1/=dfftp%nr1x .OR. cnr2/=dfftp%nr2x .OR. cnr3/=dfftp%nr3x) THEN
+    CALL mp_bcast( ierr, ionode_id, intra_image_comm )
+    CALL errore( 'read_cube', &
+                 'Number of grid points in cube != dense FFT grid', 0 )
+  ENDIF 
+  !
+  ! skip atoms
+  DO i=1, cnat
+    READ(iunps,*) 
+  ENDDO
+  !
+  ! init array and store cube data 
+  DO i=1, cnr1
+    !
+    DO j=1, cnr2
+      !
+      READ(iunps,'(6E13.5)') (cubedat(i,j,k),k=1,cnr3)
+      !
+    ENDDO
+    !
+  ENDDO
+  !
+  CALL scat_wrap(cubedat, dfftp%nr1x*dfftp%nr2x*dfftp%nr3x, cubedatout, dfftp%nnr)
+  !
+END SUBROUTINE read_cube
+!
+SUBROUTINE scat_wrap(srl,ns,par,np)
+  !
+  USE kinds, ONLY : DP
+  USE fft_base,             ONLY : grid_scatter
+  !
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: ns, np
+  REAL(DP), INTENT(IN) :: srl(ns)
+  REAL(DP), INTENT(INOUT) :: par(np)
+  !
+#ifdef __MPI
+  CALL grid_scatter(srl, par)
+#else
+  par = srl
+#endif
+  !
+END SUBROUTINE 
