@@ -19,6 +19,7 @@ SUBROUTINE epcdft_setup
   !
   IMPLICIT NONE
   !
+  CHARACTER(LEN=256) :: fil ! variable name to read cdft potential from output dir of run
   LOGICAL :: exst2 
   CHARACTER (len=256) :: tmp_dir2 ! temp variable to store system 2's dir info 
   CHARACTER (len=256) :: tmp_dir_pass   ! used to store tmp_dir during pass for reading two systems
@@ -26,11 +27,14 @@ SUBROUTINE epcdft_setup
   CHARACTER (len=256) :: prefix_pass
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER :: ios
+!!!!!DELETE LATER
+integer :: i
   REAL(DP) :: dtmp ! temp variable
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
                        debug,  s_spin, det_by_zgedi, do_epcdft, fragment1_atom1, fragment1_atom2,&
-                       fragment2_atom1, fragment2_atom2, fragment1_amp, fragment2_amp
+                       fragment2_atom1, fragment2_atom2, fragment1_amp, fragment2_amp, free1, free2,&
+                       hirshfeld
   !
   ! setup vars and consistency checks
   !
@@ -77,29 +81,40 @@ SUBROUTINE epcdft_setup
   do_epcdft=.false.
   CALL read_file()  ! for system 2
   !
+  ALLOCATE( w ( dfftp%nnr , 2 ) )
+  !
+  ! setup weight function for system 2
+  fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
+  CALL read_cube(239841274, fil, w(:,2) )
+  !
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
   !
   ! re open the wfc file for system 2
   CALL diropn_gw ( iunwfc2, tmp_dir2, trim( prefix2 )//'.wfc', 2*nwordwfc, exst2, 1 ) ! below 
   !
+  !
   ! restore sys 1's vars and read sys 1's data
-   WRITE(*,*)"    ======================================================================= "
+  WRITE(*,*)"    ======================================================================= "
   WRITE(*,*) "    SYSTEM 1 INFO"
+  do_epcdft=.false.
   tmp_dir = tmp_dir_pass
   iunwfc = iunwfc_pass
   prefix = prefix_pass
   CALL read_file()  
-   WRITE(*,*)"    ======================================================================= "
+  !
+  ! setup weight function for system 1
+  fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
+  CALL read_cube(239841275, fil, w(:,1) )
+  !
+  WRITE(*,*)"    ======================================================================= "
   !
   CALL openfil_pp() ! open all files for scf run set filenames/units
-  !
   CALL init_us_1    ! compute pseduo pot stuff
   !
   ALLOCATE( evc2 ( npwx, nbnd ) )
   ALLOCATE( smat ( 2 , 2 , nks) )
-  ALLOCATE( wmat ( 2 , 2 , nks) )
-  ALLOCATE( w ( dfftp%nnr , 2 ) )
+  ALLOCATE( wmat ( 2 , 2, 2 , nks) )
   !
   evc2 = 0.d0
   w = 0.d0
@@ -109,33 +124,10 @@ SUBROUTINE epcdft_setup
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
                           occup1, occdown1, occup2, occdown2, debug,  s_spin, det_by_zgedi )
   !
-  ! setup weight function for system 1
-  !
-  do_epcdft=.true.
-  ! 
-  fragment_atom1=fragment1_atom1
-  fragment_atom2=fragment1_atom2
-  epcdft_amp=fragment1_amp
-  CALL add_epcdft_efield( w(:,1), dtmp, rho%of_r, .true. )
-  !
-!#ifdef __MPI
-!    CALL grid_gather ( aux, w(:,1))
-!#else
-!    w(:,1)= aux(:)
-!#endif
-  !
-  ! setup weight function for system 1
-  !
-  fragment_atom1=fragment2_atom1
-  fragment_atom2=fragment2_atom2
-  epcdft_amp=fragment2_amp
-  CALL add_epcdft_efield( w(:,2), dtmp, rho%of_r, .true. )
-  !
-!#ifdef __MPI
-!    CALL grid_gather ( aux, w(:,2))
-!#else
-!    w(:,2)= aux(:)
-!#endif
+  WRITE(*,*)" "
+  WRITE(*,*)"    ======================================================================= "
+  WRITE(*,*)"    Progress : "
+  WRITE(*,*)"    Setup done"
   !
 END SUBROUTINE epcdft_setup
 !
@@ -275,3 +267,93 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
   RETURN
   !
 END SUBROUTINE print_checks_warns 
+!
+!
+!-----------------------------------------------------------------------
+SUBROUTINE read_cube(iunps, appfile, cubedatout)
+  !-----------------------------------------------------------------------
+  !
+  USE kinds, ONLY : DP
+  USE fft_base,             ONLY : dfftp
+  USE mp,            ONLY : mp_bcast
+  USE mp_images,     ONLY : intra_image_comm
+  USE io_global,     ONLY : stdout, ionode, ionode_id
+  !
+  IMPLICIT NONE
+  !
+  INTEGER, INTENT(IN) :: iunps
+  CHARACTER(LEN=256), INTENT(IN) :: appfile
+  REAL(DP), INTENT(INOUT) :: cubedatout(dfftp%nnr)
+  !
+  INTEGER :: cnr1, cnr2, cnr3, cnat, i, j, ierr, k
+  REAL(DP) :: cubedat(dfftp%nr1x,dfftp%nr2x,dfftp%nr3x)
+  !
+  ! check for input file and handle errors
+  OPEN  (unit = iunps, file = appfile, status = 'old', &
+         form = 'formatted', action='read', iostat = ierr)
+  !
+  IF( ierr /= 0) THEN
+    !
+    ! if file failed stop QE
+    CALL mp_bcast( ierr, ionode_id, intra_image_comm )
+    CALL errore( 'add_efield ', &
+                 'can not find input cubefile for applied field', ierr )
+    !
+  ENDIF 
+  !
+  ! Found file continue to read
+  ! 
+  ! skip header
+  READ(iunps,*)
+  READ(iunps,*)
+  !
+  ! read cube data
+  READ(iunps, *) cnat
+  READ(iunps, *) cnr1
+  READ(iunps, *) cnr2
+  READ(iunps, *) cnr3
+  !
+  ! cube data must match scf data
+  IF(cnr1/=dfftp%nr1x .OR. cnr2/=dfftp%nr2x .OR. cnr3/=dfftp%nr3x) THEN
+    CALL mp_bcast( ierr, ionode_id, intra_image_comm )
+    CALL errore( 'read_cube', &
+                 'Number of grid points in cube != dense FFT grid', 0 )
+  ENDIF 
+  !
+  ! skip atoms
+  DO i=1, cnat
+    READ(iunps,*) 
+  ENDDO
+  !
+  ! init array and store cube data 
+  DO i=1, cnr1
+    !
+    DO j=1, cnr2
+      !
+      READ(iunps,'(6E13.5)') (cubedat(i,j,k),k=1,cnr3)
+      !
+    ENDDO
+    !
+  ENDDO
+  !
+  CALL scat_wrap(cubedat, dfftp%nr1x*dfftp%nr2x*dfftp%nr3x, cubedatout, dfftp%nnr)
+  !
+END SUBROUTINE read_cube
+!
+SUBROUTINE scat_wrap(srl,ns,par,np)
+  !
+  USE kinds, ONLY : DP
+  USE fft_base,             ONLY : grid_scatter
+  !
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: ns, np
+  REAL(DP), INTENT(IN) :: srl(ns)
+  REAL(DP), INTENT(INOUT) :: par(np)
+  !
+#ifdef __MPI
+  CALL grid_scatter(srl, par)
+#else
+  par = srl
+#endif
+  !
+END SUBROUTINE 

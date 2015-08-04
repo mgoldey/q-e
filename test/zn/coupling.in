@@ -11,11 +11,14 @@
   s_spin       = .true.
   det_by_zgedi = .true.
   do_epcdft = .true.
+  hirshfeld = .true.
   fragment1_atom1 = 1
   fragment1_atom2 = 1
-  fragment2_atom1 = 1
-  fragment2_atom2 = 1
-  fragment1_amp   = -6.1891E-01
-  fragment2_amp   = 0.0
+  fragment2_atom1 = 2
+  fragment2_atom2 = 2
+  fragment1_amp   = 3.3000E-01
+  fragment2_amp   = 3.3000E-01
+  free1 = -220.49912608
+  free2 = -220.49912608
 /
 

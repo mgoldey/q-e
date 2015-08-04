@@ -55,6 +55,8 @@ SUBROUTINE epcdft_get_s
     !
   ENDDO !ik
   !
+  WRITE(*,*)"    S done"
+  !
   ! close shop
   !
   DEALLOCATE( r_s_aux )
@@ -68,14 +70,14 @@ SUBROUTINE get_det(evc, evc2, r_s_aux, c_s_aux, occ, outdet)
   !
   USE kinds, ONLY : DP
   USE control_flags, ONLY : gamma_only
-  USE wvfct, ONLY : nbnd, npwx, npw
+  USE wvfct, ONLY : npwx, npw
   USE becmod, ONLY : calbec
   !
   IMPLICIT NONE
   !
-  COMPLEX(DP), INTENT(IN) :: evc(npwx, nbnd), evc2(npwx, nbnd)
-  REAL(DP), INTENT(INOUT) :: r_s_aux(nbnd, nbnd)
-  COMPLEX(DP), INTENT(INOUT) :: c_s_aux(nbnd, nbnd)
+  COMPLEX(DP), INTENT(IN) :: evc(npwx, occ), evc2(npwx, occ)
+  REAL(DP), INTENT(INOUT) :: r_s_aux(occ, occ)
+  COMPLEX(DP), INTENT(INOUT) :: c_s_aux(occ, occ)
   INTEGER, INTENT(IN) :: occ
   COMPLEX(DP) :: outdet
   !

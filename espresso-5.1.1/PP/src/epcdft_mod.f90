@@ -18,7 +18,10 @@ MODULE epcdft_mod
   REAL(DP) :: freeen1, freeen2 ! free energies system 1 and 2
   COMPLEX(DP), ALLOCATABLE :: evc2(:,:) ! ks vecs for system 2
   COMPLEX(DP), ALLOCATABLE :: smat(:,:,:) ! overlap matrix  smat(  aa ab , ba bb, up down ) 
-  COMPLEX(DP), ALLOCATABLE :: wmat(:,:,:) !  weigth matrix ( aa ab, ba bb, updown)
+  COMPLEX(DP), ALLOCATABLE :: wmat(:,:,:,:) !  weigth matrix ( aa ab, ba bb, w1 w2, up down)
   REAL(DP), ALLOCATABLE :: w(:,:) ! weight functions w( r , system )
+  REAL(DP) :: free1, free2 ! free energies for system 1 and 2 (no correction)
+  COMPLEX(DP) :: hc(2,2,2) ! coupling matrix hc(a,b,spin)
+  COMPLEX(DP) :: ohc(2,2,2) ! orthogonal coupling matrix ohc(a,b,spin)
   !
 ENDMODULE epcdft_mod

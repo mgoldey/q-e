@@ -17,10 +17,10 @@ PROGRAM epcdft_coupling
   CALL epcdft_get_s ( ) ! create overlap matrix
   !
   CALL epcdft_get_w ( ) ! create weight matrix
- ! !
- ! CALL epcdft_get_diabatic ( ) ! create orthogonal diabatic hamiltonian
- ! !
- ! CALL epcdft_print ( ) ! print results
+  !
+  CALL epcdft_get_diabatic ( ) ! create orthogonal diabatic hamiltonian
+  !
+  CALL epcdft_print ( ) ! print results
   !
   CALL environment_end ( 'epcdft_coupling' )
   !
