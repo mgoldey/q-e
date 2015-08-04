@@ -20,3 +20,5 @@ bin/
 *.igk* 
 *.dat
 *.save/*
+*.cube
+tmp.pp
