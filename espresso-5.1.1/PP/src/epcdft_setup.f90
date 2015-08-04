@@ -30,7 +30,7 @@ SUBROUTINE epcdft_setup
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
                        debug,  s_spin, det_by_zgedi, do_epcdft, fragment1_atom1, fragment1_atom2,&
-                       fragment2_atom1, fragment2_atom2, fragment1_amp, fragment2_amp
+                       fragment2_atom1, fragment2_atom2, fragment1_amp, fragment2_amp, free1, free2
   !
   ! setup vars and consistency checks
   !
@@ -98,7 +98,7 @@ SUBROUTINE epcdft_setup
   !
   ALLOCATE( evc2 ( npwx, nbnd ) )
   ALLOCATE( smat ( 2 , 2 , nks) )
-  ALLOCATE( wmat ( 2 , 2 , nks) )
+  ALLOCATE( wmat ( 2 , 2, 2 , nks) )
   ALLOCATE( w ( dfftp%nnr , 2 ) )
   !
   evc2 = 0.d0

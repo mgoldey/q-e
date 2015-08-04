@@ -49,10 +49,22 @@ SUBROUTINE epcdft_get_w
     CALL w_psi(evc, w(:,1), aux) 
     !
     ! <1|w1|1>
-    CALL get_det( evc, aux, r_s_aux, c_s_aux, occ(ik), wmat(1,1,ik) )
+    CALL get_det( evc, aux, r_s_aux, c_s_aux, occ(ik), wmat(1,1,1,ik) )
     !
     ! <2|w1|1>
-    CALL get_det( evc2, aux, r_s_aux, c_s_aux, occ(ik), wmat(2,1,ik) )
+    CALL get_det( evc2, aux, r_s_aux, c_s_aux, occ(ik), wmat(2,1,1,ik) )
+    !
+    !
+    !
+    ! aux = w1*evc2
+    !
+    CALL w_psi(evc2, w(:,1), aux) 
+    !
+    ! <1|w1|2>
+    CALL get_det( evc, aux, r_s_aux, c_s_aux, occ(ik), wmat(1,2,1,ik) )
+    !
+    ! <2|w1|2>
+    CALL get_det( evc2, aux, r_s_aux, c_s_aux, occ(ik), wmat(2,2,1,ik) )
     !
     !
     !
@@ -60,10 +72,21 @@ SUBROUTINE epcdft_get_w
     CALL w_psi(evc2, w(:,2), aux) 
     ! 
     ! <1|w2|2>
-    CALL get_det( evc, aux, r_s_aux, c_s_aux, occ(ik), wmat(1,2,ik) )
+    CALL get_det( evc, aux, r_s_aux, c_s_aux, occ(ik), wmat(1,2,2,ik) )
     !
     ! <2|w2|2>
-    CALL get_det( evc2, aux, r_s_aux, c_s_aux, occ(ik), wmat(2,2,ik) )
+    CALL get_det( evc2, aux, r_s_aux, c_s_aux, occ(ik), wmat(2,2,2,ik) )
+    !
+    !
+    !
+    ! aux = w2*evc
+    CALL w_psi(evc, w(:,2), aux) 
+    ! 
+    ! <1|w2|1>
+    CALL get_det( evc, aux, r_s_aux, c_s_aux, occ(ik), wmat(1,1,2,ik) )
+    !
+    ! <2|w2|1>
+    CALL get_det( evc2, aux, r_s_aux, c_s_aux, occ(ik), wmat(2,1,2,ik) )
     !
   ENDDO !ik
   !write(*,*) wmat

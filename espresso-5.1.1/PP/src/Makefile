@@ -51,6 +51,7 @@ wannier_hamiltonians.o \
 wannier_umatrix_subroutines.o \
 wannier_u_matrix.o \
 epcdft_mod.o \
+epcdft_get_diabatic.o \
 epcdft_get_w.o \
 epcdft_get_s.o \
 epcdft_setup.o
