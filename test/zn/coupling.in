@@ -11,6 +11,7 @@
   s_spin       = .true.
   det_by_zgedi = .true.
   do_epcdft = .true.
+  hirshfeld = .true.
   fragment1_atom1 = 1
   fragment1_atom2 = 1
   fragment2_atom1 = 2

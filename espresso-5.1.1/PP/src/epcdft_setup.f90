@@ -30,7 +30,8 @@ SUBROUTINE epcdft_setup
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
                        debug,  s_spin, det_by_zgedi, do_epcdft, fragment1_atom1, fragment1_atom2,&
-                       fragment2_atom1, fragment2_atom2, fragment1_amp, fragment2_amp, free1, free2
+                       fragment2_atom1, fragment2_atom2, fragment1_amp, fragment2_amp, free1, free2,&
+                       hirshfeld
   !
   ! setup vars and consistency checks
   !
@@ -77,20 +78,41 @@ SUBROUTINE epcdft_setup
   do_epcdft=.false.
   CALL read_file()  ! for system 2
   !
+  ALLOCATE( w ( dfftp%nnr , 2 ) )
+  !
+  ! setup weight function for system 2
+  !
+  do_epcdft=.true.
+  fragment_atom1=fragment2_atom1
+  fragment_atom2=fragment2_atom2
+  epcdft_amp=fragment2_amp
+  CALL add_epcdft_efield( w(:,2), dtmp, rho%of_r, .true. )
+  !
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
   !
   ! re open the wfc file for system 2
   CALL diropn_gw ( iunwfc2, tmp_dir2, trim( prefix2 )//'.wfc', 2*nwordwfc, exst2, 1 ) ! below 
   !
+  !
   ! restore sys 1's vars and read sys 1's data
-   WRITE(*,*)"    ======================================================================= "
+  WRITE(*,*)"    ======================================================================= "
   WRITE(*,*) "    SYSTEM 1 INFO"
+  do_epcdft=.false.
   tmp_dir = tmp_dir_pass
   iunwfc = iunwfc_pass
   prefix = prefix_pass
   CALL read_file()  
-   WRITE(*,*)"    ======================================================================= "
+  !
+  ! setup weight function for system 1
+  !
+  do_epcdft=.true.
+  fragment_atom1=fragment1_atom1
+  fragment_atom2=fragment1_atom2
+  epcdft_amp=fragment1_amp
+  CALL add_epcdft_efield( w(:,1), dtmp, rho%of_r, .true. )
+  !
+  WRITE(*,*)"    ======================================================================= "
   !
   CALL openfil_pp() ! open all files for scf run set filenames/units
   !
@@ -99,7 +121,6 @@ SUBROUTINE epcdft_setup
   ALLOCATE( evc2 ( npwx, nbnd ) )
   ALLOCATE( smat ( 2 , 2 , nks) )
   ALLOCATE( wmat ( 2 , 2, 2 , nks) )
-  ALLOCATE( w ( dfftp%nnr , 2 ) )
   !
   evc2 = 0.d0
   w = 0.d0
@@ -109,33 +130,10 @@ SUBROUTINE epcdft_setup
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
                           occup1, occdown1, occup2, occdown2, debug,  s_spin, det_by_zgedi )
   !
-  ! setup weight function for system 1
-  !
-  do_epcdft=.true.
-  ! 
-  fragment_atom1=fragment1_atom1
-  fragment_atom2=fragment1_atom2
-  epcdft_amp=fragment1_amp
-  CALL add_epcdft_efield( w(:,1), dtmp, rho%of_r, .true. )
-  !
-!#ifdef __MPI
-!    CALL grid_gather ( aux, w(:,1))
-!#else
-!    w(:,1)= aux(:)
-!#endif
-  !
-  ! setup weight function for system 1
-  !
-  fragment_atom1=fragment2_atom1
-  fragment_atom2=fragment2_atom2
-  epcdft_amp=fragment2_amp
-  CALL add_epcdft_efield( w(:,2), dtmp, rho%of_r, .true. )
-  !
-!#ifdef __MPI
-!    CALL grid_gather ( aux, w(:,2))
-!#else
-!    w(:,2)= aux(:)
-!#endif
+  WRITE(*,*)" "
+  WRITE(*,*)"    ======================================================================= "
+  WRITE(*,*)"    Progress : "
+  WRITE(*,*)"    Setup done"
   !
 END SUBROUTINE epcdft_setup
 !
