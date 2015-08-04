@@ -27,8 +27,6 @@ SUBROUTINE epcdft_setup
   CHARACTER (len=256) :: prefix_pass
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER :: ios
-!!!!!DELETE LATER
-integer :: i
   REAL(DP) :: dtmp ! temp variable
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
@@ -117,9 +115,8 @@ integer :: i
   ALLOCATE( wmat ( 2 , 2, 2 , nks) )
   !
   evc2 = 0.d0
-  w = 0.d0
   smat = 0.d0
-  w = 0.D0
+  wmat = 0.d0
   !
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
                           occup1, occdown1, occup2, occdown2, debug,  s_spin, det_by_zgedi )
