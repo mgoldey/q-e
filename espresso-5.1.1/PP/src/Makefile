@@ -55,6 +55,7 @@ epcdft_print.o \
 epcdft_get_diabatic.o \
 epcdft_get_w.o \
 epcdft_get_s.o \
+epcdft_get_h.o \
 epcdft_setup.o
 
 PWOBJS = ../../PW/src/libpw.a

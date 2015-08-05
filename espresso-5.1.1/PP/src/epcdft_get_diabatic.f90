@@ -18,7 +18,6 @@ SUBROUTINE epcdft_get_diabatic
   COMPLEX(DP) :: sdinvsqr(2,2,2) ! diagonal S-1/2
   COMPLEX(DP) :: sinvsqr(2,2,2) ! S-1/2
   !
-  hc = 0.D0
   ohc = 0.D0
   smato = 0.D0
   sevec = 0.D0
@@ -29,16 +28,6 @@ SUBROUTINE epcdft_get_diabatic
   invsevec = 0.D0
   fmat(1) = free1
   fmat(2) = free2
-  !
-  DO s = 1 , nks
-    DO i = 1 , 2
-      DO j = 1 , 2
-        hc(i,j,s) = 0.5D0 * ( ( fmat(i) + fmat(j) ) * smat(i,j,s) - ( wmat(i,j,1,s) + wmat(i,j,2,s) ) )
-      ENDDO
-    ENDDO
-  ENDDO
-  !
-  WRITE(*,*)"    H done"
   !
   ! WORK ZONE 
   ! WARNING CRAP BELOW
