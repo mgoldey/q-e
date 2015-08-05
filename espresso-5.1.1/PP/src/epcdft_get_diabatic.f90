@@ -9,41 +9,37 @@ SUBROUTINE epcdft_get_diabatic
   !
   IMPLICIT NONE
   !
-  INTEGER i, j, s
-  REAL(DP) :: l(2,2) ! sev eigvals of s matrix (i, spin)
-  COMPLEX(DP) :: smato(2,2,2) !(i,j,spin)
-  COMPLEX(DP) :: u(2,2,2) ! S eigenvector matrix sev(i,j,spin) 
-  COMPLEX(DP) :: invu(2,2,2) ! inverse of S eigenvector matrix invsev(i,j,spin) 
-  COMPLEX(DP) :: d(2,2,2) ! diagonal S-1/2
+  INTEGER i, s
+  REAL(DP) :: l(2,2)            ! sev eigvals of S matrix (i, spin)
+  COMPLEX(DP) :: u(2,2,2)       ! U  S eigenvector matrix sev(i,j,spin) 
+  COMPLEX(DP) :: invu(2,2,2)    !U^-1 inverse of S eigenvector matrix invsev(i,j,spin) 
+  COMPLEX(DP) :: d(2,2,2)       ! SD^-1/2 is diagonal S^-1/2
   COMPLEX(DP) :: invssqr(2,2,2) ! S-1/2
-  COMPLEX(DP) :: work(2,2,2) 
   !
   ohc = 0.D0
-  u = 0.D0
   l = 0.D0
+  u = 0.D0
   invu = 0.D0
   d = 0.D0
   invssqr = 0.D0
   !
   DO s = 1, nks
     !
-    ! get U and U^-1 and eigenvals of s
+    ! get U and U^-1 and eigenvals (l) of S
     CALL get_evs(smat(:,:,s),2,u(:,:,s),l(:,s))
-    CALL trans(u(:,:,s),work(:,:,s))
-    u(:,:,s) = work(:,:,s)
     CALL get_inv(u(:,:,s),invu(:,:,s))
     !
-    ! get diag s^-1/2
+    ! get diag S^-1/2
     DO i = 1, 2
-      d(i,i,s) = SIGN(1.D0,l(i,s))*l(i,s)**(-0.5D0)
+      d(i,i,s) = l( 2/i , s )**(-0.5D0) !eigenvals need to be switched thus 2/i
     ENDDO
     !
     !
-    ! get s^-1/2
+    ! get S^-1/2 = U^-1 . SD^-1/2 . U
     invssqr(:,:,s) = MATMUL( invu(:,:,s), d(:,:,s) )
     invssqr(:,:,s) = MATMUL( invssqr(:,:,s), u(:,:,s) )
     !
-    ! get ohc
+    ! get oHc = S^-1/2 . Hc . S^-1/2
     ohc(:,:,s) = MATMUL( invssqr(:,:,s), hc(:,:,s) )
     ohc(:,:,s) = MATMUL( ohc(:,:,s) , invssqr(:,:,s) )
     !
@@ -94,40 +90,7 @@ SUBROUTINE get_evs(a,n,z,w)
      WRITE(*,*)'The algorithm failed to compute eigenvalues.'
      STOP
   END IF
-!  WRITE(*,'(/A,I2)')' The total number of eigenvalues found:', M
-!  CALL PRINT_RMATRIX( 'Selected eigenvalues', 1, M, W, 1 )
-!  CALL PRINT_MATRIX( 'Selected eigenvectors (stored columnwise)',&
-!                    N, M, Z, LDZ )
 END SUBROUTINE get_evs
-!
-SUBROUTINE PRINT_MATRIX( DESC, M, N, A, LDA )
-  CHARACTER(*)    DESC
-  INTEGER          M, N, LDA
-  COMPLEX*16       A( LDA, * )
-  INTEGER          I, J
-  WRITE(*,*)
-  WRITE(*,*) DESC
-  DO I = 1, M
-     WRITE(*,9998) ( A( I, J ), J = 1, N )
-  END DO
- 9998 FORMAT( 11(:,1X,'(',F6.2,',',F6.2,')') )
-  RETURN
-END SUBROUTINE
-!
-SUBROUTINE PRINT_RMATRIX( DESC, M, N, A, LDA )
-  CHARACTER(*)    DESC
-  INTEGER          M, N, LDA
-  DOUBLE PRECISION A( LDA, * )
-  INTEGER          I, J
-  WRITE(*,*)
-  WRITE(*,*) DESC
-  DO I = 1, M
-     WRITE(*,9998) ( A( I, J ), J = 1, N )
-  END DO
- 9998 FORMAT( 11(:,1X,F6.2) )
-  RETURN
-END SUBROUTINE
-!
 !-----------------------------------------------------------------------
 SUBROUTINE get_inv(ain,bout)
   !---------------------------------------------------------------------
@@ -142,33 +105,13 @@ SUBROUTINE get_inv(ain,bout)
   COMPLEX(DP) :: a, b, c, d
   !
   a = ain(1,1)
-  b = ain(1,2)
-  c = ain(2,1)
+  b = ain(2,1)
+  c = ain(1,2)
   d = ain(2,2)
   !
   bout(1,1) = d/(-b*c + a*d)
-  bout(1,2) = -(b/(-b*c + a*d))
-  bout(2,1) = -(c/(-b*c + a*d))
+  bout(2,1) = -(b/(-b*c + a*d))
+  bout(1,2) = -(c/(-b*c + a*d))
   bout(2,2) = a/(-b*c + a*d)
   !
 END SUBROUTINE get_inv
-!
-!-----------------------------------------------------------------------
-SUBROUTINE trans(a,b)
-  !---------------------------------------------------------------------
-  !
-  USE kinds, ONLY : DP
-  !
-  IMPLICIT NONE
-  !
-  COMPLEX(DP), INTENT(IN) :: a(2,2)
-  COMPLEX(DP), INTENT(OUT) :: b(2,2)
-  INTEGER :: i, j
-  !
-  DO i = 1, 2
-    DO j = 1, 2
-      b(i,j)=a(j,i)
-    ENDDO
-  ENDDO
-  !
-END SUBROUTINE trans
