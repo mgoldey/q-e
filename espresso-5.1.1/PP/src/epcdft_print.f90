@@ -10,39 +10,54 @@ SUBROUTINE epcdft_print
   !
   IMPLICIT NONE
   !
+  LOGICAL :: epcdft_debug
   CHARACTER(LEN=18) title
+  !
+  epcdft_debug = .false.
   !
   IF(ionode) THEN
     !
     WRITE(stdout,1)
-    WRITE(*,*)""
+    WRITE(stdout,*)""
     !
-    WRITE(stdout,4) free1, free2
-    WRITE(*,*)""
+    IF(epcdft_debug) THEN
+      !
+      WRITE(stdout,4) free1, free2
+      WRITE(*,*)""
+      !
+      title='S up' ; CALL pcmat( title, smat(:,:,1) )
+      title='S down' ; CALL pcmat( title, smat(:,:,2) )
+      !
+      title='W1=v1*w1 up' ; CALL pcmat( title, wmat(:,:,1,1) )
+      title='W1 down' ; CALL pcmat( title, wmat(:,:,1,2) )
+      title='W2 up' ; CALL pcmat( title, wmat(:,:,2,1) )
+      title='W2 down' ; CALL pcmat( title, wmat(:,:,2,2) )
+      title='W1+W2 up' ; CALL pcmat( title, wmat(:,:,1,1)+wmat(:,:,2,1) )
+      title='W1+W2 down' ; CALL pcmat( title, wmat(:,:,1,2)+wmat(:,:,2,2) )
+      !
+      title='H up' ; CALL pcmat( title, hc(:,:,1) )
+      title='H down' ; CALL pcmat( title, hc(:,:,2) )
+      !
+      title='Horth up' ; CALL pcmat( title, ohc(:,:,1) )
+      title='Horth down' ; CALL pcmat( title, ohc(:,:,2) )
+      !
+    ENDIF
     !
-    title='S up' ; CALL pcmat( title, smat(:,:,1) )
-    title='S down' ; CALL pcmat( title, smat(:,:,2) )
+    ! Sab = S_12_alpha * S_12_beta 
+    WRITE(stdout,6) ABS( smat(1,2,1) * smat(1,2,2) )
     !
-    title='W1=v1*w1 up' ; CALL pcmat( title, wmat(:,:,1,1) )
-    title='W1 down' ; CALL pcmat( title, wmat(:,:,1,2) )
-    title='W2 up' ; CALL pcmat( title, wmat(:,:,2,1) )
-    title='W2 down' ; CALL pcmat( title, wmat(:,:,2,2) )
-    title='W1+W2 up' ; CALL pcmat( title, wmat(:,:,1,1)+wmat(:,:,2,1) )
-    title='W1+W2 down' ; CALL pcmat( title, wmat(:,:,1,2)+wmat(:,:,2,2) )
+    ! Hab = H_12_alpha * S_12_beta + H_12_beta * S_12_alpha
+    WRITE(stdout,5) ABS( ohc(1,2,1)*smat(1,2,2) + ohc(1,2,2)*smat(1,2,1) )
     !
-    title='H up' ; CALL pcmat( title, hc(:,:,1) )
-    title='H down' ; CALL pcmat( title, hc(:,:,2) )
-    !
-    title='Horth up' ; CALL pcmat( title, ohc(:,:,1) )
-    title='Horth down' ; CALL pcmat( title, ohc(:,:,2) )
-    !
-    WRITE(*,*)""
+    WRITE(stdout,*)""
     WRITE(stdout,1)
     !
   ENDIF
   !
   1 FORMAT('     =======================================================================')
   4 FORMAT(5x,'F1 = ',F12.5,3x,'F2 = ',F12.5)
+  5 FORMAT(5x,'|Hab| = ',F14.6)
+  6 FORMAT(5x,'|Sab| = ',F14.6)
   !
 END SUBROUTINE epcdft_print
 !

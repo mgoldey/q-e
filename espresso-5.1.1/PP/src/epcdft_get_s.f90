@@ -55,6 +55,8 @@ SUBROUTINE epcdft_get_s
     !
   ENDDO !ik
   !
+  WRITE(*,*)"    S done"
+  !
   ! close shop
   !
   DEALLOCATE( r_s_aux )
