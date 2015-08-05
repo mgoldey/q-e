@@ -72,6 +72,7 @@ dynamics_module.o \
 efermig.o \
 efermit.o \
 electrons.o \
+just_energy.o \
 eqvect.o \
 esm.o \
 ewald.o \

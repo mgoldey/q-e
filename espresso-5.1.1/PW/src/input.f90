@@ -155,7 +155,7 @@ SUBROUTINE iosys()
                             noinv_            => noinv, &
                             lkpoint_dir_      => lkpoint_dir, &
                             tqr_              => tqr, &
-                            io_level, ethr, lscf, lbfgs, lmd, &
+                            io_level, ethr, lscf,lenergy, lbfgs, lmd, &
                             ldamped, lbands, llang, use_SMC,  &
                             lconstrain, restart, twfcollect, &
                             llondon, do_makov_payne, lxdm, &
@@ -316,6 +316,12 @@ SUBROUTINE iosys()
   CASE( 'scf' )
      !
      lscf  = .true.
+     nstep = 1
+     !
+  CASE( 'energy' )
+     !
+     lscf  = .true.
+     lenergy  = .true.
      nstep = 1
      !
   CASE( 'nscf' )
