@@ -4,54 +4,50 @@ SUBROUTINE epcdft_get_diabatic
   !-----------------------------------------------------------------------
   !
   USE kinds, ONLY : DP
-  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, ohc
+  USE epcdft_mod, ONLY : smat, hc, ohc
   USE klist, ONLY : nks
   !
   IMPLICIT NONE
   !
   INTEGER i, j, s
-  REAL(DP) :: fmat(2), sev(2,2) ! sev eigvals of s matrix (i, spin)
+  REAL(DP) :: l(2,2) ! sev eigvals of s matrix (i, spin)
   COMPLEX(DP) :: smato(2,2,2) !(i,j,spin)
-  COMPLEX(DP) :: sevec(2,2,2) ! S eigenvector matrix sev(i,j,spin) 
-  COMPLEX(DP) :: invsevec(2,2,2) ! inverse of S eigenvector matrix invsev(i,j,spin) 
-  COMPLEX(DP) :: sd(2,2,2) ! diagonal S 
-  COMPLEX(DP) :: sdinvsqr(2,2,2) ! diagonal S-1/2
-  COMPLEX(DP) :: sinvsqr(2,2,2) ! S-1/2
+  COMPLEX(DP) :: u(2,2,2) ! S eigenvector matrix sev(i,j,spin) 
+  COMPLEX(DP) :: invu(2,2,2) ! inverse of S eigenvector matrix invsev(i,j,spin) 
+  COMPLEX(DP) :: d(2,2,2) ! diagonal S-1/2
+  COMPLEX(DP) :: invssqr(2,2,2) ! S-1/2
+  COMPLEX(DP) :: work(2,2,2) 
   !
   ohc = 0.D0
-  smato = 0.D0
-  sevec = 0.D0
-  sev = 0.D0
-  sd = 0.D0
-  sdinvsqr = 0.D0
-  sinvsqr = 0.D0
-  invsevec = 0.D0
-  fmat(1) = free1
-  fmat(2) = free2
+  u = 0.D0
+  l = 0.D0
+  invu = 0.D0
+  d = 0.D0
+  invssqr = 0.D0
   !
-  ! WORK ZONE 
-  ! WARNING CRAP BELOW
-  CALL get_evs(smat(:,:,1),2,sevec(:,:,1),sev(:,1))
-  CALL get_inv(sevec(:,:,1),invsevec(:,:,1))
-  !
-  sd(:,:,1) = MATMUL(sevec(:,:,1),smat(:,:,1))
-  sd(:,:,1) = MATMUL(sd(:,:,1),invsevec(:,:,1))
-  !
-  DO i = 1, 2
-    DO j = 1, 2
-      IF(i/=j)THEN
-        sdinvsqr(i,j,1) = 0.D0
-      ELSE
-        sdinvsqr(i,j,1) = sev(i,1)**(-0.5D0)
-      ENDIF
+  DO s = 1, nks
+    !
+    ! get U and U^-1 and eigenvals of s
+    CALL get_evs(smat(:,:,s),2,u(:,:,s),l(:,s))
+    CALL get_inv(u(:,:,s),invu(:,:,s))
+    !
+    ! get diag s^-1/2
+    DO i = 1, 2
+      d(i,i,s) = SIGN(1.D0,l(i,s))*l(i,s)**(-0.5D0)
     ENDDO
+    !
+    !
+    ! get s^-1/2
+    CALL trans(invu(:,:,s),work(:,:,s))
+    invssqr(:,:,s) = MATMUL( work(:,:,s), d(:,:,s) )
+    invssqr(:,:,s) = MATMUL( invssqr(:,:,s), u(:,:,s) )
+    !
+    ! get ohc
+    CALL trans(invssqr(:,:,s),work(:,:,s))
+    ohc(:,:,s) = MATMUL( work(:,:,s), hc(:,:,s) )
+    ohc(:,:,s) = MATMUL( ohc(:,:,s) , invssqr(:,:,s) )
+    !
   ENDDO
-  !
-  sinvsqr(:,:,1) = MATMUL(invsevec(:,:,1), sdinvsqr(:,:,1))
-  sinvsqr(:,:,1) = MATMUL(sinvsqr(:,:,1),sevec(:,:,1))
-  !
-  ohc(:,:,1) = MATMUL(sinvsqr(:,:,1), hc(:,:,1))
-  ohc(:,:,1) = MATMUL(ohc(:,:,1),sinvsqr(:,:,1))
   !
 END SUBROUTINE epcdft_get_diabatic
 !
@@ -135,9 +131,9 @@ END SUBROUTINE
 !-----------------------------------------------------------------------
 SUBROUTINE get_inv(ain,bout)
   !---------------------------------------------------------------------
+  ! gives inverse of 2x2 matrix ain
   !
   USE kinds, ONLY : DP
-  ! gives inverse of 2x2 matrix ain
   !
   IMPLICIT NONE
   !
@@ -156,3 +152,23 @@ SUBROUTINE get_inv(ain,bout)
   bout(2,2) = a/(-b*c + a*d)
   !
 END SUBROUTINE get_inv
+!
+!-----------------------------------------------------------------------
+SUBROUTINE trans(a,b)
+  !---------------------------------------------------------------------
+  !
+  USE kinds, ONLY : DP
+  !
+  IMPLICIT NONE
+  !
+  COMPLEX(DP), INTENT(IN) :: a(2,2)
+  COMPLEX(DP), INTENT(OUT) :: b(2,2)
+  INTEGER :: i, j
+  !
+  DO i = 1, 2
+    DO j = 1, 2
+      b(i,j)=a(j,i)
+    ENDDO
+  ENDDO
+  !
+END SUBROUTINE trans
