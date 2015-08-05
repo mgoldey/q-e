@@ -167,6 +167,7 @@ MODULE control_flags
   !
   LOGICAL, PUBLIC :: &
     lscf    =.FALSE., &! if .TRUE. the calc. is selfconsistent
+    lenergy =.FALSE., &! if .TRUE. the calc. is just an energy
     lbfgs   =.FALSE., &! if .TRUE. the calc. is a relaxation based on BFGS
     lmd     =.FALSE., &! if .TRUE. the calc. is a dynamics
     llang   =.FALSE., &! if .TRUE. the calc. is Langevin dynamics

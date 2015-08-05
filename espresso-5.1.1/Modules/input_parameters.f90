@@ -96,8 +96,8 @@ MODULE input_parameters
         CHARACTER(len=80) :: calculation = 'none'
           ! Specify the type of the simulation
           ! See below for allowed values
-        CHARACTER(len=80) :: calculation_allowed(14)
-        DATA calculation_allowed / 'scf', 'nscf', 'relax', 'md', 'cp', &
+        CHARACTER(len=80) :: calculation_allowed(15)
+        DATA calculation_allowed / 'scf', 'energy', 'nscf', 'relax', 'md', 'cp', &
           'vc-relax', 'vc-md', 'vc-cp', 'bands', 'neb', 'smd', 'cp-wf', &
           'vc-cp-wf', 'cp-wf-nscf'/
         CHARACTER(len=80) :: verbosity = 'default'

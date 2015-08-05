@@ -75,10 +75,10 @@ SUBROUTINE get_det(evc, evc2, r_s_aux, c_s_aux, occ, outdet)
   !
   IMPLICIT NONE
   !
+  INTEGER, INTENT(IN) :: occ
   COMPLEX(DP), INTENT(IN) :: evc(npwx, occ), evc2(npwx, occ)
   REAL(DP), INTENT(INOUT) :: r_s_aux(occ, occ)
   COMPLEX(DP), INTENT(INOUT) :: c_s_aux(occ, occ)
-  INTEGER, INTENT(IN) :: occ
   COMPLEX(DP) :: outdet
   !
   r_s_aux = 0.D0
