@@ -29,6 +29,8 @@ SUBROUTINE epcdft_get_diabatic
     !
     ! get U and U^-1 and eigenvals of s
     CALL get_evs(smat(:,:,s),2,u(:,:,s),l(:,s))
+    CALL trans(u(:,:,s),work(:,:,s))
+    u(:,:,s) = work(:,:,s)
     CALL get_inv(u(:,:,s),invu(:,:,s))
     !
     ! get diag s^-1/2
@@ -38,13 +40,11 @@ SUBROUTINE epcdft_get_diabatic
     !
     !
     ! get s^-1/2
-    CALL trans(invu(:,:,s),work(:,:,s))
-    invssqr(:,:,s) = MATMUL( work(:,:,s), d(:,:,s) )
+    invssqr(:,:,s) = MATMUL( invu(:,:,s), d(:,:,s) )
     invssqr(:,:,s) = MATMUL( invssqr(:,:,s), u(:,:,s) )
     !
     ! get ohc
-    CALL trans(invssqr(:,:,s),work(:,:,s))
-    ohc(:,:,s) = MATMUL( work(:,:,s), hc(:,:,s) )
+    ohc(:,:,s) = MATMUL( invssqr(:,:,s), hc(:,:,s) )
     ohc(:,:,s) = MATMUL( ohc(:,:,s) , invssqr(:,:,s) )
     !
   ENDDO
