@@ -112,7 +112,7 @@ SUBROUTINE epcdft_setup
   !
   ALLOCATE( evc2 ( npwx, nbnd ) )
   ALLOCATE( smat ( 2 , 2 , nks) )
-  ALLOCATE( wmat ( 2 , 2, 2 , nks) )
+  ALLOCATE( wmat ( 2 , 2, nks) )
   !
   evc2 = 0.d0
   smat = 0.d0
