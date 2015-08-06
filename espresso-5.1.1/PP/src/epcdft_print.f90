@@ -11,7 +11,7 @@ SUBROUTINE epcdft_print
   IMPLICIT NONE
   !
   LOGICAL :: epcdft_debug
-  CHARACTER(LEN=18) title
+  CHARACTER(LEN=256) title
   !
   epcdft_debug = .true.
   !
@@ -31,19 +31,17 @@ SUBROUTINE epcdft_print
       title='W up' ; CALL pcmat( title, wmat(:,:,1) )
       title='W down' ; CALL pcmat( title, wmat(:,:,2) )
       !
-      title='H up' ; CALL pcmat( title, hc(:,:,1) )
-      title='H down' ; CALL pcmat( title, hc(:,:,2) )
+      title='H' ; CALL pcmat( title, hc(:,:) )
       !
-      title='Horth up' ; CALL pcmat( title, ohc(:,:,1) )
-      title='Horth down' ; CALL pcmat( title, ohc(:,:,2) )
+      title='H lowdin orthogonalization'  ; CALL pcmat( title, ohc(:,:) )
       !
     ENDIF
     !
     ! Sab = S_12_alpha * S_12_beta 
     WRITE(stdout,6) ABS( smat(1,2,1) * smat(1,2,2) )
     !
-    ! Hab = H_12_alpha * S_12_beta + H_12_beta * S_12_alpha
-    WRITE(stdout,5) ABS( ohc(1,2,1)*smat(1,2,2) + ohc(1,2,2)*smat(1,2,1) )
+    ! |Hab| 
+    WRITE(stdout,5) ABS( ohc(1,2) )
     !
     WRITE(stdout,*)""
     WRITE(stdout,1)
@@ -66,7 +64,7 @@ SUBROUTINE pcmat (title, m)
   !
   IMPLICIT NONE
   !
-  CHARACTER(LEN=18), INTENT(IN) :: title
+  CHARACTER(LEN=256), INTENT(IN) :: title
   COMPLEX(DP), INTENT(IN) :: m(2,2)
   !
   INTEGER :: i, j

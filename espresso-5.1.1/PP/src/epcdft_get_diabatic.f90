@@ -10,11 +10,12 @@ SUBROUTINE epcdft_get_diabatic
   IMPLICIT NONE
   !
   INTEGER i, s
-  REAL(DP) :: l(2,2)            ! sev eigvals of S matrix (i, spin)
-  COMPLEX(DP) :: u(2,2,2)       ! U  S eigenvector matrix sev(i,j,spin) 
-  COMPLEX(DP) :: invu(2,2,2)    !U^-1 inverse of S eigenvector matrix invsev(i,j,spin) 
-  COMPLEX(DP) :: d(2,2,2)       ! SD^-1/2 is diagonal S^-1/2
-  COMPLEX(DP) :: invssqr(2,2,2) ! S-1/2
+  REAL(DP) :: l(2)            ! sev eigvals of S matrix
+  COMPLEX(DP) :: u(2,2)       ! U  S eigenvector matrix sev(i,j) 
+  COMPLEX(DP) :: invu(2,2)    !U^-1 inverse of S eigenvector matrix invsev(i,j) 
+  COMPLEX(DP) :: d(2,2)       ! SD^-1/2 is diagonal S^-1/2
+  COMPLEX(DP) :: invssqr(2,2) ! S-1/2
+  COMPLEX(DP) :: smattot(2,2)   ! Sup*Sdown
   !
   ohc = 0.D0
   l = 0.D0
@@ -22,28 +23,29 @@ SUBROUTINE epcdft_get_diabatic
   invu = 0.D0
   d = 0.D0
   invssqr = 0.D0
+  smattot(:,:) = smat(:,:,1)*smat(:,:,2)
   !
-  DO s = 1, nks
+!  DO s = 1, nks
     !
     ! get U and U^-1 and eigenvals (l) of S
-    CALL get_evs(smat(:,:,s),2,u(:,:,s),l(:,s))
-    CALL get_inv(u(:,:,s),invu(:,:,s))
+    CALL get_evs(smattot(:,:),2,u(:,:),l)
+    CALL get_inv(u(:,:),invu(:,:))
     !
     ! get diag S^-1/2
     DO i = 1, 2
-      d(i,i,s) = l( 2/i , s )**(-0.5D0) !eigenvals need to be switched thus 2/i
+      d(i,i) = l( 2/i )**(-0.5D0) !eigenvals need to be switched thus 2/i
     ENDDO
     !
     !
     ! get S^-1/2 = U^-1 . SD^-1/2 . U
-    invssqr(:,:,s) = MATMUL( invu(:,:,s), d(:,:,s) )
-    invssqr(:,:,s) = MATMUL( invssqr(:,:,s), u(:,:,s) )
+    invssqr(:,:) = MATMUL( invu(:,:), d(:,:) )
+    invssqr(:,:) = MATMUL( invssqr(:,:), u(:,:) )
     !
     ! get oHc = S^-1/2 . Hc . S^-1/2
-    ohc(:,:,s) = MATMUL( invssqr(:,:,s), hc(:,:,s) )
-    ohc(:,:,s) = MATMUL( ohc(:,:,s) , invssqr(:,:,s) )
+    ohc(:,:) = MATMUL( invssqr(:,:), hc(:,:) )
+    ohc(:,:) = MATMUL( ohc(:,:) , invssqr(:,:) )
     !
-  ENDDO
+!  ENDDO
   !
 END SUBROUTINE epcdft_get_diabatic
 !

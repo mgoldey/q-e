@@ -21,7 +21,8 @@ MODULE epcdft_mod
   COMPLEX(DP), ALLOCATABLE :: wmat(:,:,:) !  weigth matrix ( aa ab, ba bb, up down)
   REAL(DP), ALLOCATABLE :: w(:,:) ! weight functions w( r , system )
   REAL(DP) :: free1, free2 ! free energies for system 1 and 2 (no correction)
-  COMPLEX(DP) :: hc(2,2,2) ! coupling matrix hc(a,b,spin)
-  COMPLEX(DP) :: ohc(2,2,2) ! orthogonal coupling matrix ohc(a,b,spin)
+  COMPLEX(DP) :: hc(2,2) ! coupling matrix hc(a,b)
+  COMPLEX(DP) :: ohc(2,2) ! orthogonal coupling matrix ohc(a,b)
+  REAL(DP) :: cor1, cor2 ! energy corrections to the free energy for systems 1 and 2
   !
 ENDMODULE epcdft_mod
