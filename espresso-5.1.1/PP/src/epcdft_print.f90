@@ -28,8 +28,8 @@ SUBROUTINE epcdft_print
       title='S up' ; CALL pcmat( title, smat(:,:,1) )
       title='S down' ; CALL pcmat( title, smat(:,:,2) )
       !
-      title='W up' ; CALL pcmat( title, wmat(:,:,1)+wmat(:,:,1) )
-      title='W down' ; CALL pcmat( title, wmat(:,:,2)+wmat(:,:,2) )
+      title='W up' ; CALL pcmat( title, wmat(:,:,1) )
+      title='W down' ; CALL pcmat( title, wmat(:,:,2) )
       !
       title='H up' ; CALL pcmat( title, hc(:,:,1) )
       title='H down' ; CALL pcmat( title, hc(:,:,2) )
