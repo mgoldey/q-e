@@ -213,7 +213,7 @@ SUBROUTINE get_s_invs(evc, evc2, sinvs, occ)
   COMPLEX(DP), INTENT(INOUT) :: sinvs(occ, occ)
   REAL(DP) :: r_s_aux(occ, occ)
   COMPLEX(DP) :: c_s_aux(occ, occ)
-  COMPLEX(DP) :: crap
+  COMPLEX(DP) :: filler
   !
   r_s_aux = 0.D0
   c_s_aux = 0.D0
@@ -222,10 +222,10 @@ SUBROUTINE get_s_invs(evc, evc2, sinvs, occ)
   IF( gamma_only ) THEN
       CALL calbec ( npw, evc, evc2, r_s_aux, occ ) ! get over laps of each state
       c_s_aux = CMPLX(r_s_aux, 0.D0) 
-      CALL invmat_complex (occ, c_s_aux, sinvs, crap)
+      CALL invmat_complex (occ, c_s_aux, sinvs, filler)
   ELSE
       CALL calbec ( npw, evc, evc2, c_s_aux, occ )
-      CALL invmat_complex (occ, c_s_aux, sinvs, crap)
+      CALL invmat_complex (occ, c_s_aux, sinvs, filler)
   ENDIF
   !
 END SUBROUTINE get_s_invs
