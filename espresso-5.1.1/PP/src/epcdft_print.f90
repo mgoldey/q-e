@@ -13,7 +13,7 @@ SUBROUTINE epcdft_print
   LOGICAL :: epcdft_debug
   CHARACTER(LEN=18) title
   !
-  epcdft_debug = .false.
+  epcdft_debug = .true.
   !
   IF(ionode) THEN
     !

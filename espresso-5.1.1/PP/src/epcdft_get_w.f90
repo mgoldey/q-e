@@ -3,9 +3,8 @@
 SUBROUTINE epcdft_get_w
   !-----------------------------------------------------------------------
   !
-  !  <A|W|B> = <A|VA+VB|B> = N \sum_{i,j} (-1)^{i+j} <i|W|j> det( S_minor_i,j )
-  !
-  !  <i|W|j> is caclualted by sum_g conj(i(g)) Wj(g) not the same thing as sum_g conj(i(g)) w(g) j(g)
+  !  <A|W|B> = <A|VA+VB|B> = N \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
+  !                                                                     ^-----cofactor----------^
   !
   USE kinds, ONLY : DP
   USE klist, ONLY : nks
@@ -15,7 +14,7 @@ SUBROUTINE epcdft_get_w
   USE wvfct, ONLY : nbnd, npwx, igk, npw , g2kin, ecutwfc
   USE cell_base, ONLY : tpiba2
   USE klist, ONLY : xk
-  USE epcdft_mod, ONLY : evc2, iunwfc2, occup1, occdown1, wmat, w
+  USE epcdft_mod, ONLY : evc2, iunwfc2, occup1, occdown1, wmat, w, smat
   USE gvect, ONLY : ngm, g
   USE fft_base, ONLY : dfftp
   !
@@ -26,16 +25,13 @@ SUBROUTINE epcdft_get_w
   COMPLEX(DP) :: wevc(npwx, nbnd) ! wtot*evc
   COMPLEX(DP) :: wevc2(npwx, nbnd) ! wtot*evc2
   REAL(DP) :: wtot(dfftp%nnr) ! tot W  w(:,1) + w(:,2)
-  COMPLEX(DP), EXTERNAL :: dot, det_s_minor ! dot product and det of S minor
+  COMPLEX(DP), EXTERNAL :: dot
+  COMPLEX(DP) :: cofc(nbnd,nbnd,2,2) ! cofactor ( i, j, ab ba, spin up down )
   !
   occ(1) = occup1
   occ(2) = occdown1
   wtot(:) = w(:,1) + w(:,2)
   wmat = 0.D0
-  !
-  WRITE(*,*)"     NOTE : det_s_minor in epcdft_get_w calculates S every call."
-  WRITE(*,*)"     much time can be saved by saving S and just deleting the rows for S minor"
-  WRITE(*,*)"     we can change this later."
   !
   ! create S matrix
   !
@@ -49,6 +45,22 @@ SUBROUTINE epcdft_get_w
     CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
     CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik, -1 )
     !
+    ! S^-1  ab/ba 
+    !
+    CALL get_s_invs(evc, evc2, cofc(:,:,1,ik), nbnd)
+    !CALL get_s_invs(evc2, evc, cofc(:,:,2,ik), nbnd)
+    !
+    ! S^-1 * det(S) ab/ba 
+    !
+    cofc(:,:,1,ik) = cofc(:,:,1,ik) * smat(1,2,ik)
+    !cofc(:,:,2,ik) = cofc(:,:,2,ik) * smat(2,1,ik)
+    !
+    ! C = ( S^-1 * det(S))^T   ab/ba 
+    !
+    cofc(:,:,2,ik) = CONJG(cofc(:,:,1,ik))
+    cofc(:,:,1,ik) = TRANSPOSE(cofc(:,:,1,ik))
+    !cofc(:,:,2,ik) = TRANSPOSE(cofc(:,:,2,ik))
+    !
     ! aux = w*phiA
     CALL w_psi(evc, wtot, wevc) 
     CALL w_psi(evc2, wtot, wevc2) 
@@ -56,11 +68,11 @@ SUBROUTINE epcdft_get_w
     DO i = 1, occ(ik)
       DO j = 1, occ(ik)
       !
-      ! <B|W|A>                                        <phi_ib|w|phi_ja>
-      wmat(1,2,ik) = wmat(1,2,ik) + (-1.D0)**(i+j) * dot(evc2(:,i), wevc(:,j)) * det_s_minor(evc2,evc,i,j,occ(ik))
+      ! <B|W|A>                                 
+      wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,i), wevc(:,j)) * cofc(i,j,1,ik)
       !
       ! <A|W|B>
-      wmat(2,1,ik) = wmat(1,2,ik) + (-1.D0)**(i+j) * dot(evc(:,i), wevc2(:,j)) * det_s_minor(evc,evc2,i,j,occ(ik))
+      wmat(2,1,ik) = wmat(1,2,ik) + dot(evc(:,i), wevc2(:,j)) * cofc(i,j,2,ik)
       !
       ENDDO
     ENDDO
@@ -70,41 +82,11 @@ SUBROUTINE epcdft_get_w
     !
   ENDDO !ik
   !
-  WRITE(*,*)"    W done"
+  WRITE(*,*)"    W done Note : not sure if wmat should have a factor of N_occ"
   !
   ! close shop
   !
 END SUBROUTINE epcdft_get_w
-!
-!-----------------------------------------------------------------------
-FUNCTION det_s_minor(evc1,evc2,i,j,occ) RESULT(c)
-  !-----------------------------------------------------------------------
-  !
-  USE kinds, ONLY : DP
-  USE wvfct, ONLY : npwx 
-  !
-  IMPLICIT NONE
-  !
-  INTEGER, INTENT(IN) :: i, j, occ
-  COMPLEX(DP) :: c
-  COMPLEX(DP) :: c_s_aux(occ,occ) ! work array
-  REAL(DP) :: r_s_aux(occ,occ)  ! work array
-  COMPLEX(DP), INTENT(INOUT) :: evc1(npwx,occ), evc2(npwx,occ) ! these should be unchanged at end
-  COMPLEX(DP) :: aux1(npwx), aux2(npwx) ! work arrays
-  !
-  aux1(:)=evc1(:,i) ! keep the deleted row/colmn in aux
-  aux2(:)=evc2(:,j)
-  !
-  evc1(:,i)=evc1(:,occ) ! copy last row/colmn to deleted row/colmn
-  evc2(:,j)=evc2(:,occ)
-  !
-  CALL get_det( evc1, evc2, r_s_aux, c_s_aux, occ-1, c ) ! here we only get det S without last row/colmn
-  !
-  evc1(:,i)=aux1(:) ! put the deleted row/colmn back
-  evc2(:,j)=aux2(:)
-  !
-END FUNCTION det_s_minor
-!
 !
 !-----------------------------------------------------------------------
 SUBROUTINE w_psi(evc, w, auxg)
@@ -191,69 +173,59 @@ FUNCTION gdot(a, b) result(c)
   !
 END FUNCTION gdot
 !
-!
 !-----------------------------------------------------------------------
-!SUBROUTINE epcdft_get_s
-!  !-----------------------------------------------------------------------
-!  !
-!  USE kinds, ONLY : DP
-!  USE klist, ONLY : nks
-!  USE io_files, ONLY : nwordwfc, iunwfc
-!  USE io_global, ONLY : ionode, stdout
-!  USE wavefunctions_module, ONLY : evc
-!  USE wvfct, ONLY : nbnd, npwx, igk, npw , g2kin, ecutwfc
-!  USE cell_base, ONLY : tpiba2
-!  USE klist, ONLY : xk
-!  USE epcdft_mod, ONLY : evc2, iunwfc2, occup1, occdown1, smat
-!  USE gvect, ONLY : ngm, g
-!  !
-!  IMPLICIT NONE
-!  !
-!  INTEGER :: ik
-!  INTEGER :: occ(2) ! number of occupied states for that spin
-!  COMPLEX(DP), ALLOCATABLE :: c_s_aux(:,:) ! complex overlap matrix S_ij = <system 1_i | system 2_j>
-!  REAL(DP), ALLOCATABLE :: r_s_aux(:,:) ! real overlap matrix S_ij = <system 1_i | system 2_j>
-!  !
-!  ALLOCATE( c_s_aux(nbnd,nbnd) )
-!  ALLOCATE( r_s_aux(nbnd,nbnd) )
-!  !
-!  ! bounds for spin channels in S matrix
-!  !
-!  occ(1) = occup1
-!  occ(2) = occdown1
-!  !
-!  ! create S matrix
-!  !
-!  DO ik = 1 , nks 
-!    !
-!    ! read wfcs for system 1
-!    CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
-!    CALL davcio( evc, 2*nwordwfc, iunwfc, ik, -1 )
-!    !
-!    ! read wfcs for system 1
-!    CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
-!    CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik, -1 )
-!    !
-!    ! <1|1>
-!    CALL get_det( evc, evc, r_s_aux, c_s_aux, occ(ik), smat(1,1,ik) )
-!    ! 
-!    ! <1|2>
-!    CALL get_det( evc, evc2, r_s_aux, c_s_aux, occ(ik), smat(1,2,ik) )
-!    !
-!    ! <2|1>
-!    CALL get_det( evc2, evc, r_s_aux, c_s_aux, occ(ik), smat(2,1,ik) )
-!    !
-!    ! <2|2>
-!    CALL get_det( evc2, evc2, r_s_aux, c_s_aux, occ(ik), smat(2,2,ik) )
-!    !
-!  ENDDO !ik
-!  !
-!  WRITE(*,*)"    S done"
-!  !
-!  ! close shop
-!  !
-!  DEALLOCATE( r_s_aux )
-!  DEALLOCATE( c_s_aux )
-!  !
-!END SUBROUTINE epcdft_get_s
-!!
+SUBROUTINE cident(c,n)
+  !-----------------------------------------------------------------------
+  !
+  ! return complex identitiy matrix
+  !
+  USE kinds, ONLY : DP
+  !
+  IMPLICIT NONE
+  !
+  INTEGER, INTENT(IN) :: n
+  COMPLEX(DP), INTENT(INOUT) :: c(n,n)
+  INTEGER :: i, j
+  !
+  c = 0.D0
+  !
+  DO i=1,n
+    DO j=1,n
+      IF(i==j)  c = CMPLX(1.D0,1.D0) 
+    ENDDO
+  ENDDO
+  !
+END SUBROUTINE cident
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE get_s_invs(evc, evc2, sinvs, occ)
+  !--------------------------------------------------------------------------
+  !
+  USE kinds, ONLY : DP
+  USE control_flags, ONLY : gamma_only
+  USE wvfct, ONLY : npwx, npw
+  USE becmod, ONLY : calbec
+  !
+  IMPLICIT NONE
+  !
+  INTEGER, INTENT(IN) :: occ
+  COMPLEX(DP), INTENT(IN) :: evc(npwx, occ), evc2(npwx, occ)
+  COMPLEX(DP), INTENT(INOUT) :: sinvs(occ, occ)
+  REAL(DP) :: r_s_aux(occ, occ)
+  COMPLEX(DP) :: c_s_aux(occ, occ)
+  COMPLEX(DP) :: crap
+  !
+  r_s_aux = 0.D0
+  c_s_aux = 0.D0
+  sinvs = 0.D0
+  !
+  IF( gamma_only ) THEN
+      CALL calbec ( npw, evc, evc2, r_s_aux, occ ) ! get over laps of each state
+      c_s_aux = CMPLX(r_s_aux, 0.D0) 
+      CALL invmat_complex (occ, c_s_aux, sinvs, crap)
+  ELSE
+      CALL calbec ( npw, evc, evc2, c_s_aux, occ )
+      CALL invmat_complex (occ, c_s_aux, sinvs, crap)
+  ENDIF
+  !
+END SUBROUTINE get_s_invs

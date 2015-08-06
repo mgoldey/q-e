@@ -79,7 +79,7 @@ SUBROUTINE get_det(evc, evc2, r_s_aux, c_s_aux, occ, outdet)
   COMPLEX(DP), INTENT(IN) :: evc(npwx, occ), evc2(npwx, occ)
   REAL(DP), INTENT(INOUT) :: r_s_aux(occ, occ)
   COMPLEX(DP), INTENT(INOUT) :: c_s_aux(occ, occ)
-  COMPLEX(DP) :: outdet
+  COMPLEX(DP), INTENT(INOUT) :: outdet
   !
   r_s_aux = 0.D0
   c_s_aux = 0.D0
