@@ -10,10 +10,10 @@
 &SYSTEM
   nosym = .true.
   ibrav     = 1,
-  a         = 10,
+  a         = 14,
   nat       = 2,
   ntyp      = 1,
-  ecutwfc   = 60,
+  ecutwfc   = 80,
   tot_charge = +1
   nspin   = 2,
   tot_magnetization = 1
