@@ -16,6 +16,7 @@ SUBROUTINE epcdft_get_diabatic
   COMPLEX(DP) :: d(2,2)       ! SD^-1/2 is diagonal S^-1/2
   COMPLEX(DP) :: invssqr(2,2) ! S-1/2
   COMPLEX(DP) :: smattot(2,2)   ! Sup*Sdown
+  COMPLEX(DP) :: crap
   !
   ohc = 0.D0
   l = 0.D0
@@ -29,17 +30,19 @@ SUBROUTINE epcdft_get_diabatic
     !
     ! get U and U^-1 and eigenvals (l) of S
     CALL get_evs(smattot(:,:),2,u(:,:),l)
-    CALL get_inv(u(:,:),invu(:,:))
     !
     ! get diag S^-1/2
     DO i = 1, 2
-      d(i,i) = l( 2/i )**(-0.5D0) !eigenvals need to be switched thus 2/i
+      d(i,i) = l( i )**(-0.5D0)
     ENDDO
+
     !
     !
     ! get S^-1/2 = U^-1 . SD^-1/2 . U
-    invssqr(:,:) = MATMUL( invu(:,:), d(:,:) )
+    invssqr(:,:) = MATMUL( Transpose(u(:,:)), d(:,:) )
     invssqr(:,:) = MATMUL( invssqr(:,:), u(:,:) )
+    !
+    ! CALL print_cmat("S**-.5",invssqr,2)
     !
     ! get oHc = S^-1/2 . Hc . S^-1/2
     ohc(:,:) = MATMUL( invssqr(:,:), hc(:,:) )
@@ -94,26 +97,3 @@ SUBROUTINE get_evs(a,n,z,w)
   END IF
 END SUBROUTINE get_evs
 !-----------------------------------------------------------------------
-SUBROUTINE get_inv(ain,bout)
-  !---------------------------------------------------------------------
-  ! gives inverse of 2x2 matrix ain
-  !
-  USE kinds, ONLY : DP
-  !
-  IMPLICIT NONE
-  !
-  COMPLEX(DP), INTENT(IN) :: ain(2,2)
-  COMPLEX(DP), INTENT(INOUT) :: bout(2,2)
-  COMPLEX(DP) :: a, b, c, d
-  !
-  a = ain(1,1)
-  b = ain(2,1)
-  c = ain(1,2)
-  d = ain(2,2)
-  !
-  bout(1,1) = d/(-b*c + a*d)
-  bout(2,1) = -(b/(-b*c + a*d))
-  bout(1,2) = -(c/(-b*c + a*d))
-  bout(2,2) = a/(-b*c + a*d)
-  !
-END SUBROUTINE get_inv
