@@ -45,21 +45,18 @@ SUBROUTINE epcdft_get_w
     CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
     CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik, -1 )
     !
-    ! S^-1  ab/ba 
+    ! S^-1  ab 
     !
     CALL get_s_invs(evc, evc2, cofc(:,:,1,ik), nbnd)
-    !CALL get_s_invs(evc2, evc, cofc(:,:,2,ik), nbnd)
     !
-    ! S^-1 * det(S) ab/ba 
+    ! S^-1 * det(S) ab 
     !
     cofc(:,:,1,ik) = cofc(:,:,1,ik) * smat(1,2,ik)
-    !cofc(:,:,2,ik) = cofc(:,:,2,ik) * smat(2,1,ik)
     !
-    ! C = ( S^-1 * det(S))^T   ab/ba 
+    ! C = ( S^-1 * det(S))^T   ab & ba 
     !
     cofc(:,:,2,ik) = CONJG(cofc(:,:,1,ik))
     cofc(:,:,1,ik) = TRANSPOSE(cofc(:,:,1,ik))
-    !cofc(:,:,2,ik) = TRANSPOSE(cofc(:,:,2,ik))
     !
     ! aux = w*phiA
     CALL w_psi(evc, wtot, wevc) 
@@ -77,14 +74,9 @@ SUBROUTINE epcdft_get_w
       ENDDO
     ENDDO
     !
-    !wmat(1,2,ik) = occ(ik) * wmat(1,2,ik)
-    !wmat(2,1,ik) = occ(ik) * wmat(2,1,ik)
-    !
   ENDDO !ik
   !
   WRITE(*,*)"    W done Note"
-  !
-  ! close shop
   !
 END SUBROUTINE epcdft_get_w
 !
@@ -172,30 +164,6 @@ FUNCTION gdot(a, b) result(c)
   ENDIF
   !
 END FUNCTION gdot
-!
-!-----------------------------------------------------------------------
-SUBROUTINE cident(c,n)
-  !-----------------------------------------------------------------------
-  !
-  ! return complex identitiy matrix
-  !
-  USE kinds, ONLY : DP
-  !
-  IMPLICIT NONE
-  !
-  INTEGER, INTENT(IN) :: n
-  COMPLEX(DP), INTENT(INOUT) :: c(n,n)
-  INTEGER :: i, j
-  !
-  c = 0.D0
-  !
-  DO i=1,n
-    DO j=1,n
-      IF(i==j)  c = CMPLX(1.D0,1.D0) 
-    ENDDO
-  ENDDO
-  !
-END SUBROUTINE cident
 !
 !-----------------------------------------------------------------------------
 SUBROUTINE get_s_invs(evc, evc2, sinvs, occ)
