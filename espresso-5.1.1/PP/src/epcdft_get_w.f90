@@ -72,7 +72,7 @@ SUBROUTINE epcdft_get_w
       wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,i), wevc(:,j)) * cofc(i,j,1,ik)
       !
       ! <A|W|B>
-      wmat(2,1,ik) = wmat(1,2,ik) + dot(evc(:,i), wevc2(:,j)) * cofc(i,j,2,ik)
+      wmat(2,1,ik) = wmat(2,1,ik) + dot(evc(:,i), wevc2(:,j)) * cofc(i,j,2,ik)
       !
       ENDDO
     ENDDO
