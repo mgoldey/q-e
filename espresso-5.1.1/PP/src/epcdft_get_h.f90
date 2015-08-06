@@ -8,6 +8,8 @@ SUBROUTINE epcdft_get_h
   ! hc(2,1,s) = 0.5 ( (F2+F1) Sba - Wba )
   ! hc(2,2,s) = ecor2
   !
+  ! Wab = Wab_up*det(Sab_down) + Wab_down*det(Sab_up)
+  !
   USE kinds, ONLY : DP
   USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, cor1, cor2
   USE klist, ONLY : nks
@@ -24,7 +26,7 @@ SUBROUTINE epcdft_get_h
   core(2) = free2 + cor2
   ftot = free1 + free2
   stot(:,:) = smat(:,:,1) * smat(:,:,2)
-  wtot(:,:) = wmat(:,:,1) + wmat(:,:,2)
+  wtot(:,:) = wmat(:,:,1) * smat(:,:,2) + wmat(:,:,2) * smat(:,:,1)
   !
 !  DO s = 1, nks
     DO i = 1, 2
@@ -40,6 +42,6 @@ SUBROUTINE epcdft_get_h
     ENDDO
 !  ENDDO
   !
-  WRITE(*,*)"    H done Note : assuming Sab=Sab_up*Sab_down and Wab = Wab_up + Wab_down"
+  WRITE(*,*)"    H done"
   !
 END SUBROUTINE epcdft_get_h

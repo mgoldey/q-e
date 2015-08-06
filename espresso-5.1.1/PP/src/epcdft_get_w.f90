@@ -82,7 +82,7 @@ SUBROUTINE epcdft_get_w
     !
   ENDDO !ik
   !
-  WRITE(*,*)"    W done Note : not sure if wmat should have a factor of N_occ. I assume no."
+  WRITE(*,*)"    W done Note"
   !
   ! close shop
   !
