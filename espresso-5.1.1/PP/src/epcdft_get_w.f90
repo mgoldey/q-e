@@ -67,15 +67,13 @@ SUBROUTINE epcdft_get_w
     !
     DO i = 1, occ(ik)
       DO j = 1, occ(ik)
-        IF(i/=j)THEN
-          !
-          ! <B|W|A>                                 
-          wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,i), wevc(:,j)) * cofc(i,j,1,ik)
-          !
-          ! <A|W|B>
-          wmat(2,1,ik) = wmat(2,1,ik) + dot(evc(:,i), wevc2(:,j)) * cofc(i,j,2,ik)
-          !
-        ENDIF
+        !
+        ! <B|W|A>                                 
+        wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,i), wevc(:,j)) * cofc(i,j,1,ik)
+        !
+        ! <A|W|B>
+        wmat(2,1,ik) = wmat(2,1,ik) + dot(evc(:,i), wevc2(:,j)) * cofc(i,j,2,ik)
+        !
       ENDDO
     ENDDO
     !
