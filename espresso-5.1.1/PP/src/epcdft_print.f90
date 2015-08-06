@@ -4,9 +4,10 @@ SUBROUTINE epcdft_print
   !-----------------------------------------------------------------------
   !
   USE kinds, ONLY : DP
-  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, ohc
+  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, ohc, cor1, cor2
   USE klist, ONLY : nks
   USE io_global, ONLY : stdout, ionode
+  USE constants,  ONLY : rytoev
   !
   IMPLICIT NONE
   !
@@ -23,6 +24,8 @@ SUBROUTINE epcdft_print
     IF(epcdft_debug) THEN
       !
       WRITE(stdout,4) free1, free2
+      WRITE(stdout,7) free1+cor1, free2+cor2
+      WRITE(stdout,8) cor1, cor2
       WRITE(*,*)""
       !
       title='S up' ; CALL pcmat( title, smat(:,:,1) )
@@ -42,6 +45,8 @@ SUBROUTINE epcdft_print
     !
     ! |Hab| 
     WRITE(stdout,5) ABS( ohc(1,2) )
+    WRITE(stdout,9) ABS( ohc(1,2) ) * 0.5D0
+    WRITE(stdout,10) ABS( ohc(1,2) ) * rytoev
     !
     WRITE(stdout,*)""
     WRITE(stdout,1)
@@ -50,7 +55,11 @@ SUBROUTINE epcdft_print
   !
   1 FORMAT('     =======================================================================')
   4 FORMAT(5x,'F1 = ',F12.5,3x,'F2 = ',F12.5)
-  5 FORMAT(5x,'|Hab| = ',F14.6)
+  7 FORMAT(5x,'E1 = ',F12.5,3x,'E2 = ',F12.5)
+  8 FORMAT(5x,'C1 = ',F12.5,3x,'C2 = ',F12.5)
+  5 FORMAT(5x,'|Hab| = ',F14.6,' Ry')
+  9 FORMAT(5x,'|Hab| = ',F14.6,' Ha')
+  10 FORMAT(5x,'|Hab| = ',F14.6,' eV')
   6 FORMAT(5x,'|Sab| = ',F14.6)
   !
 END SUBROUTINE epcdft_print
