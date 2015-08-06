@@ -77,12 +77,12 @@ SUBROUTINE epcdft_get_w
       ENDDO
     ENDDO
     !
-    wmat(1,2,ik) = occ(ik) * wmat(1,2,ik)
-    wmat(2,1,ik) = occ(ik) * wmat(2,1,ik)
+    !wmat(1,2,ik) = occ(ik) * wmat(1,2,ik)
+    !wmat(2,1,ik) = occ(ik) * wmat(2,1,ik)
     !
   ENDDO !ik
   !
-  WRITE(*,*)"    W done Note : not sure if wmat should have a factor of N_occ"
+  WRITE(*,*)"    W done Note : not sure if wmat should have a factor of N_occ. I assume no."
   !
   ! close shop
   !
