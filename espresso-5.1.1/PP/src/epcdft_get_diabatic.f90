@@ -29,7 +29,9 @@ SUBROUTINE epcdft_get_diabatic
 !  DO s = 1, nks
     !
     ! get U and U^-1 and eigenvals (l) of S
-    CALL get_evs(smattot(:,:),2,u(:,:),l)
+    CALL cdiagh(2,smattot,2,l,u)
+
+    !CALL get_evs(smattot(:,:),2,u(:,:),l)
     !
     ! get diag S^-1/2
     DO i = 1, 2
@@ -39,8 +41,8 @@ SUBROUTINE epcdft_get_diabatic
     !
     !
     ! get S^-1/2 = U^-1 . SD^-1/2 . U
-    invssqr(:,:) = MATMUL( Transpose(u(:,:)), d(:,:) )
-    invssqr(:,:) = MATMUL( invssqr(:,:), u(:,:) )
+    invssqr(:,:) = MATMUL( u(:,:), d(:,:) )
+    invssqr(:,:) = MATMUL( invssqr(:,:), Transpose(u(:,:)) )
     !
     ! CALL print_cmat("S**-.5",invssqr,2)
     !
