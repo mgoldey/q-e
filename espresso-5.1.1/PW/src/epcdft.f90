@@ -214,7 +214,7 @@ SUBROUTINE epcdft_controller()
     epcdft_shift = -1.D0 * epcdft_shift
     !
     IF (.not.zero) WRITE(*,*)"    E field correction : ",epcdft_shift," Ry"
-    WRITE(*,*)"    #e's   in well     : ",einwell," electrons"
+    WRITE(*,*)"    Total charge in well     : ",-1.D0*einwell," Ha atomic units"
     !
     ! is there a localization condition?
     !
@@ -230,7 +230,7 @@ SUBROUTINE epcdft_controller()
         !
         conv_ions = .FALSE.
         !
-        WRITE(*,*) "    Surplus/deficit electrons    :  ", enumerr,    "electrons"
+        WRITE(*,*) "    Surplus/deficit electrons    :  ", -1.D0*enumerr,    "electrons"
         WRITE(*,*) "    epcdft_thr                   :  ", epcdft_thr, "electrons"
         !
       ELSE
