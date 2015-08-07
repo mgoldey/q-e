@@ -2,26 +2,26 @@
     calculation='scf'
     pseudo_dir = '../pseudos',
     outdir='./out'
-    prefix='scf'
+    prefix='right'
     wf_collect = .true.
     verbosity = "high" 
   do_epcdft    = .true.,
 /
 &system
     ibrav=1, 
-    celldm(1) =20.d0, 
+    celldm(1) =17.d0, 
     nat=13, 
     ntyp=3,
-    ecutwfc = 85.d0, 
+    ecutwfc = 60.d0, 
     nbnd=40,
     nosym=.true.
     tot_charge = -1
     nspin = 2,
     tot_magnetization = 2
   hirshfeld = .TRUE.
-  fragment_atom1    = 1,
-  fragment_atom2    = 12,
-  epcdft_amp        = 9.6066E-02,
+  fragment_atom1    = 13,
+  fragment_atom2    = 13,
+  epcdft_amp        = 9.6066E-03,
   epcdft_electrons  = 1.D0,
   epcdft_thr = 1.0E-02
 / 
