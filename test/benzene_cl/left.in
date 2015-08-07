@@ -2,7 +2,7 @@
     calculation='scf'
     pseudo_dir = '../pseudos',
     outdir='./out'
-    prefix='scf'
+    prefix='left'
     wf_collect = .true.
     verbosity = "high" 
   do_epcdft    = .true.,
