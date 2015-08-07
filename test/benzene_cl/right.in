@@ -1,6 +1,6 @@
 &control
     calculation='scf'
-    pseudo_dir = '../pseudos',
+    pseudo_dir = '../pseudo',
     outdir='./out'
     prefix='right'
     wf_collect = .true.
@@ -21,7 +21,7 @@
   hirshfeld = .TRUE.
   fragment_atom1    = 13,
   fragment_atom2    = 13,
-  epcdft_amp        = 9.6066E-03,
+  epcdft_amp        = 9.6066E-02,
   epcdft_electrons  = 1.D0,
   epcdft_thr = 1.0E-02
 / 
