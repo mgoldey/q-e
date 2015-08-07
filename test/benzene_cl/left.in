@@ -1,0 +1,49 @@
+&control
+    calculation='scf'
+    pseudo_dir = '../pseudos',
+    outdir='./out'
+    prefix='scf'
+    wf_collect = .true.
+    verbosity = "high" 
+  do_epcdft    = .true.,
+/
+&system
+    ibrav=1, 
+    celldm(1) =17.d0, 
+    nat=13, 
+    ntyp=3,
+    ecutwfc = 60.d0, 
+    nbnd=40,
+    nosym=.true.
+    tot_charge = -1
+    nspin = 2,
+    tot_magnetization = 0
+  hirshfeld = .TRUE.
+  fragment_atom1    = 1,
+  fragment_atom2    = 12,
+  epcdft_amp        = 0.10D0,
+  epcdft_electrons  = 1.D0,
+  epcdft_thr = 1.0E-02
+/ 
+&electrons 
+    diago_full_acc=.true.
+    mixing_beta = 0.20
+/ 
+ATOMIC_SPECIES 
+C   12.0107  C.pbe-mt_fhi.UPF 
+H   1.00794  H.pbe-rrkjus.UPF 
+Cl  1.0      Cl.UPF
+ATOMIC_POSITIONS {angstrom} 
+C       0.0000   1.3970 0.0000 
+C       1.2098   0.6985 0.0000 
+C       1.2098  -0.6985 0.0000 
+C       0.0000  -1.3970 0.0000 
+C      -1.2098  -0.6985 0.0000 
+C      -1.2098   0.6985 0.0000 
+H       0.0000   2.4810 0.0000 
+H       2.1486   1.2405 0.0000 
+H       2.1486  -1.2405 0.0000 
+H       0.0000  -2.4810 0.0000 
+H      -2.1486  -1.2405 0.0000 
+H      -2.1486   1.2405 0.0000 
+Cl      0.6049 1.04775  3.0000
