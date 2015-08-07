@@ -1,8 +1,8 @@
 &control
     calculation='scf'
-    pseudo_dir = '../pseudos',
+    pseudo_dir = '../pseudo',
     outdir='./out'
-    prefix='scf'
+    prefix='left'
     wf_collect = .true.
     verbosity = "high" 
   do_epcdft    = .true.,
