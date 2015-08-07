@@ -58,10 +58,32 @@ SUBROUTINE epcdft_setup
   !
   ! ... Broadcast variables
   !
+  CALL mp_bcast (ios, ionode_id, world_comm )
   CALL mp_bcast( tmp_dir, ionode_id, world_comm )
-  CALL mp_bcast( prefix, ionode_id, world_comm )
   CALL mp_bcast( tmp_dir2, ionode_id, world_comm )
+  CALL mp_bcast( outdir, ionode_id, world_comm )
+  CALL mp_bcast( prefix, ionode_id, world_comm )
   CALL mp_bcast( prefix2, ionode_id, world_comm )
+  CALL mp_bcast( outdir2, ionode_id, world_comm )
+  CALL mp_bcast( occup1, ionode_id, world_comm )
+  CALL mp_bcast( occup2, ionode_id, world_comm )
+  CALL mp_bcast( occdown1, ionode_id, world_comm )
+  CALL mp_bcast( occdown2, ionode_id, world_comm )
+  CALL mp_bcast( debug, ionode_id, world_comm )
+  CALL mp_bcast( s_spin, ionode_id, world_comm )
+  CALL mp_bcast( det_by_zgedi, ionode_id, world_comm )
+  CALL mp_bcast( do_epcdft, ionode_id, world_comm )
+  CALL mp_bcast( fragment1_atom1, ionode_id, world_comm )
+  CALL mp_bcast( fragment1_atom2, ionode_id, world_comm )
+  CALL mp_bcast( fragment2_atom1, ionode_id, world_comm )
+  CALL mp_bcast( fragment2_atom2, ionode_id, world_comm )
+  CALL mp_bcast( fragment1_amp, ionode_id, world_comm )
+  CALL mp_bcast( fragment2_amp, ionode_id, world_comm )
+  CALL mp_bcast( free1, ionode_id, world_comm )
+  CALL mp_bcast( free2, ionode_id, world_comm )
+  CALL mp_bcast( hirshfeLd, ionode_id, world_comm )
+  CALL mp_bcast( cor1, ionode_id, world_comm )
+  CALL mp_bcast( cor2, ionode_id, world_comm )
   !
   ! first read system 2 and store in system 1's variables 
   ! then we will restore vars to right place and read sys 1's stuff
