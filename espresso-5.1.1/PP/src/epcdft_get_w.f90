@@ -134,7 +134,7 @@ FUNCTION dot(a, b) result(c)
   COMPLEX(DP) :: c
   !
   IF (gamma_only) THEN
-     c = CMPLX( gdot(a, b) , 0.D0 )
+     c = CMPLX( gdot(a, b) , 0.D0, KIND=DP )
   ELSE
      c = zdotc( npwx, a, 1, b, 1 )
   ENDIF
