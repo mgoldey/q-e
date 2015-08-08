@@ -189,7 +189,7 @@ SUBROUTINE get_s_invs(evc, evc2, sinvs, occ)
   !
   IF( gamma_only ) THEN
       CALL calbec ( npw, evc, evc2, r_s_aux, occ ) ! get over laps of each state
-      c_s_aux = CMPLX(r_s_aux, 0.D0) 
+      c_s_aux = CMPLX(r_s_aux, 0.D0, KIND=DP) 
       CALL invmat_complex (occ, c_s_aux, sinvs, filler)
   ELSE
       CALL calbec ( npw, evc, evc2, c_s_aux, occ )
