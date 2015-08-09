@@ -6,14 +6,19 @@ SUBROUTINE epcdft_setup
   USE kinds,                ONLY : DP
   USE io_files,             ONLY : prefix, tmp_dir, diropn
   USE mp_global,            ONLY : npool  
-  USE wvfct,                ONLY : nbnd, npwx
+  USE wvfct,                ONLY : nbnd, npwx, igk, npw, g2kin, ecutwfc
   USE klist,                ONLY : nks
   USE io_global,            ONLY : ionode, ionode_id, stdout
   USE mp,                   ONLY : mp_bcast
   USE mp_world,             ONLY : world_comm
   USE io_files,             ONLY : nwordwfc, iunwfc
-  USE fft_base,             ONLY : dfftp,  grid_gather
+  USE fft_base,             ONLY : dfftp, grid_gather
   USE scf,                  ONLY : rho
+  USE klist,                ONLY : nks
+  USE klist,                ONLY : xk
+  USE gvect,                ONLY : ngm, g
+  USE wavefunctions_module, ONLY : evc
+  USE cell_base,            ONLY : tpiba2
   USE epcdft_mod  
   USE epcdft
   !
@@ -23,7 +28,7 @@ SUBROUTINE epcdft_setup
   LOGICAL :: exst2 
   CHARACTER (len=256) :: tmp_dir2 ! temp variable to store system 2's dir info 
   CHARACTER (len=256) :: tmp_dir_pass   ! used to store tmp_dir during pass for reading two systems
-  INTEGER  :: iunwfc_pass    ! same as above but diff var
+  INTEGER  :: iunwfc_pass, ik   ! same as above but diff var
   CHARACTER (len=256) :: prefix_pass
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER :: ios
@@ -96,10 +101,17 @@ SUBROUTINE epcdft_setup
   iunwfc = iunwfc2
   prefix = prefix2
   !
-  WRITE(*,*)"    ======================================================================= "
-  WRITE(*,*) "    SYSTEM 2 INFO"
+  IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
+  IF( ionode ) WRITE( stdout,*) "    SYSTEM 2 INFO"
   do_epcdft=.false.
   CALL read_file()  ! for system 2
+  CALL openfil_pp() ! open all files for scf run set filenames/units
+  ALLOCATE( evc2 ( npwx, nbnd, nks ) )
+  !
+  DO ik = 1, nks
+    CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
+    CALL davcio( evc2(:,:,ik), 2*nwordwfc, iunwfc, ik, -1 )
+  ENDDO
   !
   ALLOCATE( w ( dfftp%nnr , 2 ) )
   !
@@ -110,119 +122,48 @@ SUBROUTINE epcdft_setup
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
   !
-  ! re open the wfc file for system 2
-  CALL diropn_gw ( iunwfc2, tmp_dir2, trim( prefix2 )//'.wfc', 2*nwordwfc, exst2, 1 ) ! below 
-  !
-  !
   ! restore sys 1's vars and read sys 1's data
-  WRITE(*,*)"    ======================================================================= "
-  WRITE(*,*) "    SYSTEM 1 INFO"
+  IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
+  IF( ionode ) WRITE( stdout,*) "    SYSTEM 1 INFO"
   do_epcdft=.false.
   tmp_dir = tmp_dir_pass
   iunwfc = iunwfc_pass
   prefix = prefix_pass
   CALL read_file()  
+  CALL openfil_pp() 
+  !
+  ALLOCATE( evc1 ( npwx, nbnd, nks ) )
+  !
+  DO ik = 1, nks
+    CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
+    CALL davcio( evc1(:,:,ik), 2*nwordwfc, iunwfc, ik, -1 )
+  ENDDO
+  !
+  DEALLOCATE( evc )
   !
   ! setup weight function for system 1
   fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   CALL read_cube(239841275, fil, w(:,1) )
   !
-  WRITE(*,*)"    ======================================================================= "
+  IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
   !
-  CALL openfil_pp() ! open all files for scf run set filenames/units
-  CALL init_us_1    ! compute pseduo pot stuff
+  !CALL init_us_1    ! compute pseduo pot stuff
   !
-  ALLOCATE( evc2 ( npwx, nbnd ) )
   ALLOCATE( smat ( 2 , 2 , nks) )
   ALLOCATE( wmat ( 2 , 2, nks) )
   !
-  evc2 = 0.d0
   smat = 0.d0
   wmat = 0.d0
   !
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
                           occup1, occdown1, occup2, occdown2, debug,  s_spin, det_by_zgedi )
   !
-  WRITE(*,*)" "
-  WRITE(*,*)"    ======================================================================= "
-  WRITE(*,*)"    Progress : "
-  WRITE(*,*)"    Setup done"
+  IF( ionode ) WRITE( stdout,*)" "
+  IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
+  IF( ionode ) WRITE( stdout,*)"    Progress : "
+  IF( ionode ) WRITE( stdout,*)"    Setup done"
   !
 END SUBROUTINE epcdft_setup
-!
-!-----------------------------------------------------------------------
-SUBROUTINE diropn_gw (unit, tmp_dir2, filename, recl, exst, ndnmbr )
-  !-----------------------------------------------------------------------
-  !
-  !     this routine (taken from PP/src/pw2gw.f90 and modded) opens a file in tmp_dir2 for direct I/O access
-  !     If appropriate, the node number is added to the file name
-  !
-  USE kinds
-  USE io_files
-  IMPLICIT NONE
-
-  !
-  !    first the input variables
-  !
-  CHARACTER(len=*) :: filename
-  ! input: name of the file to open
-  INTEGER :: unit, recl
-  ! input: unit of the file to open
-  ! input: length of the records
-  LOGICAL :: exst
-  ! output: if true the file exists
-  !
-  INTEGER :: ndnmbr
-  !
-  !    local variables
-  !
-  CHARACTER(len=256) :: tempfile
-  ! complete file name
-  CHARACTER(len=80) :: assstr
-  INTEGER :: ios, unf_recl, ierr
-  ! used to check I/O operations
-  ! length of the record
-  ! error code
-  LOGICAL :: opnd
-  ! if true the file is already opened
-  CHARACTER (len=256), INTENT(IN)          :: tmp_dir2
-  CHARACTER(len=256) :: strnum
-  !
-  !WRITE( strnum, '(i10)' ) ndnmbr
-  IF(ndnmbr>-1 .and. ndnmbr<10)   WRITE( strnum, '(I1)' ) ndnmbr
-  IF(ndnmbr>9 .and. ndnmbr<100)   WRITE( strnum, '(I2)' ) ndnmbr
-  IF(ndnmbr>99 .and. ndnmbr<1000) WRITE( strnum, '(I3)' ) ndnmbr
-  !
-  IF (unit < 0) CALL errore ('diropn', 'wrong unit', 1)
-  !
-  !    we first check that the file is not already openend
-  !
-  ios = 0
-  INQUIRE (unit = unit, opened = opnd)
-  IF (opnd) CALL errore ('diropn', "can't open a connected unit", abs(unit))
-  !
-  !      then we check the filename
-  !
-
-  IF (filename == ' ') CALL errore ('diropn', 'filename not given', 2)
-  tempfile = trim(tmp_dir2) // trim(filename) // trim(strnum)
-
-  INQUIRE (file = tempfile, exist = exst)
-  !
-  !      the unit for record length is unfortunately machine-dependent
-  !
-#define DIRECT_IO_FACTOR 8
-  unf_recl = DIRECT_IO_FACTOR * recl
-  IF (unf_recl <= 0) CALL errore ('diropn', 'wrong record length', 3)
-  !
-  OPEN ( unit, file = trim(tempfile), iostat = ios, form = 'unformatted', &
-       status = 'unknown', access = 'direct', recl = unf_recl )
-
-  IF (ios /= 0) CALL errore ('diropn', 'error opening '//filename, unit)
-  RETURN
-END SUBROUTINE diropn_gw
-!
-!-----------------------------------------------------------------------
 !
 !-----------------------------------------------------------------------------
 SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occup1, &
@@ -233,6 +174,7 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
   !     
   !
   USE io_global,            ONLY : ionode
+  USE io_global,            ONLY : ionode, stdout
   !
   IMPLICIT NONE
   !
@@ -247,39 +189,39 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
   !
   IF(ionode)THEN
      !
-     WRITE(*,*)" "
-     WRITE(*,*)"    ======================================================================= "
-     WRITE(*,*)" "
-     WRITE(*,*)"      EPCDFT_Coupling Code warnings:"
-     WRITE(*,*)"      1) Only works with norm conserving pseudos."
-     WRITE(*,*)"      2) (which implies) that smooth grid = dense grid."
-     WRITE(*,*)"      3) Run must be in serial."
-     WRITE(*,*)"      4) No K-points."
-     WRITE(*,*)"      5) Make sure your grids/cutoffs... are the same for both systems."
-     WRITE(*,*)"      6) Previous PW runs must NOT use parallelization over k points."
-     WRITE(*,*)"      7) occup1+occdown1 == occup2+occdown2."
-     WRITE(*,*)"      8) if s_spin = .true. then  occup1 must = occup2."
-     WRITE(*,*)"      9) if s_spin = .true. then occdown1 must = occdown2."
-     WRITE(*,*)" "
-     WRITE(*,*)"    ======================================================================= "
-     WRITE(*,*)" "
-     WRITE(*,*)" "
-     WRITE(*,*)"    Data from input file :"
-     WRITE(*,*)" "
-     WRITE(*,*)"    prefix1      :", prefix
-     WRITE(*,*)"    outdir1      :", tmp_dir
-     WRITE(*,*)"    prefix2      :", prefix2
-     WRITE(*,*)"    outdir2      :", tmp_dir2
-     WRITE(*,*)"    debug        :", debug
-     WRITE(*,*)"    s_spin       :", s_spin
-     WRITE(*,*)"    det_by_zgedi :", det_by_zgedi
-     WRITE(*,*)" "
-     WRITE(*,*)"    # of spins   :", nks
-     WRITE(*,*)"    # of bands   :", nbnd
-     WRITE(*,*)"    # occ up states in sys 1   :", occup1 
-     WRITE(*,*)"    # occ down states in sys 1 :", occdown1 
-     WRITE(*,*)"    # occ up states in sys 2   :", occup2 
-     WRITE(*,*)"    # occ down states in sys 2 :", occdown2 
+     IF( ionode ) WRITE( stdout,*)" "
+     IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
+     IF( ionode ) WRITE( stdout,*)" "
+     IF( ionode ) WRITE( stdout,*)"      EPCDFT_Coupling Code warnings:"
+     IF( ionode ) WRITE( stdout,*)"      1) Only works with norm conserving pseudos."
+     IF( ionode ) WRITE( stdout,*)"      2) (which implies) that smooth grid = dense grid."
+     IF( ionode ) WRITE( stdout,*)"      3) Run must be in serial."
+     IF( ionode ) WRITE( stdout,*)"      4) No K-points."
+     IF( ionode ) WRITE( stdout,*)"      5) Make sure your grids/cutoffs... are the same for both systems."
+     IF( ionode ) WRITE( stdout,*)"      6) Previous PW runs must NOT use parallelization over k points."
+     IF( ionode ) WRITE( stdout,*)"      7) occup1+occdown1 == occup2+occdown2."
+     IF( ionode ) WRITE( stdout,*)"      8) if s_spin = .true. then  occup1 must = occup2."
+     IF( ionode ) WRITE( stdout,*)"      9) if s_spin = .true. then occdown1 must = occdown2."
+     IF( ionode ) WRITE( stdout,*)" "
+     IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
+     IF( ionode ) WRITE( stdout,*)" "
+     IF( ionode ) WRITE( stdout,*)" "
+     IF( ionode ) WRITE( stdout,*)"    Data from input file :"
+     IF( ionode ) WRITE( stdout,*)" "
+     IF( ionode ) WRITE( stdout,*)"    prefix1      :", prefix
+     IF( ionode ) WRITE( stdout,*)"    outdir1      :", tmp_dir
+     IF( ionode ) WRITE( stdout,*)"    prefix2      :", prefix2
+     IF( ionode ) WRITE( stdout,*)"    outdir2      :", tmp_dir2
+     IF( ionode ) WRITE( stdout,*)"    debug        :", debug
+     IF( ionode ) WRITE( stdout,*)"    s_spin       :", s_spin
+     IF( ionode ) WRITE( stdout,*)"    det_by_zgedi :", det_by_zgedi
+     IF( ionode ) WRITE( stdout,*)" "
+     IF( ionode ) WRITE( stdout,*)"    # of spins   :", nks
+     IF( ionode ) WRITE( stdout,*)"    # of bands   :", nbnd
+     IF( ionode ) WRITE( stdout,*)"    # occ up states in sys 1   :", occup1 
+     IF( ionode ) WRITE( stdout,*)"    # occ down states in sys 1 :", occdown1 
+     IF( ionode ) WRITE( stdout,*)"    # occ up states in sys 2   :", occup2 
+     IF( ionode ) WRITE( stdout,*)"    # occ down states in sys 2 :", occdown2 
      !
   ENDIF
   !

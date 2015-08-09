@@ -3,23 +3,18 @@
 SUBROUTINE epcdft_get_s
   !-----------------------------------------------------------------------
   !
-  USE kinds, ONLY : DP
-  USE klist, ONLY : nks
-  USE io_files, ONLY : nwordwfc, iunwfc
-  USE io_global, ONLY : ionode, stdout
-  USE wavefunctions_module, ONLY : evc
-  USE wvfct, ONLY : nbnd, npwx, igk, npw , g2kin, ecutwfc
-  USE cell_base, ONLY : tpiba2
-  USE klist, ONLY : xk
-  USE epcdft_mod, ONLY : evc2, iunwfc2, occup1, occdown1, smat
-  USE gvect, ONLY : ngm, g
+  USE kinds,      ONLY : DP
+  USE klist,      ONLY : nks
+  USE io_global,  ONLY : ionode, stdout
+  USE wvfct,      ONLY : nbnd
+  USE epcdft_mod, ONLY : evc1, evc2, occup1, occdown1, smat
   !
   IMPLICIT NONE
   !
   INTEGER :: ik
-  INTEGER :: occ(2) ! number of occupied states for that spin
+  INTEGER :: occ(2)                        ! number of occupied states for that spin
   COMPLEX(DP), ALLOCATABLE :: c_s_aux(:,:) ! complex overlap matrix S_ij = <system 1_i | system 2_j>
-  REAL(DP), ALLOCATABLE :: r_s_aux(:,:) ! real overlap matrix S_ij = <system 1_i | system 2_j>
+  REAL(DP), ALLOCATABLE :: r_s_aux(:,:)    ! real overlap matrix S_ij = <system 1_i | system 2_j>
   !
   ALLOCATE( c_s_aux(nbnd,nbnd) )
   ALLOCATE( r_s_aux(nbnd,nbnd) )
@@ -33,29 +28,21 @@ SUBROUTINE epcdft_get_s
   !
   DO ik = 1 , nks 
     !
-    ! read wfcs for system 1
-    CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
-    CALL davcio( evc, 2*nwordwfc, iunwfc, ik, -1 )
-    !
-    ! read wfcs for system 1
-    CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
-    CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik, -1 )
-    !
     ! <1|1>
-    CALL get_det( evc, evc, r_s_aux, c_s_aux, occ(ik), smat(1,1,ik) )
+    CALL get_det( evc1(:,:,ik), evc1(:,:,ik), r_s_aux, c_s_aux, occ(ik), smat(1,1,ik) )
     ! 
     ! <1|2>
-    CALL get_det( evc, evc2, r_s_aux, c_s_aux, occ(ik), smat(1,2,ik) )
+    CALL get_det( evc1(:,:,ik), evc2(:,:,ik), r_s_aux, c_s_aux, occ(ik), smat(1,2,ik) )
     !
     ! <2|1>
-    CALL get_det( evc2, evc, r_s_aux, c_s_aux, occ(ik), smat(2,1,ik) )
+    CALL get_det( evc2(:,:,ik), evc1(:,:,ik), r_s_aux, c_s_aux, occ(ik), smat(2,1,ik) )
     !
     ! <2|2>
-    CALL get_det( evc2, evc2, r_s_aux, c_s_aux, occ(ik), smat(2,2,ik) )
+    CALL get_det( evc2(:,:,ik), evc2(:,:,ik), r_s_aux, c_s_aux, occ(ik), smat(2,2,ik) )
     !
   ENDDO !ik
   !
-  WRITE(*,*)"    S done"
+  IF( ionode ) WRITE( stdout,*)"    S done"
   !
   ! close shop
   !

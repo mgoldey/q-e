@@ -10,9 +10,10 @@ SUBROUTINE epcdft_get_h
   !
   ! Wab = Wab_up*det(Sab_down) + Wab_down*det(Sab_up)
   !
-  USE kinds, ONLY : DP
+  USE kinds,      ONLY : DP
+  USE io_global,  ONLY : ionode, stdout
   USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, cor1, cor2
-  USE klist, ONLY : nks
+  USE klist,      ONLY : nks
   !
   IMPLICIT NONE
   !
@@ -42,6 +43,6 @@ SUBROUTINE epcdft_get_h
     ENDDO
 !  ENDDO
   !
-  WRITE(*,*)"    H done"
+  IF( ionode ) WRITE( stdout, * )"    H done"
   !
 END SUBROUTINE epcdft_get_h

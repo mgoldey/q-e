@@ -16,7 +16,8 @@ MODULE epcdft_mod
   INTEGER :: fragment1_atom1, fragment1_atom2, fragment2_atom1, fragment2_atom2 ! atoms in acceptor fragments for sys 1 and 2
   REAL(DP) :: fragment1_amp, fragment2_amp ! amplitudes of weight functions (external pots)
   REAL(DP) :: freeen1, freeen2 ! free energies system 1 and 2
-  COMPLEX(DP), ALLOCATABLE :: evc2(:,:) ! ks vecs for system 2
+  COMPLEX(DP), ALLOCATABLE :: evc1(:,:,:) ! ks vecs for system 1 evc1(npwx, nbnd, spin)
+  COMPLEX(DP), ALLOCATABLE :: evc2(:,:,:) ! ks vecs for system 2
   COMPLEX(DP), ALLOCATABLE :: smat(:,:,:) ! det of overlap matrix  smat(  aa ab , ba bb, up down ) 
   COMPLEX(DP), ALLOCATABLE :: wmat(:,:,:) !  weigth matrix ( aa ab, ba bb, up down)
   REAL(DP), ALLOCATABLE :: w(:,:) ! weight functions w( r , system )

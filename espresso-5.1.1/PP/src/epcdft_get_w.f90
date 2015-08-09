@@ -6,17 +6,13 @@ SUBROUTINE epcdft_get_w
   !  <A|W|B> = <A|VA+VB|B> = N \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
   !                                                                     ^-----cofactor----------^
   !
-  USE kinds, ONLY : DP
-  USE klist, ONLY : nks
-  USE io_files, ONLY : nwordwfc, iunwfc
-  USE io_global, ONLY : ionode, stdout
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : nks
+  USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
-  USE wvfct, ONLY : nbnd, npwx, igk, npw , g2kin, ecutwfc
-  USE cell_base, ONLY : tpiba2
-  USE klist, ONLY : xk
-  USE epcdft_mod, ONLY : evc2, iunwfc2, occup1, occdown1, wmat, w, smat
-  USE gvect, ONLY : ngm, g
-  USE fft_base, ONLY : dfftp
+  USE wvfct,                ONLY : nbnd, npwx
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
+  USE fft_base,             ONLY : dfftp
   !
   IMPLICIT NONE
   !
@@ -37,17 +33,9 @@ SUBROUTINE epcdft_get_w
   !
   DO ik = 1 , nks 
     !
-    ! read wfcs for system 1
-    CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
-    CALL davcio( evc, 2*nwordwfc, iunwfc, ik, -1 )
-    !
-    ! read wfcs for system 2
-    CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
-    CALL davcio( evc2, 2*nwordwfc, iunwfc2, ik, -1 )
-    !
     ! S^-1  ab 
     !
-    CALL get_s_invs(evc, evc2, cofc(:,:,1,ik), nbnd)
+    CALL get_s_invs(evc1(:,:,ik), evc2(:,:,ik), cofc(:,:,1,ik), nbnd)
     !
     ! S^-1 * det(S) ab 
     !
@@ -59,24 +47,24 @@ SUBROUTINE epcdft_get_w
     cofc(:,:,1,ik) = TRANSPOSE(cofc(:,:,1,ik))
     !
     ! aux = w*phiA
-    CALL w_psi(evc, wtot, wevc) 
-    CALL w_psi(evc2, wtot, wevc2) 
+    CALL w_psi(evc1(:,:,ik), wtot, wevc) 
+    CALL w_psi(evc2(:,:,ik), wtot, wevc2) 
     !
     DO i = 1, occ(ik)
       DO j = 1, occ(ik)
         !
         ! <B|W|A>                                 
-        wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,i), wevc(:,j)) * cofc(i,j,1,ik)
+        wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,i,ik), wevc(:,j)) * cofc(i,j,1,ik)
         !
         ! <A|W|B>
-        wmat(2,1,ik) = wmat(2,1,ik) + dot(evc(:,i), wevc2(:,j)) * cofc(i,j,2,ik)
+        wmat(2,1,ik) = wmat(2,1,ik) + dot(evc1(:,i,ik), wevc2(:,j)) * cofc(i,j,2,ik)
         !
       ENDDO
     ENDDO
     !
   ENDDO !ik
   !
-  WRITE(*,*)"    W done Note"
+  IF( ionode ) WRITE( stdout,* )"    W done Note"
   !
 END SUBROUTINE epcdft_get_w
 !
