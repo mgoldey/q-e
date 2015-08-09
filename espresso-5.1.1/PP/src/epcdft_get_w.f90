@@ -13,6 +13,8 @@ SUBROUTINE epcdft_get_w
   USE wvfct,                ONLY : nbnd, npwx
   USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
   USE fft_base,             ONLY : dfftp
+  USE mp,                   ONLY : mp_sum
+  USE mp_images,            ONLY : intra_image_comm
   !
   IMPLICIT NONE
   !
@@ -63,6 +65,8 @@ SUBROUTINE epcdft_get_w
     ENDDO
     !
   ENDDO !ik
+  !
+  CALL mp_sum(wmat,intra_image_comm)
   !
   IF( ionode ) WRITE( stdout,* )"    W done Note"
   !
