@@ -37,7 +37,6 @@ This README would normally document whatever steps are necessary to get your app
 ### TODO ###
 
 * input for largest step in potential
-* use electron_maxstep to restart scf and backoff on potential or create input param?
 
 ### Who do I talk to? ###
 
