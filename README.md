@@ -45,6 +45,6 @@ This README would normally document whatever steps are necessary to get your app
 
 
 ### What to do if it doesn't work? ###
-* Try diagonalization='cg'
+* try starting from a smaller cdft field
 * Try fewer electrons - compare with the N-1 electron system?
-* Reduce beta mixing parameter
+* increase epcdft_thr
