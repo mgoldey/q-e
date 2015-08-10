@@ -34,6 +34,11 @@ This README would normally document whatever steps are necessary to get your app
 * Code review
 * Other guidelines
 
+### TODO ###
+
+* input for largest step in potential
+* input for max scf step till backoff on potential
+
 ### Who do I talk to? ###
 
 * Repo owner or admin
