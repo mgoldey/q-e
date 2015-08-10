@@ -48,3 +48,4 @@ This README would normally document whatever steps are necessary to get your app
 * try starting from a smaller cdft field
 * Try fewer electrons - compare with the N-1 electron system?
 * increase epcdft_thr
+* smearing
