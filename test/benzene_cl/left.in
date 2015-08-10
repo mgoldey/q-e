@@ -6,33 +6,38 @@
     wf_collect = .true.
     verbosity = "high" 
   do_epcdft    = .true.,
+restart_mode = 'restart'
 /
 &system
     ibrav=1, 
-    celldm(1) =20.d0, 
+    celldm(1) =30.d0, 
     nat=13, 
     ntyp=3,
-    ecutwfc = 85.d0, 
+    ecutwfc = 70.d0, 
     nbnd=40,
     nosym=.true.
     tot_charge = -1
     nspin = 2,
-    tot_magnetization = 2
+    tot_magnetization = 0
   hirshfeld = .TRUE.
   fragment_atom1    = 1,
   fragment_atom2    = 12,
-  epcdft_amp        = 9.6066E-02,
-  epcdft_electrons  = 1.D0,
+  epcdft_amp        = -3.6884E-01,
+  epcdft_electrons  = -1.D0,
   epcdft_thr = 1.0E-02
 / 
 &electrons 
     diago_full_acc=.true.
-    mixing_beta = 0.20
+    conv_thr = 1.D-8
+!    mixing_beta = 0.20
+!electron_maxstep = 40
+!startingpot = 'file'
 / 
 ATOMIC_SPECIES 
 C   12.0107  C.pbe-mt_fhi.UPF 
-H   1.00794  H.pbe-rrkjus.UPF 
+H   1.00794  H.pbe-mt_fhi.UPF 
 Cl  1.0      Cl.UPF
+K_POINTS {Gamma}
 ATOMIC_POSITIONS {angstrom} 
 C       0.0000   1.3970 0.0000 
 C       1.2098   0.6985 0.0000 
