@@ -365,6 +365,9 @@ CONTAINS
     CASE ( 'epcdft_electrons' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, epcdft_electrons, ierr = ierr )
        !
+    CASE ( 'epcdft_delta_fld' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_delta_fld, ierr = ierr )
+       !
     CASE ( 'epcdft_width' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, epcdft_width, ierr = ierr )
        !

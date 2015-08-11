@@ -353,6 +353,7 @@ INTEGER :: &
      fragment_atom2    ! last atom of fragment
 REAL(DP) :: &
      epcdft_electrons,&! number of electrons
+     epcdft_delta_fld,&! max change in fld between cdft steps
      epcdft_amp,      &! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
      epcdft_width,    &! field width (in a.u.) 
      epcdft_shift,    &! energy correction due to the field

@@ -53,7 +53,7 @@ SUBROUTINE epcdft_controller()
   USE epcdft,        ONLY : do_epcdft, fragment_atom1, &
                             fragment_atom2, epcdft_electrons, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_thr, hirshfeld
+                            epcdft_thr, hirshfeld, epcdft_delta_fld
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -130,7 +130,8 @@ SUBROUTINE epcdft_controller()
   ! this call only calulates vpoten
   !
   CALL add_epcdft_efield(vpotenp(:,1), epcdft_shift, rho%of_r, .true. )
-  CALL add_epcdft_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
+  !CALL add_epcdft_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
+  IF(nspin > 1) vpotenp(:,2)=vpotenp(:,1)
   !
   IF (zero) epcdft_amp=0.D0
   !
@@ -288,10 +289,17 @@ SUBROUTINE epcdft_controller()
          !
       ELSE
          !
+         ! find next amp
+         !
          CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
                             einwell,         last_einwell, epcdft_electrons)
-         IF (abs(next_epcdft_amp) .gt. abs(epcdft_amp)*1.1) THEN
-           next_epcdft_amp=epcdft_amp*1.1
+         !
+         ! change in amp must be <= delta_fld
+         !
+         IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. ABS(epcdft_delta_fld) ) THEN
+           !
+           next_epcdft_amp = epcdft_amp + SIGN(next_epcdft_amp - epcdft_amp, 1.D0) * epcdft_delta_fld
+           !
          ENDIF
          !
       ENDIF
