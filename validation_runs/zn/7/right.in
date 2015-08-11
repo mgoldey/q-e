@@ -11,7 +11,7 @@
 &SYSTEM
   nosym = .true.
   ibrav     = 1,
-  a         = 17,
+  a         = 30,
   nat       = 2,
   ntyp      = 1,
   ecutwfc   = 100,
