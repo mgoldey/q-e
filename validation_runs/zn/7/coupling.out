@@ -1,0 +1,182 @@
+
+     Program epcdft_coupling v.5.1.1 starts on 11Aug2015 at 13:39:22 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on     198 processor cores
+     Number of MPI processes:               198
+     Threads/MPI process:                     1
+     R & G space division:  proc/nbgrp/npool/nimage =     198
+     ======================================================================= 
+     SYSTEM 2 INFO
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1s, nr2s, nr3s values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file Zn.pbe-mt_fhi.UPF: wavefunction(s)  4p 4f renormalized
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min         516     516    128               124316   124316   15532
+     Max         518     518    130               124342   124342   15554
+     Sum      102325  102325  25581             24616397 24616397 3077481
+     Tot       51163   51163  12791
+ 
+     Generating pointlists ...
+     new r_m :   0.0963 (alat units)  5.4566 (a.u.) for type    1
+ 
+     Using Hirshfeld
+        Amplitude [Ry a.u.] :  3.3000E-01
+        Acceptor Fragment start :           2
+        Acceptor Fragment end   :           2
+ 
+     ======================================================================= 
+     SYSTEM 1 INFO
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1s, nr2s, nr3s values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file Zn.pbe-mt_fhi.UPF: wavefunction(s)  4p 4f renormalized
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min         516     516    128               124316   124316   15532
+     Max         518     518    130               124342   124342   15554
+     Sum      102325  102325  25581             24616397 24616397 3077481
+     Tot       51163   51163  12791
+ 
+     Generating pointlists ...
+ 
+     Using Hirshfeld
+        Amplitude [Ry a.u.] :  3.3000E-01
+        Acceptor Fragment start :           1
+        Acceptor Fragment end   :           1
+ 
+     ======================================================================= 
+  
+     ======================================================================= 
+  
+       EPCDFT_Coupling Code warnings:
+       1) Only works with norm conserving pseudos.
+       2) (which implies) that smooth grid = dense grid.
+       3) Run must be in serial.
+       4) No K-points.
+       5) Make sure your grids/cutoffs... are the same for both systems.
+       6) Previous PW runs must NOT use parallelization over k points.
+       7) occup1+occdown1 == occup2+occdown2.
+       8) if s_spin = .true. then  occup1 must = occup2.
+       9) if s_spin = .true. then occdown1 must = occdown2.
+  
+     ======================================================================= 
+  
+  
+     Data from input file :
+  
+     prefix1      :
+ left                                                                           
+                                                                                
+                                                                                
+                    
+     outdir1      :
+ ./out/                                                                         
+                                                                                
+                                                                                
+                    
+     prefix2      :
+ right                                                                          
+                                                                                
+                                                                                
+                    
+     outdir2      :
+ ./out/                                                                         
+                                                                                
+                                                                                
+                    
+     debug        : T
+     s_spin       : T
+     det_by_zgedi : T
+  
+     # of spins   :           2
+     # of bands   :          12
+     # occ up states in sys 1   :          12
+     # occ down states in sys 1 :          11
+     # occ up states in sys 2   :          12
+     # occ down states in sys 2 :          11
+  
+     ======================================================================= 
+     Progress : 
+     Setup done
+     S done
+     W done Note
+     H done
+     =======================================================================
+ 
+     F1 =   -220.93283   F2 =   -220.93283
+     E1 =   -220.60318   E2 =   -220.60318
+     C1 =      0.32966   C2 =      0.32966
+ 
+ 
+     S up              
+     ( 0.1000000000000014E+01, 0.0000000000000000E+00)  (-0.9799189437589457E+00, 0.0000000000000000E+00)
+     (-0.9799189437589452E+00, 0.0000000000000000E+00)  ( 0.1000000000000008E+01, 0.0000000000000000E+00)
+ 
+ 
+     S down            
+     ( 0.1000000000000010E+01, 0.0000000000000000E+00)  (-0.2911978972126583E-02, 0.0000000000000000E+00)
+     (-0.2911978972126584E-02, 0.0000000000000000E+00)  ( 0.1000000000000011E+01, 0.0000000000000000E+00)
+ 
+ 
+     W up              
+     ( 0.0000000000000000E+00, 0.0000000000000000E+00)  ( 0.0000000000000000E+00, 0.0000000000000000E+00)
+     ( 0.0000000000000000E+00, 0.0000000000000000E+00)  ( 0.0000000000000000E+00, 0.0000000000000000E+00)
+ 
+ 
+     W down            
+     ( 0.0000000000000000E+00, 0.0000000000000000E+00)  ( 0.0000000000000000E+00, 0.0000000000000000E+00)
+     ( 0.0000000000000000E+00, 0.0000000000000000E+00)  ( 0.0000000000000000E+00, 0.0000000000000000E+00)
+ 
+ 
+     H                 
+     (-0.2206031760731968E+03, 0.0000000000000000E+00)  (-0.6304325765565278E+00, 0.0000000000000000E+00)
+     (-0.6304325765565276E+00, 0.0000000000000000E+00)  (-0.2206031766905090E+03, 0.0000000000000000E+00)
+ 
+ 
+     H lowdin orthogona
+     (-0.2206031733889582E+03, 0.0000000000000000E+00)  (-0.9406794893955794E-03, 0.0000000000000000E+00)
+     (-0.9406794893953019E-03, 0.0000000000000000E+00)  (-0.2206031740062738E+03, 0.0000000000000000E+00)
+ 
+     |Sab| =       0.002854
+     |Hab| =       0.000941 Ry
+     |Hab| =       0.000470 Ha
+     |Hab| =       0.012799 eV
+ 
+     =======================================================================
+ 
+     epcdft_coupl :  1m54.30s CPU     2m11.17s WALL
+
+ 
+   This run was terminated on:  13:41:33  11Aug2015            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
+Application 57821195 resources: utime ~23728s, stime ~2239s, Rss ~911264, inblocks ~554706587, outblocks ~12399074
