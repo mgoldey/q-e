@@ -10,8 +10,8 @@
   debug        = .true.
   s_spin       = .true.
   det_by_zgedi = .true.
-  free1 = thef1 
-  free2 = thef2
-  cor1 = thec1
-  cor2 = thec2
+  free1 = -220.92552944 
+  free2 = -220.92552947
+  cor1 = 0.329648974996089
+  cor2 = 0.329649049078279
 /
