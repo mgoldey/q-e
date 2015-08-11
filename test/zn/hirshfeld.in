@@ -23,6 +23,7 @@
   epcdft_amp        = 3.60E-01,
   epcdft_electrons  = 1.,
   epcdft_thr = 1.0E-02
+  epcdft_delta_fld = 0.05D0
 /
 &ELECTRONS
  ! startingpot = 'file'

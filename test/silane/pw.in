@@ -21,6 +21,7 @@
   epcdft_electrons  = 1.0    ! electrons at the site
   epcdft_width = 2.645616384
   epcdft_thr = 1e-6  
+  epcdft_delta_fld = 0.05D0
 /
 &ELECTRONS
   conv_thr    = 1.D-10,
