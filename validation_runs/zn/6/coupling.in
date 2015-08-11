@@ -1,0 +1,17 @@
+&INPUTPP
+  prefix       = "left",
+  outdir       = "./out",
+  prefix2      = "right",
+  outdir2      = "./out",
+  occup1       = 12
+  occup2       = 12
+  occdown1     = 11
+  occdown2     = 11
+  debug        = .true.
+  s_spin       = .true.
+  det_by_zgedi = .true.
+  free1 = thef1 
+  free2 = thef2
+  cor1 = thec1
+  cor2 = thec2
+/
