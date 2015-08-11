@@ -444,6 +444,7 @@ MODULE input_parameters
         INTEGER  :: fragment_atom1 = 0
         INTEGER  :: fragment_atom2 = 0
         LOGICAL  :: hirshfeld = .FALSE.
+        LOGICAL  :: conv_epcdft = .FALSE.
         REAL(DP) :: epcdft_electrons = 0.0_DP
         REAL(DP) :: epcdft_delta_fld = 0.10_DP
         REAL(DP) :: epcdft_amp = 0.0_DP
@@ -577,7 +578,7 @@ MODULE input_parameters
              exxdiv_treatment, x_gamma_extrapolation, yukawa, ecutvcut,       &
              exx_fraction, screening_parameter, ref_alat,                     &
              noncolin, lspinorb, starting_spin_angle, lambda, angle1, angle2, &
-             report,              &
+             report, conv_epcdft,                                             &
              constrained_magnetization, B_field, fixed_magnetization,         &
              sic, sic_epsilon, force_pairing, sic_alpha,                      &
              tot_charge, tot_magnetization, spline_ps, one_atom_occupations,  &

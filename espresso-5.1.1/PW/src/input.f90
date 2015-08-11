@@ -76,6 +76,7 @@ SUBROUTINE iosys()
                             fragment_atom1_  => fragment_atom1,   &
                             fragment_atom2_  => fragment_atom2,   &
                             hirshfeld_       => hirshfeld,        &
+                            conv_epcdft_       => conv_epcdft,    &
                             epcdft_electrons_=> epcdft_electrons, &
                             epcdft_delta_fld_=> epcdft_delta_fld, &
                             epcdft_amp_      => epcdft_amp,       &
@@ -250,7 +251,8 @@ SUBROUTINE iosys()
                                one_atom_occupations,                          &
                                esm_bc, esm_efield, esm_w, esm_nfit,           &
                                space_group, uniqueb, origin_choice,           &
-                               rhombohedral, hirshfeld, epcdft_delta_fld
+                               rhombohedral, hirshfeld, epcdft_delta_fld,     &
+                               conv_epcdft           
   !
   ! ... ELECTRONS namelist
   !
@@ -1112,6 +1114,7 @@ SUBROUTINE iosys()
   fragment_atom1_  = fragment_atom1   
   fragment_atom2_  = fragment_atom2   
   hirshfeld_       = hirshfeld  
+  conv_epcdft_       = conv_epcdft  
   epcdft_electrons_= epcdft_electrons 
   epcdft_delta_fld_= epcdft_delta_fld 
   epcdft_amp_      = epcdft_amp       

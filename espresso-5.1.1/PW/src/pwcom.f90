@@ -346,8 +346,9 @@ SAVE
 LOGICAL :: &
      do_epcdft,       &! if .TRUE. a finite electric field is added to the
                        ! local potential
-     hirshfeld         ! if .TRUE. use hirshfeld partitioning rather than
+     hirshfeld,       &! if .TRUE. use hirshfeld partitioning rather than
                        ! voronoi
+     conv_epcdft       ! localization condition flag
 INTEGER :: &
      fragment_atom1,  &! first atom of fragment
      fragment_atom2    ! last atom of fragment

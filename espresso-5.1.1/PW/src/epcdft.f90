@@ -53,7 +53,8 @@ SUBROUTINE epcdft_controller()
   USE epcdft,        ONLY : do_epcdft, fragment_atom1, &
                             fragment_atom2, epcdft_electrons, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_thr, hirshfeld, epcdft_delta_fld
+                            epcdft_thr, hirshfeld, epcdft_delta_fld,&
+                            conv_epcdft
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -62,7 +63,7 @@ SUBROUTINE epcdft_controller()
   USE mp_bands,      ONLY : me_bgrp, intra_bgrp_comm
   USE fft_base,      ONLY : dfftp, grid_gather
   USE mp,            ONLY : mp_bcast, mp_sum
-  USE control_flags, ONLY : iverbosity, conv_elec, conv_ions
+  USE control_flags, ONLY : iverbosity, conv_elec
   USE scf,           ONLY : rho
   USE io_files,  ONLY : tmp_dir, prefix
   !
@@ -225,16 +226,19 @@ SUBROUTINE epcdft_controller()
       !
       enumerr = epcdft_electrons - einwell 
       !
-      ! conv_ions = false will restart scf
+      ! conv_epcdft = false will restart scf
       !
       IF( ABS(enumerr) .GE. epcdft_thr .and. .not. zero) THEN
         !
-        conv_ions = .FALSE.
+        conv_epcdft = .FALSE.
         !
         WRITE(*,*) "    Surplus/deficit electrons    :  ", -1.D0*enumerr,    "electrons"
         WRITE(*,*) "    epcdft_thr                   :  ", epcdft_thr, "electrons"
         !
       ELSE
+        !
+        conv_epcdft = .TRUE.
+        !
         ! WRITE OUT potential
         !call write_wfc_cube_r ( 84332, 'v',  v )
       ENDIF
@@ -245,12 +249,12 @@ SUBROUTINE epcdft_controller()
   !
   IF (zero) THEN
       ! IF(ionode) write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
-    conv_ions =.true.
+    conv_epcdft =.TRUE.
   ENDIF
   !
-  CALL mp_bcast( conv_ions, ionode_id, intra_image_comm )
+  CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
   !
-  IF(conv_ions)THEN  ! cdft done write external pot to cube
+  IF(conv_epcdft)THEN  ! cdft done write external pot to cube
     !
     filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft'
     CALL write_cube_r ( 9519395, filename, vpotenp(:,1) )
@@ -264,7 +268,7 @@ SUBROUTINE epcdft_controller()
   !
   ! if the charge is not localized
   !
-  IF(.NOT.conv_ions .AND. epcdft_amp .NE. 0)THEN
+  IF(.NOT.conv_epcdft .AND. epcdft_amp .NE. 0)THEN
     !
     ! update applied field and restart scf
     !

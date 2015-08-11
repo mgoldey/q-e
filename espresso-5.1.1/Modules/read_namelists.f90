@@ -217,6 +217,7 @@ MODULE read_namelists_module
        fragment_atom1 = 0
        fragment_atom2 = 0
        hirshfeld = .FALSE.
+       conv_epcdft = .FALSE.
        epcdft_electrons = 0.0_DP
        epcdft_delta_fld = 0.1_DP
        epcdft_amp = 0.0_DP
@@ -796,6 +797,7 @@ MODULE read_namelists_module
        CALL mp_bcast( fragment_atom1,         ionode_id, intra_image_comm )
        CALL mp_bcast( fragment_atom2,         ionode_id, intra_image_comm )
        CALL mp_bcast( hirshfeld,              ionode_id, intra_image_comm )
+       CALL mp_bcast( conv_epcdft,            ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_amp,             ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_electrons,       ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_delta_fld,       ionode_id, intra_image_comm )

@@ -37,7 +37,7 @@ SUBROUTINE run_pwscf ( exit_status )
   USE mp,               ONLY : mp_bcast, mp_sum
   USE qmmm,             ONLY : qmmm_initialization, qmmm_shutdown, &
                                qmmm_update_positions, qmmm_update_forces
-  USE epcdft,           ONLY : do_epcdft
+  USE epcdft,           ONLY : do_epcdft, conv_epcdft
   !
   IMPLICIT NONE
   INTEGER, INTENT(OUT) :: exit_status
@@ -130,13 +130,12 @@ SUBROUTINE run_pwscf ( exit_status )
      !
      CALL qmmm_update_forces(force)
      !
-     ! epcdft check if charge is localized if not conv_ion set to false
+     ! epcdft check if charge is localized if epcdft
      !
-     conv_ions = .TRUE.  !MBG changed this
      IF(do_epcdft) CALL epcdft_controller()
-     CALL mp_bcast( conv_ions, ionode_id, intra_image_comm )
+     CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
      !
-     IF (do_epcdft .and. .not. conv_ions ) THEN
+     IF (do_epcdft .and. .not. conv_epcdft ) THEN
       CALL hinit1()
       CYCLE
      ENDIF

@@ -131,7 +131,7 @@ MODULE pw_restart
                                        fragment_atom2, epcdft_electrons, &
                                        epcdft_amp, epcdft_width, epcdft_shift, &
                                        epcdft_thr, epcdft_old_amp, hirshfeld, &
-                                       epcdft_delta_fld
+                                       epcdft_delta_fld, conv_epcdft
       USE io_rho_xml,           ONLY : write_rho
       USE mp_world,             ONLY : nproc
       USE mp_images,            ONLY : nproc_image
@@ -413,7 +413,7 @@ MODULE pw_restart
          !
          CALL qexml_write_epcdft(do_epcdft, fragment_atom1, fragment_atom2, &
               hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
-              epcdft_thr,epcdft_old_amp,epcdft_delta_fld)
+              epcdft_thr,epcdft_old_amp,epcdft_delta_fld,conv_epcdft)
          !
 !
 !-------------------------------------------------------------------------------
@@ -1701,7 +1701,7 @@ MODULE pw_restart
       !
       USE epcdft, ONLY : do_epcdft, fragment_atom1, fragment_atom2, hirshfeld, &
                          epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
-                         epcdft_thr, epcdft_old_amp, epcdft_delta_fld
+                         epcdft_thr, epcdft_old_amp, epcdft_delta_fld, conv_epcdft
 
       !
       IMPLICIT NONE
@@ -1718,7 +1718,7 @@ MODULE pw_restart
       FRAGMENT_ATOM2=fragment_atom2, HIRSHFELD=hirshfeld, EPCDFT_ELECTRONS=epcdft_electrons, &
       EPCDFT_AMP=epcdft_amp, EPCDFT_WIDTH=epcdft_width, EPCDFT_SHIFT=epcdft_shift, &
       EPCDFT_THR=epcdft_thr, EPCDFT_OLD_AMP=epcdft_old_amp,EPCDFT_DELTA_FLD=epcdft_delta_fld, &
-      FOUND=found, IERR=ierr )
+      CONV_EPCDFT=conv_epcdft, FOUND=found, IERR=ierr )
       ENDIF
       !
       CALL mp_bcast( ierr, ionode_id, intra_image_comm )
@@ -1735,6 +1735,7 @@ MODULE pw_restart
       CALL mp_bcast( fragment_atom1,   ionode_id, intra_image_comm )
       CALL mp_bcast( fragment_atom2,   ionode_id, intra_image_comm )
       CALL mp_bcast( hirshfeld,        ionode_id, intra_image_comm )
+      CALL mp_bcast( conv_epcdft,      ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_electrons, ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_delta_fld, ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_amp,       ionode_id, intra_image_comm )
