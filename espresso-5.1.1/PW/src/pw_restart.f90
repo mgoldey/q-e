@@ -127,8 +127,8 @@ MODULE pw_restart
       USE scf,                  ONLY : rho
       USE extfield,             ONLY : tefield, dipfield, edir, &
                                        emaxpos, eopreg, eamp
-      USE epcdft,               ONLY : do_epcdft, fragment_atom1,&
-                                       fragment_atom2, epcdft_electrons, &
+      USE epcdft,               ONLY : do_epcdft, donor_start, acceptor_start, &
+                                       donor_end, epcdft_electrons, acceptor_end, &
                                        epcdft_amp, epcdft_width, epcdft_shift, &
                                        epcdft_thr, epcdft_old_amp, hirshfeld, &
                                        epcdft_delta_fld, conv_epcdft
@@ -411,7 +411,8 @@ MODULE pw_restart
 ! ... EPCDFT
 !-------------------------------------------------------------------------------
          !
-         CALL qexml_write_epcdft(do_epcdft, fragment_atom1, fragment_atom2, &
+         CALL qexml_write_epcdft(do_epcdft, donor_start,donor_end,acceptor_start,&
+              acceptor_end, &
               hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
               epcdft_thr,epcdft_old_amp,epcdft_delta_fld,conv_epcdft)
          !
@@ -1699,7 +1700,7 @@ MODULE pw_restart
     SUBROUTINE read_epcdft( ierr )
       !----------------------------------------------------------------------
       !
-      USE epcdft, ONLY : do_epcdft, fragment_atom1, fragment_atom2, hirshfeld, &
+      USE epcdft, ONLY : do_epcdft, donor_start,donor_end,acceptor_start,acceptor_end, hirshfeld, &
                          epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
                          epcdft_thr, epcdft_old_amp, epcdft_delta_fld, conv_epcdft
 
@@ -1714,11 +1715,12 @@ MODULE pw_restart
       IF ( lepcdft_read ) RETURN
       !
       IF ( ionode ) THEN
-         CALL qexml_read_epcdft(DO_EPCDFT=do_epcdft, FRAGMENT_ATOM1=fragment_atom1, &
-      FRAGMENT_ATOM2=fragment_atom2, HIRSHFELD=hirshfeld, EPCDFT_ELECTRONS=epcdft_electrons, &
-      EPCDFT_AMP=epcdft_amp, EPCDFT_WIDTH=epcdft_width, EPCDFT_SHIFT=epcdft_shift, &
-      EPCDFT_THR=epcdft_thr, EPCDFT_OLD_AMP=epcdft_old_amp,EPCDFT_DELTA_FLD=epcdft_delta_fld, &
-      CONV_EPCDFT=conv_epcdft, FOUND=found, IERR=ierr )
+         CALL qexml_read_epcdft(DO_EPCDFT=do_epcdft, DONOR_START=donor_start,DONOR_END=donor_end,&
+          ACCEPTOR_START=acceptor_start,ACCEPTOR_END=acceptor_end, HIRSHFELD=hirshfeld, &
+          EPCDFT_ELECTRONS=epcdft_electrons, EPCDFT_AMP=epcdft_amp, EPCDFT_WIDTH=epcdft_width, &
+          EPCDFT_SHIFT=epcdft_shift, EPCDFT_THR=epcdft_thr, EPCDFT_OLD_AMP=epcdft_old_amp, &
+          EPCDFT_DELTA_FLD=epcdft_delta_fld, &
+          CONV_EPCDFT=conv_epcdft, FOUND=found, IERR=ierr )
       ENDIF
       !
       CALL mp_bcast( ierr, ionode_id, intra_image_comm )
@@ -1732,8 +1734,10 @@ MODULE pw_restart
       END IF
       !
       CALL mp_bcast( do_epcdft,        ionode_id, intra_image_comm )
-      CALL mp_bcast( fragment_atom1,   ionode_id, intra_image_comm )
-      CALL mp_bcast( fragment_atom2,   ionode_id, intra_image_comm )
+      CALL mp_bcast( donor_start,   ionode_id, intra_image_comm )
+      CALL mp_bcast( donor_end,   ionode_id, intra_image_comm )
+      CALL mp_bcast( acceptor_start,   ionode_id, intra_image_comm )
+      CALL mp_bcast( acceptor_end,   ionode_id, intra_image_comm )
       CALL mp_bcast( hirshfeld,        ionode_id, intra_image_comm )
       CALL mp_bcast( conv_epcdft,      ionode_id, intra_image_comm )
       CALL mp_bcast( epcdft_electrons, ionode_id, intra_image_comm )

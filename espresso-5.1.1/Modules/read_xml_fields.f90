@@ -353,11 +353,17 @@ CONTAINS
     CASE ( 'epol' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, epol, ierr = ierr )
        !
-    CASE ( 'fragment_atom1' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, fragment_atom1, ierr = ierr )
+    CASE ( 'donor_start' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, donor_start, ierr = ierr )
        !
-    CASE ( 'fragment_atom2' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, fragment_atom2, ierr = ierr )
+    CASE ( 'donor_end' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, donor_end, ierr = ierr )
+       !
+    CASE ( 'acceptor_start' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, acceptor_start, ierr = ierr )
+       !
+    CASE ( 'acceptor_end' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, acceptor_end, ierr = ierr )
        !
     CASE ( 'conv_epcdft' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, conv_epcdft, ierr = ierr )

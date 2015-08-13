@@ -1069,14 +1069,17 @@ CONTAINS
     END SUBROUTINE qexml_write_efield
     !
 
-    SUBROUTINE qexml_write_epcdft( do_epcdft, fragment_atom1, fragment_atom2, &
+    SUBROUTINE qexml_write_epcdft( do_epcdft, donor_start, donor_end, &
+         acceptor_start, acceptor_end, &
          hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
          epcdft_thr, epcdft_old_amp, epcdft_delta_fld, conv_epcdft)
       !------------------------------------------------------------------------
       !
       LOGICAL, INTENT(in)   :: do_epcdft      ! 
-      INTEGER, INTENT(in)   :: fragment_atom1 ! 
-      INTEGER, INTENT(in)   :: fragment_atom2 ! 
+      INTEGER, INTENT(in)   :: donor_start    ! 
+      INTEGER, INTENT(in)   :: donor_end      ! 
+      INTEGER, INTENT(in)   :: acceptor_start ! 
+      INTEGER, INTENT(in)   :: acceptor_end   ! 
       LOGICAL, INTENT(in)   :: hirshfeld      ! 
       LOGICAL, INTENT(in)   :: conv_epcdft    ! 
       REAL(DP), INTENT(in) :: epcdft_electrons! 
@@ -1092,9 +1095,13 @@ CONTAINS
       !
       CALL iotk_write_dat( ounit, "HAS_EPCDFT", do_epcdft)
       !
-      CALL iotk_write_dat( ounit, "FRAGMENT_ATOM_START", fragment_atom1)
+      CALL iotk_write_dat( ounit, "DONOR_START", donor_start)
       !
-      CALL iotk_write_dat( ounit, "FRAGMENT_ATOM_END", fragment_atom2)
+      CALL iotk_write_dat( ounit, "DONOR_END", donor_end)
+      !
+      CALL iotk_write_dat( ounit, "ACCEPTOR_START", acceptor_start)
+      !
+      CALL iotk_write_dat( ounit, "ACCEPTOR_END", acceptor_end)
       !
       CALL iotk_write_dat( ounit, "CONV_EPCDFT", conv_epcdft)
       !
@@ -2987,15 +2994,18 @@ CONTAINS
       !
     END SUBROUTINE qexml_read_efield
 
-    SUBROUTINE qexml_read_epcdft(do_epcdft, fragment_atom1, fragment_atom2,  &
+    SUBROUTINE qexml_read_epcdft(do_epcdft, donor_start,donor_end, &
+      & acceptor_start, acceptor_end,  &
       & hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
       & epcdft_thr, epcdft_old_amp, found, epcdft_delta_fld, conv_epcdft, ierr)
       IMPLICIT NONE
       !------------------------------------------------------------------------
       !
       LOGICAL, OPTIONAL, INTENT(out)   :: do_epcdft      ! 
-      INTEGER, OPTIONAL, INTENT(out)   :: fragment_atom1 ! 
-      INTEGER, OPTIONAL, INTENT(out)   :: fragment_atom2 ! 
+      INTEGER, OPTIONAL, INTENT(out)   :: donor_start    ! 
+      INTEGER, OPTIONAL, INTENT(out)   :: donor_end      ! 
+      INTEGER, OPTIONAL, INTENT(out)   :: acceptor_start ! 
+      INTEGER, OPTIONAL, INTENT(out)   :: acceptor_end   ! 
       LOGICAL, OPTIONAL, INTENT(out)   :: hirshfeld      ! 
       LOGICAL, OPTIONAL, INTENT(out)   :: conv_epcdft    ! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_electrons! 
@@ -3009,8 +3019,10 @@ CONTAINS
       INTEGER,             INTENT(out) :: ierr
       !
       LOGICAL   :: do_epcdft_      ! 
-      INTEGER   :: fragment_atom1_ ! 
-      INTEGER   :: fragment_atom2_ ! 
+      INTEGER   :: donor_start_ ! 
+      INTEGER   :: donor_end_ ! 
+      INTEGER   :: acceptor_start_ ! 
+      INTEGER   :: acceptor_end_ ! 
       LOGICAL   :: hirshfeld_      ! 
       LOGICAL   :: conv_epcdft_    ! 
       REAL(DP) :: epcdft_electrons_! 
@@ -3028,10 +3040,16 @@ CONTAINS
       CALL iotk_scan_dat( iunit, "HAS_EPCDFT", do_epcdft_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "FRAGMENT_ATOM_START", fragment_atom1_, IERR=ierr)
+      CALL iotk_scan_dat( iunit, "DONOR_START", donor_start_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "FRAGMENT_ATOM_END", fragment_atom2_, IERR=ierr)
+      CALL iotk_scan_dat( iunit, "DONOR_END", donor_end_, IERR=ierr)
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( iunit, "ACCEPTOR_START", acceptor_start_, IERR=ierr)
+      IF ( ierr /= 0 ) RETURN
+      !
+      CALL iotk_scan_dat( iunit, "ACCEPTOR_END", acceptor_end_, IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
       CALL iotk_scan_dat( iunit, "CONV_EPCDFT", conv_epcdft_, IERR=ierr)
@@ -3065,8 +3083,10 @@ CONTAINS
       IF ( ierr /= 0 ) RETURN
 
       IF ( present(do_epcdft) )     do_epcdft      = do_epcdft_
-      IF ( present(fragment_atom1) )       fragment_atom1     = fragment_atom1_
-      IF ( present(fragment_atom2) )       fragment_atom2     = fragment_atom2_
+      IF ( present(donor_start) )   donor_start=donor_start_
+      IF ( present(donor_end) )       donor_end=donor_end_
+      IF ( present(acceptor_start) )   acceptor_start=acceptor_start_
+      IF ( present(acceptor_end) )       acceptor_end=acceptor_end_
       IF ( present(hirshfeld) )            hirshfeld     = hirshfeld_
       IF ( present(conv_epcdft) )            conv_epcdft     = conv_epcdft_
       IF ( present(epcdft_amp) )           epcdft_amp         = epcdft_amp_

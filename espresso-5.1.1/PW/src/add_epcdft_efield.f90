@@ -17,15 +17,19 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   !
   !   Voronoi cells:
   !
-  !     fragment_atom1 - first atom in fragment to center potential well around 
-  !     fragment_atom2 - last atom  in fragment to center potential well around 
+  !     acceptor_start - first atom in fragment to center potential well around 
+  !     acceptor_end - last atom  in fragment to center potential well around 
+  !     donor_start - first atom in fragment in donor
+  !     donor_end - last atom  in fragment in donor 
   !     epcdft_amp - strength of potential in Ry a.u.
   !     epcdft_electrons - number of electrons that should be in well
   !
   !   User defined well around single atom:
   !
-  !     fragment_atom1 - only atom to center potential well around 
-  !     fragment_atom2 - = 0
+  !     acceptor_start - only atom to center potential well around 
+  !     acceptor_end - = 0
+  !     donor_start - do not use
+  !     donor_end - do not use
   !     epccdft_width  - radius of potential well in alat
   !     epcdft_amp - strength of potential in Ry a.u.
   !     epcdft_electrons - number of electrons that should be in well
@@ -35,8 +39,10 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   !     J. Chem. Phys. 133, 244105 (2010); http://dx.doi.org/10.1063/1.3507878 
   !     eqs. 6 & 7
   !
-  !     fragment_atom1 - first atom in fragment in acceptor
-  !     fragment_atom2 - last atom  in fragment in acceptor (all others are donors)
+  !     acceptor_start - first atom in fragment in acceptor
+  !     acceptor_end - last atom  in fragment in acceptor (all others are donors)
+  !     donor_start - first atom in fragment in donor
+  !     donor_end - last atom  in fragment in donor 
   !     epcdft_amp - strength of potential in Ry a.u. 
   !     epcdft_electrons - ?? not sure yet
   !
@@ -46,7 +52,8 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   USE constants,     ONLY : fpi, eps8, e2, au_debye
   USE ions_base,     ONLY : nat, ityp, zv
   USE cell_base,     ONLY : alat, at, omega, bg, saw
-  USE epcdft,        ONLY : do_epcdft, fragment_atom1, fragment_atom2, &
+  USE epcdft,        ONLY : do_epcdft, donor_start, donor_end, &
+                            acceptor_start, acceptor_end, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
                             epcdft_electrons, hirshfeld
   USE force_mod,     ONLY : lforce
@@ -121,15 +128,6 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   !---------------------
   !  Execution control
   !---------------------
-  !write(*,*) "do_epcdft is ",do_epcdft
-  !write(*,*) "tefield is ",tefield
-
-  !WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-  !WRITE( stdout,'(8x,"Fragment start : ", I11.1)') fragment_atom1
-  !WRITE( stdout,'(8x,"Fragment end   : ", I11.1)') fragment_atom2
-  !WRITE( stdout,'(8x,"Well size     : ", es11.4)') epcdft_width
-
-  ! write(*,*) iflag, first, sum(rho(:,1)), sum(vpoten(:,1))
   IF (.NOT. do_epcdft) RETURN
   IF (.NOT. iflag) RETURN  !TURN OFF SELF-CONSISTENCY INSIDE SCF CYCLE OR ELSE!
   if (iflag) first=.true.
@@ -159,21 +157,23 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
       !
       WRITE( stdout,'(5x,"Using Hirshfeld")')
       WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-      WRITE( stdout,'(8x,"Acceptor Fragment start : ", I11.1)') fragment_atom1
-      WRITE( stdout,'(8x,"Acceptor Fragment end   : ", I11.1)') fragment_atom2
+      WRITE( stdout,'(8x,"Acceptor Fragment start : ", I11.1)') acceptor_start
+      WRITE( stdout,'(8x,"Acceptor Fragment end   : ", I11.1)') acceptor_end
+      WRITE( stdout,'(8x,"Donor Fragment start : ", I11.1)') donor_start
+      WRITE( stdout,'(8x,"Donor Fragment end   : ", I11.1)') donor_end
       WRITE( stdout,*)     
       !
     ELSE ! not hirshfeld then voronoi or user well
       !
-      if (fragment_atom2 .ne. 0) then
+      if (acceptor_end .ne. 0) then
         !
         write( stdout,'(5x,"Using Voronoi cells")')
         WRITE( stdout,'(5x,"Adding the potential well":)')
         WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-        WRITE( stdout,'(8x,"Fragment start : ", I11.1: es11.4, es11.4, es11.4)') fragment_atom1,&
-        & tau(1,fragment_atom1),tau(2,fragment_atom1),tau(3,fragment_atom1)
-        WRITE( stdout,'(8x,"Fragment end   : ", I11.1: es11.4, es11.4, es11.4)') fragment_atom2,&
-        & tau(1,fragment_atom2),tau(2,fragment_atom2),tau(3,fragment_atom2)
+        WRITE( stdout,'(8x,"Acceptor Fragment start : ", I11.1)') acceptor_start
+        WRITE( stdout,'(8x,"Acceptor Fragment end   : ", I11.1)') acceptor_end
+        WRITE( stdout,'(8x,"Donor Fragment start : ", I11.1)') donor_start
+        WRITE( stdout,'(8x,"Donor Fragment end   : ", I11.1)') donor_end
         WRITE( stdout,*)     
         !
       else
@@ -181,7 +181,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
         write( stdout,'(5x,"Using a distance-based cell")')
         WRITE( stdout,'(5x,"Adding the potential well":)')
         WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-        WRITE( stdout,'(8x,"Atom selected : ", I11.1)') fragment_atom1
+        WRITE( stdout,'(8x,"Atom selected : ", I11.1)') acceptor_start
         WRITE( stdout,'(8x,"Well size     : ", es11.4)') epcdft_width
         WRITE( stdout,*)     
         !
@@ -218,7 +218,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   if (sum(rho).lt.1e-3) THEN
   !  write(*,*) "Density is really small. I forget why this matters."
   ENDIF
-  if (fragment_atom2 .ne. 0) then
+  if (acceptor_end .ne. 0) then
     DO ir = 1, dfftp%nnr
       i = index0 + ir - 1
       k = i / (dfftp%nr1x*dfftp%nr2x)
@@ -231,7 +231,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
                 DBLE( k )*inv_nr3*at(ip,3)
       END DO
       mindist=5.D6
-      DO iatom= fragment_atom1, fragment_atom2
+      DO iatom= acceptor_start, acceptor_end
         cm(:) = tau(:,iatom)
         myr(:) = r(:) - cm(:)
         s(:) = MATMUL( myr(:), bg(:,:) )
@@ -244,7 +244,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
       END DO
       on_frag = .TRUE.
       DO iatom=1, nat
-        IF ((iatom.ge.fragment_atom1) .AND. (iatom.le.fragment_atom2) ) THEN
+        IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) THEN
           CYCLE
         END IF
         cm(:) = tau(:,iatom)
@@ -260,7 +260,9 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
         ENDIF
       END DO
       IF(on_frag) THEN
-          vpoten(ir) = vpoten(ir) - epcdft_amp
+        vpoten(ir) = vpoten(ir) - epcdft_amp
+      ELSE ! FIX TO BE DONOR ONLY
+        vpoten(ir) = vpoten(ir) + epcdft_amp
       ENDIF
     END DO 
   else ! APPLY POTENTIAL WITHIN WELL OF SIZE EPCDFT_WIDTH
@@ -275,7 +277,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
                 DBLE( j )*inv_nr2*at(ip,2) + &
                 DBLE( k )*inv_nr3*at(ip,3)
       END DO
-      iatom= fragment_atom1
+      iatom= acceptor_start
       cm(:) = tau(:,iatom)
       myr(:) = r(:) - cm(:)
       s(:) = MATMUL( myr(:), bg(:,:) )
@@ -284,6 +286,8 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
       dist = SQRT( SUM( myr * myr ) )*alat
       IF(dist .le. epcdft_width) THEN
         vpoten(ir) = vpoten(ir) - epcdft_amp
+      ELSE
+        vpoten(ir) = vpoten(ir) + epcdft_amp
       ENDIF
     END DO 
   ENDIF
@@ -331,7 +335,8 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE cell_base,            ONLY : tpiba2
   USE uspp_param,           ONLY : upf
   USE ions_base,            ONLY : nat, ityp
-  USE epcdft,               ONLY : fragment_atom1, fragment_atom2
+  USE epcdft,               ONLY : donor_start,donor_end,&
+                                   acceptor_start,acceptor_end
   USE fft_base,             ONLY : dfftp, dffts
   USE gvect,                ONLY : nl, nlm
   USE gvecs,                ONLY : nls, nlsm
@@ -393,11 +398,11 @@ SUBROUTINE calc_hirshfeld_v( v, n )
         !  
         orboc = REAL( upf(nt)%oc(nb) ,KIND=DP) / REAL( 2*l+1 ,KIND=DP)
         !
-        IF( na >= fragment_atom1 .and. na <= fragment_atom2 )THEN ! atom in acceptor
+        IF( na >= acceptor_start .and. na <= acceptor_end )THEN ! atom in acceptor
           !
           vtop(:) = vtop(:) - orboc * wfcatomr( : , orbi ) 
           !
-        ELSE ! atom in donor
+        ELSE IF ( na >= donor_start .and. na <= donor_end )THEN ! atom in donor
           ! 
           vtop(:) = vtop(:) + orboc * wfcatomr( : , orbi ) 
           !

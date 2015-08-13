@@ -35,8 +35,7 @@ SUBROUTINE epcdft_setup
   REAL(DP) :: dtmp ! temp variable
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
-                       debug,  s_spin, det_by_zgedi, do_epcdft, fragment1_atom1, fragment1_atom2,&
-                       fragment2_atom1, fragment2_atom2, fragment1_amp, fragment2_amp, free1, free2,&
+                       debug,  s_spin, det_by_zgedi, free1, free2,&
                        hirshfeld, cor1, cor2
   !
   ! setup vars and consistency checks
@@ -77,13 +76,6 @@ SUBROUTINE epcdft_setup
   CALL mp_bcast( debug, ionode_id, world_comm )
   CALL mp_bcast( s_spin, ionode_id, world_comm )
   CALL mp_bcast( det_by_zgedi, ionode_id, world_comm )
-  CALL mp_bcast( do_epcdft, ionode_id, world_comm )
-  CALL mp_bcast( fragment1_atom1, ionode_id, world_comm )
-  CALL mp_bcast( fragment1_atom2, ionode_id, world_comm )
-  CALL mp_bcast( fragment2_atom1, ionode_id, world_comm )
-  CALL mp_bcast( fragment2_atom2, ionode_id, world_comm )
-  CALL mp_bcast( fragment1_amp, ionode_id, world_comm )
-  CALL mp_bcast( fragment2_amp, ionode_id, world_comm )
   CALL mp_bcast( free1, ionode_id, world_comm )
   CALL mp_bcast( free2, ionode_id, world_comm )
   CALL mp_bcast( hirshfeLd, ionode_id, world_comm )

@@ -12,8 +12,8 @@ thec1=`awk '/correction /{print $5}' $1 | tail -n 1`
 thef2=`awk '/! /{print $5}' $2 | tail -n 1`
 thec2=`awk '/correction /{print $5}' $2 | tail -n 1`
 #
-spinup=`awk '/up:  /{print $7}' $1`
-spindown=`awk '/up:  /{print $9}' $1`
+spinup=`awk '/\(up:  /{print $7}' $1`
+spindown=`awk '/\(up:  /{print $9}' $1`
 #
 spinup=${spinup%%.*}
 spindown=${spindown%%.*}

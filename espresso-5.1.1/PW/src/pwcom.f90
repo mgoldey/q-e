@@ -350,8 +350,10 @@ LOGICAL :: &
                        ! voronoi
      conv_epcdft       ! localization condition flag
 INTEGER :: &
-     fragment_atom1,  &! first atom of fragment
-     fragment_atom2    ! last atom of fragment
+     donor_start,    &   ! first atom of donor fragment
+     donor_end,      &   ! last atom of donor fragment
+     acceptor_start, &   ! first atom of acceptor fragment
+     acceptor_end        ! last atom of acceptor fragment
 REAL(DP) :: &
      epcdft_electrons,&! number of electrons
      epcdft_delta_fld,&! max change in fld between cdft steps

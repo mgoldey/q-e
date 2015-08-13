@@ -73,8 +73,10 @@ SUBROUTINE iosys()
                             forcefield
   !
   USE epcdft,        ONLY : do_epcdft_       => do_epcdft,        &  
-                            fragment_atom1_  => fragment_atom1,   &
-                            fragment_atom2_  => fragment_atom2,   &
+                            donor_start_  => donor_start,   &
+                            donor_end_  => donor_end,   &
+                            acceptor_start_  => acceptor_start,   &
+                            acceptor_end_  => acceptor_end,   &
                             hirshfeld_       => hirshfeld,        &
                             conv_epcdft_       => conv_epcdft,    &
                             epcdft_electrons_=> epcdft_electrons, &
@@ -240,8 +242,9 @@ SUBROUTINE iosys()
                                gau_parameter,                               &
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
                                epcdft_amp, epcdft_width, epcdft_shift,        &
-                               epcdft_thr, epcdft_old_amp,                    & 
-                               epcdft_electrons,fragment_atom1,fragment_atom2,&
+                               epcdft_thr, epcdft_old_amp, acceptor_start,    & 
+                               epcdft_electrons,donor_start,donor_end,        &
+                               acceptor_end,                                  &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
                                starting_spin_angle, assume_isolated,spline_ps,&
@@ -1111,8 +1114,10 @@ SUBROUTINE iosys()
   eopreg_  = eopreg
   eamp_    = eamp
   do_epcdft_       = do_epcdft        
-  fragment_atom1_  = fragment_atom1   
-  fragment_atom2_  = fragment_atom2   
+  donor_start_  = donor_start   
+  donor_end_    = donor_end
+  acceptor_start_  = acceptor_start   
+  acceptor_end_    = acceptor_end
   hirshfeld_       = hirshfeld  
   conv_epcdft_       = conv_epcdft  
   epcdft_electrons_= epcdft_electrons 

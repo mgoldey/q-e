@@ -441,8 +441,10 @@ MODULE input_parameters
         REAL(DP) :: eamp = 0.0_DP
 
           ! parameters for epcdft
-        INTEGER  :: fragment_atom1 = 0
-        INTEGER  :: fragment_atom2 = 0
+        INTEGER  :: donor_start = 0
+        INTEGER  :: donor_end = 0
+        INTEGER  :: acceptor_start = 0
+        INTEGER  :: acceptor_end = 0
         LOGICAL  :: hirshfeld = .FALSE.
         LOGICAL  :: conv_epcdft = .FALSE.
         REAL(DP) :: epcdft_electrons = 0.0_DP
@@ -569,8 +571,8 @@ MODULE input_parameters
              occupations, degauss, nspin, ecfixed,                            &
              qcutz, q2sigma, lda_plus_U, lda_plus_u_kind,                     &
              Hubbard_U, Hubbard_J, Hubbard_alpha,                             &
-             Hubbard_J0, Hubbard_beta, fragment_atom1, fragment_atom2,        &
-             hirshfeld, epcdft_electrons, epcdft_amp,epcdft_width,            &
+             Hubbard_J0, Hubbard_beta, donor_start, donor_end, acceptor_start,&
+             acceptor_end,hirshfeld, epcdft_electrons,epcdft_amp,epcdft_width,&
              epcdft_shift, epcdft_thr,epcdft_old_amp, epcdft_delta_fld,       &
              edir, emaxpos, eopreg, eamp, smearing, starting_ns_eigenvalue,   &
              U_projection_type, input_dft, la2F, assume_isolated,             &

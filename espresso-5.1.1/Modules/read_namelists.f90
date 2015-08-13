@@ -214,8 +214,11 @@ MODULE read_namelists_module
        eamp = 0.0_DP
 
        ! epcdft variables
-       fragment_atom1 = 0
-       fragment_atom2 = 0
+       donor_start = 0
+       donor_end = 0
+       acceptor_start = 0
+       acceptor_end = 0
+       
        hirshfeld = .FALSE.
        conv_epcdft = .FALSE.
        epcdft_electrons = 0.0_DP
@@ -794,8 +797,11 @@ MODULE read_namelists_module
        CALL mp_bcast( eamp,                   ionode_id, intra_image_comm )
        
        ! epcdft variables
-       CALL mp_bcast( fragment_atom1,         ionode_id, intra_image_comm )
-       CALL mp_bcast( fragment_atom2,         ionode_id, intra_image_comm )
+       CALL mp_bcast( donor_start,         ionode_id, intra_image_comm )
+       CALL mp_bcast( donor_end,         ionode_id, intra_image_comm )
+       CALL mp_bcast( acceptor_start,         ionode_id, intra_image_comm )
+       CALL mp_bcast( acceptor_end,         ionode_id, intra_image_comm )
+
        CALL mp_bcast( hirshfeld,              ionode_id, intra_image_comm )
        CALL mp_bcast( conv_epcdft,            ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_amp,             ionode_id, intra_image_comm )

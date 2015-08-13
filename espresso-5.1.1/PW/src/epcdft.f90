@@ -21,9 +21,9 @@ SUBROUTINE epcdft_controller()
   !
   !   do_epcdft - flag to do cdft
   !
-  !   fragment_atom1 - first atom in voronoi cell or in acceptor (if hirshfeld)
+  !   acceptor_start - first atom in voronoi cell or in acceptor (if hirshfeld)
   !
-  !   fragment_atom2 - last atom in voronoi cell or in acceptor (if hirshfeld)
+  !   acceptor_end   - last atom in voronoi cell or in acceptor (if hirshfeld)
   !                    if zero user defined well is used (not working right now)
   !
   !   epcdft_electrons - number of electrons in voronoi cell or on acceptor
@@ -50,11 +50,11 @@ SUBROUTINE epcdft_controller()
   USE cell_base,     ONLY : alat, at, omega, bg, saw
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
                             eopreg, forcefield, etotefield
-  USE epcdft,        ONLY : do_epcdft, fragment_atom1, &
-                            fragment_atom2, epcdft_electrons, &
+  USE epcdft,        ONLY : do_epcdft, donor_start, &
+                            acceptor_start, acceptor_end, &
+                            donor_end, epcdft_electrons, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_thr, hirshfeld, epcdft_delta_fld,&
-                            conv_epcdft
+                            epcdft_thr, hirshfeld, conv_epcdft
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -131,8 +131,7 @@ SUBROUTINE epcdft_controller()
   ! this call only calulates vpoten
   !
   CALL add_epcdft_efield(vpotenp(:,1), epcdft_shift, rho%of_r, .true. )
-  !CALL add_epcdft_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
-  IF(nspin > 1) vpotenp(:,2)=vpotenp(:,1)
+  CALL add_epcdft_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
   !
   IF (zero) epcdft_amp=0.D0
   !
@@ -191,18 +190,18 @@ SUBROUTINE epcdft_controller()
     !
     DO iatom=1, nat
       !
-      ! user well condition
-      IF (fragment_atom2.ne.0) THEN
+      ! Voronoi and Hirshfeld below
+      IF (acceptor_end.ne.0) THEN
         !
-        IF ((iatom.ge.fragment_atom1) .AND. (iatom.le.fragment_atom2) ) THEN
+        IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) THEN
           einwell = einwell - zv(ityp(iatom))
-        ELSE
+        ELSE IF ((iatom.ge.donor_start) .AND. (iatom.le.donor_end) ) THEN
           einwell = einwell + zv(ityp(iatom))
         ENDIF
         !
-      ELSE ! voronoi cells
+      ELSE ! just a well around one atom
         !
-        IF (iatom.eq.fragment_atom1) THEN
+        IF (iatom.eq.acceptor_start) THEN
           einwell = einwell - zv(ityp(iatom))
         ELSE
           einwell = einwell + zv(ityp(iatom))
@@ -216,7 +215,7 @@ SUBROUTINE epcdft_controller()
     epcdft_shift = -1.D0 * epcdft_shift
     !
     IF (.not.zero) WRITE(*,*)"    E field correction : ",epcdft_shift," Ry"
-    WRITE(*,*)"    Total charge in well     : ",-1.D0*einwell," Ha atomic units"
+    WRITE(*,*)"    #e's   in well     : ",einwell," electrons"
     !
     ! is there a localization condition?
     !
@@ -232,13 +231,11 @@ SUBROUTINE epcdft_controller()
         !
         conv_epcdft = .FALSE.
         !
-        WRITE(*,*) "    Surplus/deficit electrons    :  ", -1.D0*enumerr,    "electrons"
+        WRITE(*,*) "    Surplus/deficit electrons    :  ", enumerr,    "electrons"
         WRITE(*,*) "    epcdft_thr                   :  ", epcdft_thr, "electrons"
         !
       ELSE
-        !
-        conv_epcdft = .TRUE.
-        !
+        conv_epcdft =.true.
         ! WRITE OUT potential
         !call write_wfc_cube_r ( 84332, 'v',  v )
       ENDIF
@@ -249,7 +246,7 @@ SUBROUTINE epcdft_controller()
   !
   IF (zero) THEN
       ! IF(ionode) write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
-    conv_epcdft =.TRUE.
+    conv_epcdft =.true.
   ENDIF
   !
   CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
@@ -293,17 +290,10 @@ SUBROUTINE epcdft_controller()
          !
       ELSE
          !
-         ! find next amp
-         !
          CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
                             einwell,         last_einwell, epcdft_electrons)
-         !
-         ! change in amp must be <= delta_fld
-         !
-         IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. ABS(epcdft_delta_fld) ) THEN
-           !
-           next_epcdft_amp = epcdft_amp + SIGN(next_epcdft_amp - epcdft_amp, 1.D0) * epcdft_delta_fld
-           !
+         IF (abs(next_epcdft_amp) .gt. abs(epcdft_amp)*1.1) THEN
+           next_epcdft_amp=epcdft_amp*1.1
          ENDIF
          !
       ENDIF
