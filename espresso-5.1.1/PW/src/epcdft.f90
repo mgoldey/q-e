@@ -292,8 +292,13 @@ SUBROUTINE epcdft_controller()
          !
          CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
                             einwell,         last_einwell, epcdft_electrons)
-         IF (abs(next_epcdft_amp) .gt. abs(epcdft_amp)*1.1) THEN
-           next_epcdft_amp=epcdft_amp*1.1
+         !
+         ! abs of the change in amp must be <= |delta_fld|
+         !
+         IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. ABS(epcdft_delta_fld) ) THEN
+           !
+           next_epcdft_amp = epcdft_amp + SIGN(1.D0, next_epcdft_amp - epcdft_amp) * epcdft_delta_fld
+           !
          ENDIF
          !
       ENDIF
