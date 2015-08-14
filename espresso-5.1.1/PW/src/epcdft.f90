@@ -54,7 +54,7 @@ SUBROUTINE epcdft_controller()
                             acceptor_start, acceptor_end, &
                             donor_end, epcdft_electrons, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_thr, hirshfeld, conv_epcdft
+                            epcdft_thr, hirshfeld, conv_epcdft, epcdft_delta_fld
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
