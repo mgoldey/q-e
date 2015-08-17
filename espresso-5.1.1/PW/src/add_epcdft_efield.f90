@@ -373,6 +373,13 @@ SUBROUTINE calc_hirshfeld_v( v, n )
     !
     CALL invfft ('Dense', wfcatomr(:,s), dfftp)
     wfcatomr(:,s) = wfcatomr(:,s) * CONJG(wfcatomr(:,s))
+
+    !
+    ! Prune low values away
+    !
+    DO ir=1, n
+      if (abs(wfcatomr(ir,s)).lt.1d-8) wfcatomr(ir,s)=0.D0
+    ENDDO  
     !
   ENDDO
   !
