@@ -82,7 +82,6 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   REAL(DP) :: oldamp                         ! stores old external potential strength
   SAVE oldamp
   LOGICAL  :: elocflag                       ! true if charge localization condition is satisfied
-  REAL(DP),DIMENSION(:), ALLOCATABLE :: tmpv ! temporary copy of v to check number of electrons
   REAL(DP),INTENT(INOUT) :: etotefield       ! contribution to etot due to ef
   REAL(DP),INTENT(IN):: rho(dfftp%nnr,nspin) ! the density whose dipole is computed
   LOGICAL,INTENT(IN)     :: iflag            ! set to true to force recalculation of field
@@ -114,8 +113,6 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   LOGICAL :: on_donor    = .TRUE.
   LOGICAL :: on_acceptor = .TRUE.
 
-  ALLOCATE(tmpv(dfftp%nnr))
-  tmpv=0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   einwellp = 0.D0
   einwells = 0.D0
@@ -306,16 +303,6 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
       ENDIF
     END DO 
   ENDIF
-
-#ifdef __MPI
-  CALL MP_SUM(einwellp,intra_image_comm) ! FIX ME?
-  einwells=einwellp
-#else
-  einwells=einwellp
-#endif
-  
-  !dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
-  !write(*,*) "vpoten is ",sum(vpoten(:))
   RETURN
   !
 END SUBROUTINE add_epcdft_efield

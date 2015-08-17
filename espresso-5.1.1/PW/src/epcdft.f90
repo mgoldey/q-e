@@ -61,6 +61,9 @@ SUBROUTINE epcdft_controller()
   USE lsda_mod,      ONLY : nspin
   USE mp_images,     ONLY : intra_image_comm
   USE mp_bands,      ONLY : me_bgrp, intra_bgrp_comm
+  USE mp_pools,      ONLY : inter_pool_comm
+  USE mp_world,      ONLY : world_comm
+
   USE fft_base,      ONLY : dfftp, grid_gather
   USE mp,            ONLY : mp_bcast, mp_sum
   USE control_flags, ONLY : iverbosity, conv_elec
@@ -75,14 +78,13 @@ SUBROUTINE epcdft_controller()
   REAL(DP) :: tmp
   REAL(DP) :: dv
   REAL(DP) :: einwell                              ! number of electrons in well
+  REAL(DP) :: einwellp                             ! number of electrons in well
+  REAL(DP) :: epcdft_shiftp                        ! size of shift
   REAL(DP) :: enumerr                              ! epcdft_charge - einwell  (e number error)
   LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
   LOGICAL  :: zero                                 ! used to run cdft with zero constraining potential
   REAL(DP) :: safe_epcdft_amp                      ! used for zero constraining potential run 
-  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotens ! ef is added to this potential serial
-  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp ! ef is added to this potential parll
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosup    ! rho serial
-  REAL(DP), DIMENSION(:), ALLOCATABLE :: rhosdown  ! rho serial
+  REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp ! ef is added to this potential
   REAL(DP) :: next_epcdft_amp                      ! guess of amp for next iteration
   CHARACTER(LEN=256) :: filename                   ! cube file for final cdft potential
   !
@@ -97,27 +99,26 @@ SUBROUTINE epcdft_controller()
   !
   ! dont do anything unless the calculation is converged
   !
-  IF(.NOT.conv_elec)RETURN
+  IF(.NOT.conv_elec) RETURN
   !
   ! calc is converged lets compute and print the correction
   !
   ! first setup vars
   ALLOCATE(vpotenp(dfftp%nnr, nspin))
-  ALLOCATE(vpotens(dfftp%nr1x * dfftp%nr2x * dfftp%nr3x,nspin ))
-  ALLOCATE(rhosup( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
-  ALLOCATE(rhosdown( dfftp%nr1x * dfftp%nr2x * dfftp%nr3x ))
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   vpotenp  = 0.D0
-  vpotens  = 0.D0
-  rhosup   = 0.D0
-  rhosdown = 0.D0
   einwell  = 0.D0
+  einwellp  = 0.D0
   tmp      = 0.D0
   elocflag = .TRUE.
   etotefield = 0.D0
   epcdft_shift = 0.D0
+  epcdft_shiftp = 0.D0
   zero =.false.
   next_epcdft_amp = 0.D0
+  !einwellp  = 0.D0
+  !epcdft_shiftp = 0.D0
+
   !
   ! gather the grids for serial calculation
   !
@@ -135,114 +136,119 @@ SUBROUTINE epcdft_controller()
   !
   IF (zero) epcdft_amp=0.D0
   !
-  ! gather the grids for serial calculation
-  !
-#ifdef __MPI
-    CALL grid_gather ( vpotenp(:,1), vpotens(:,1) )
-    CALL grid_gather ( rho%of_r(:,1), rhosup )
-    IF(nspin > 1)THEN
-      CALL grid_gather ( rho%of_r(:,2), rhosdown )
-      CALL grid_gather ( vpotenp(:,2), vpotens(:,2) )
-    ENDIF
-#else
-    vpotens(:,1)=vpotenp(:,1)
-    rhosup(:) = rho%of_r(:,1)
-    IF(nspin > 1)THEN
-      rhosdown(:) = rho%of_r(:,2)
-      vpotens(:,2)=vpotenp(:,2)
-    ENDIF
-#endif
-  !
   ! begin calculation of the correction 
   !
-  IF(ionode) THEN
+  ! combine up and down parts of rho
+  ! rhosup(:) = rhosup(:) + rhosdown(:) 
+  ! vpotens(:,1)=vpotens(:,1)+vpotens(:,2)
+  !
+  DO i=1, dfftp%nnr
     !
-    ! combine up and down parts of rho
-    rhosup(:) = rhosup(:) + rhosdown(:) 
-    ! vpotens(:,1)=vpotens(:,1)+vpotens(:,2)
+    ! calculate energy correction
     !
-    DO i=1, dfftp%nr1x*dfftp%nr2x*dfftp%nr3x
-      !
-      ! calculate energy correction
-      !
-      epcdft_shift = epcdft_shift + (vpotens(i,1)) * rhosup(i) * dv
-      !
-      ! count number of electrons in well 
-      !
-      IF(hirshfeld) THEN
-        ! need number of electrons on 
-        ! acceptor so negetive of vpotens is used
-        einwell = einwell - ( vpotens(i,1) / safe_epcdft_amp ) * rhosup(i) * dv
-        !
-      ELSE
-        !
-        IF(vpotens(i,1) .lt. 0.D0)THEN
-          einwell = einwell + rhosup(i) * dv
-        ELSE IF (vpotens(i,1).gt. 0.D0) THEN
-          einwell = einwell - rhosup(i) * dv
-        ENDIF
-        !
+    IF (nspin.eq.1) THEN
+      epcdft_shiftp = epcdft_shiftp + (vpotenp(i,1)) * rho%of_r(i,1) * dv
+    ELSE 
+      epcdft_shiftp = epcdft_shiftp + vpotenp(i,1) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
+    ENDIF
+    !
+    ! count number of electrons in well 
+    !
+    IF(hirshfeld) THEN
+      ! need number of electrons on 
+      ! acceptor so negetive of vpotens is used
+      IF (nspin.eq.1) THEN
+        einwellp = einwellp - ( vpotenp(i,1) / safe_epcdft_amp ) * rho%of_r(i,1) * dv
+      ELSE 
+        einwellp = einwellp - ( vpotenp(i,1) / safe_epcdft_amp ) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
       ENDIF
       !
-    ENDDO
-    !
-    ! count nuc charge
-    !
-    DO iatom=1, nat
+    ELSE
       !
-      ! Voronoi and Hirshfeld below
-      IF (acceptor_end.ne.0) THEN
-        !
-        IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) THEN
-          einwell = einwell - zv(ityp(iatom))
-        ELSE IF ((iatom.ge.donor_start) .AND. (iatom.le.donor_end) ) THEN
-          einwell = einwell + zv(ityp(iatom))
+      IF(vpotenp(i,1) .lt. 0.D0)THEN
+        IF (nspin.eq.1) THEN
+          einwellp = einwellp + rho%of_r(i,1) * dv
+        ELSE 
+          einwellp = einwellp + (rho%of_r(i,1) +rho%of_r(i,2)) * dv
         ENDIF
-        !
-      ELSE ! just a well around one atom
-        !
-        IF (iatom.eq.acceptor_start) THEN
-          einwell = einwell - zv(ityp(iatom))
+      ELSE IF (vpotenp(i,1).gt. 0.D0) THEN
+        IF (nspin.eq.1) THEN
+          einwellp = einwellp - rho%of_r(i,1) * dv
         ELSE
-          einwell = einwell + zv(ityp(iatom))
+          einwellp = einwellp - (rho%of_r(i,1) +rho%of_r(i,2)) * dv
         ENDIF
-        !
       ENDIF
       !
-    ENDDO ! atoms
+    ENDIF
     !
-    ! the correction is - of the energy
-    epcdft_shift = -1.D0 * epcdft_shift
+  ENDDO
+#ifdef __MPI
+  CALL MP_SUM(epcdft_shiftp,intra_image_comm) ! RIGHT COMM?
+  CALL MP_SUM(einwellp,intra_image_comm) ! RIGHT COMM?
+  epcdft_shift=epcdft_shiftp
+  einwell=einwellp
+#else
+  epcdft_shift=epcdft_shiftp
+  einwell=einwellp
+#endif
+  !
+  ! count nuc charge
+  !
+  DO iatom=1, nat
     !
+    ! Voronoi and Hirshfeld below
+    IF (acceptor_end.ne.0) THEN
+      !
+      IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) THEN
+        einwell = einwell - zv(ityp(iatom))
+      ELSE IF ((iatom.ge.donor_start) .AND. (iatom.le.donor_end) ) THEN
+        einwell = einwell + zv(ityp(iatom))
+      ENDIF
+      !
+    ELSE ! just a well around one atom
+      !
+      IF (iatom.eq.acceptor_start) THEN
+        einwell = einwell - zv(ityp(iatom))
+      ELSE
+        einwell = einwell + zv(ityp(iatom))
+      ENDIF
+      !
+    ENDIF
+    !
+  ENDDO ! atoms
+  !
+  ! the correction is - of the energy
+  epcdft_shift = -1.D0 * epcdft_shift
+  !
+  IF(ionode) THEN
     IF (.not.zero) WRITE(*,*)"    E field correction              :  ",epcdft_shift,"Ry"
     WRITE(*,*)"    Difference of charges           : ",einwell," electrons"
+  ENDIF
+  !
+  ! is there a localization condition?
+  !
+  IF(epcdft_amp .ne. 0.D0) THEN
     !
-    ! is there a localization condition?
+    ! is the localization condition satisfied?
     !
-    IF(epcdft_amp .ne. 0.D0)THEN
-      !
-      ! is the localization condition satisfied?
-      !
-      enumerr = epcdft_charge - einwell 
-      !
-      ! conv_epcdft = false will restart scf
-      !
-      IF( ABS(enumerr) .GE. epcdft_thr .and. .not. zero) THEN
-        !
-        conv_epcdft = .FALSE.
-        !
-        WRITE(*,*) "    Surplus(+)/deficit(-) charge    :  ", -enumerr,    "electrons"
-        WRITE(*,*) "    epcdft_thr                      :  ", epcdft_thr, "electrons"
-        !
-      ELSE
-        conv_epcdft =.true.
-        ! WRITE OUT potential
-        !call write_wfc_cube_r ( 84332, 'v',  v )
-      ENDIF
-      !
-    ENDIF ! localization condition
+    enumerr = epcdft_charge - einwell 
     !
-  ENDIF ! io node
+    ! conv_epcdft = false will restart scf
+    !
+    IF( ABS(enumerr) .GE. epcdft_thr .and. .not. zero .and. ionode) THEN
+      !
+      conv_epcdft = .FALSE.
+      !
+      WRITE(*,*) "    Surplus(+)/deficit(-) charge    :  ", -enumerr,    "electrons"
+      WRITE(*,*) "    epcdft_thr                      :  ", epcdft_thr, "electrons"
+      !
+    ELSE
+      conv_epcdft =.true.
+      ! WRITE OUT potential
+      !call write_wfc_cube_r ( 84332, 'v',  v )
+    ENDIF
+    !
+  ENDIF ! localization condition
   !
   IF (zero) THEN
       ! IF(ionode) write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
@@ -259,9 +265,6 @@ SUBROUTINE epcdft_controller()
   ENDIF
   !
   DEALLOCATE(vpotenp)
-  DEALLOCATE(vpotens)
-  DEALLOCATE(rhosup)
-  DEALLOCATE(rhosdown)
   !
   ! if the charge is not localized
   !
@@ -269,7 +272,7 @@ SUBROUTINE epcdft_controller()
     !
     ! update applied field and restart scf
     !
-    IF(ionode)THEN
+    IF(ionode) THEN
       !
       WRITE(*,*)""
       WRITE(*,*)"    -----------------------------------------------"
