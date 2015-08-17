@@ -378,7 +378,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
     ! Prune low values away
     !
     DO ir=1, n
-      if (abs(wfcatomr(ir,s)).lt.1d-8) wfcatomr(ir,s)=0.D0
+      if (abs(wfcatomr(ir,s)).lt.1d-6) wfcatomr(ir,s)=0.D0
     ENDDO  
     !
   ENDDO
