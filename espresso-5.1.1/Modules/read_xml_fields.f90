@@ -371,8 +371,8 @@ CONTAINS
     CASE ( 'hirshfeld' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, hirshfeld, ierr = ierr )
        !
-    CASE ( 'epcdft_electrons' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_electrons, ierr = ierr )
+    CASE ( 'epcdft_charge' ) 
+       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_charge, ierr = ierr )
        !
     CASE ( 'epcdft_delta_fld' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, epcdft_delta_fld, ierr = ierr )

@@ -221,7 +221,7 @@ MODULE read_namelists_module
        
        hirshfeld = .FALSE.
        conv_epcdft = .FALSE.
-       epcdft_electrons = 0.0_DP
+       epcdft_charge = 0.0_DP
        epcdft_delta_fld = 0.1_DP
        epcdft_amp = 0.0_DP
        epcdft_width = 0.0_DP
@@ -805,7 +805,7 @@ MODULE read_namelists_module
        CALL mp_bcast( hirshfeld,              ionode_id, intra_image_comm )
        CALL mp_bcast( conv_epcdft,            ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_amp,             ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_electrons,       ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_charge,       ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_delta_fld,       ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_shift,           ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_thr,             ionode_id, intra_image_comm )

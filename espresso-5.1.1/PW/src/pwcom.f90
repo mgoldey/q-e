@@ -355,7 +355,7 @@ INTEGER :: &
      acceptor_start, &   ! first atom of acceptor fragment
      acceptor_end        ! last atom of acceptor fragment
 REAL(DP) :: &
-     epcdft_electrons,&! number of electrons
+     epcdft_charge,&! number of electrons
      epcdft_delta_fld,&! max change in fld between cdft steps
      epcdft_amp,      &! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
      epcdft_width,    &! field width (in a.u.) 

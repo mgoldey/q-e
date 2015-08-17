@@ -79,7 +79,7 @@ SUBROUTINE iosys()
                             acceptor_end_  => acceptor_end,   &
                             hirshfeld_       => hirshfeld,        &
                             conv_epcdft_       => conv_epcdft,    &
-                            epcdft_electrons_=> epcdft_electrons, &
+                            epcdft_charge_=> epcdft_charge, &
                             epcdft_delta_fld_=> epcdft_delta_fld, &
                             epcdft_amp_      => epcdft_amp,       &
                             epcdft_width_    => epcdft_width,     &
@@ -243,7 +243,7 @@ SUBROUTINE iosys()
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
                                epcdft_amp, epcdft_width, epcdft_shift,        &
                                epcdft_thr, epcdft_old_amp, acceptor_start,    & 
-                               epcdft_electrons,donor_start,donor_end,        &
+                               epcdft_charge,donor_start,donor_end,        &
                                acceptor_end,                                  &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
@@ -1120,7 +1120,7 @@ SUBROUTINE iosys()
   acceptor_end_    = acceptor_end
   hirshfeld_       = hirshfeld  
   conv_epcdft_       = conv_epcdft  
-  epcdft_electrons_= epcdft_electrons 
+  epcdft_charge_= epcdft_charge 
   epcdft_delta_fld_= epcdft_delta_fld 
   epcdft_amp_      = epcdft_amp       
   epcdft_width_    = epcdft_width

@@ -447,7 +447,7 @@ MODULE input_parameters
         INTEGER  :: acceptor_end = 0
         LOGICAL  :: hirshfeld = .FALSE.
         LOGICAL  :: conv_epcdft = .FALSE.
-        REAL(DP) :: epcdft_electrons = 0.0_DP
+        REAL(DP) :: epcdft_charge = 0.0_DP
         REAL(DP) :: epcdft_delta_fld = 0.10_DP
         REAL(DP) :: epcdft_amp = 0.0_DP
         REAL(DP) :: epcdft_width = 0.0_DP
@@ -572,7 +572,7 @@ MODULE input_parameters
              qcutz, q2sigma, lda_plus_U, lda_plus_u_kind,                     &
              Hubbard_U, Hubbard_J, Hubbard_alpha,                             &
              Hubbard_J0, Hubbard_beta, donor_start, donor_end, acceptor_start,&
-             acceptor_end,hirshfeld, epcdft_electrons,epcdft_amp,epcdft_width,&
+             acceptor_end,hirshfeld, epcdft_charge,epcdft_amp,epcdft_width,&
              epcdft_shift, epcdft_thr,epcdft_old_amp, epcdft_delta_fld,       &
              edir, emaxpos, eopreg, eamp, smearing, starting_ns_eigenvalue,   &
              U_projection_type, input_dft, la2F, assume_isolated,             &

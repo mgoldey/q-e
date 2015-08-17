@@ -22,7 +22,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   !     donor_start - first atom in fragment in donor
   !     donor_end - last atom  in fragment in donor 
   !     epcdft_amp - strength of potential in Ry a.u.
-  !     epcdft_electrons - number of electrons that should be in well
+  !     epcdft_charge - number of electrons that should be in well
   !
   !   User defined well around single atom:
   !
@@ -32,7 +32,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   !     donor_end - do not use
   !     epccdft_width  - radius of potential well in alat
   !     epcdft_amp - strength of potential in Ry a.u.
-  !     epcdft_electrons - number of electrons that should be in well
+  !     epcdft_charge - number of electrons that should be in well
   !
   !   Hirshfeld partitioning following :
   !
@@ -44,7 +44,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   !     donor_start - first atom in fragment in donor
   !     donor_end - last atom  in fragment in donor 
   !     epcdft_amp - strength of potential in Ry a.u. 
-  !     epcdft_electrons - ?? not sure yet
+  !     epcdft_charge - ?? not sure yet
   !
   !
   !
@@ -55,7 +55,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   USE epcdft,        ONLY : do_epcdft, donor_start, donor_end, &
                             acceptor_start, acceptor_end, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_electrons, hirshfeld
+                            epcdft_charge, hirshfeld
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode
   USE control_flags, ONLY : mixing_beta
@@ -78,7 +78,7 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   REAL(DP) :: dv                             ! volume element
   REAL(DP) :: einwellp                       ! number of electrons in well
   REAL(DP) :: einwells                       ! number of electrons in well
-  REAL(DP) :: enumerr                        ! epcdft_electrons - einwell  (e number error)
+  REAL(DP) :: enumerr                        ! epcdft_charge - einwell  (e number error)
   REAL(DP) :: oldamp                         ! stores old external potential strength
   SAVE oldamp
   LOGICAL  :: elocflag                       ! true if charge localization condition is satisfied
@@ -106,12 +106,13 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   ! ... Coulomb Vars
   !
   INTEGER      :: ip
-  REAL( DP )   :: dist, mindist
+  REAL( DP )   :: dist, mindonor, minacceptor
   REAL( DP )   :: r( 3 ), myr(3), s( 3 ), cm(3)
   REAL( DP )   :: inv_nr1, inv_nr2, inv_nr3
   REAL( DP )   :: thresh
   
-  LOGICAL :: on_frag = .TRUE.
+  LOGICAL :: on_donor    = .TRUE.
+  LOGICAL :: on_acceptor = .TRUE.
 
   ALLOCATE(tmpv(dfftp%nnr))
   tmpv=0.D0
@@ -218,6 +219,8 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   if (sum(rho).lt.1e-3) THEN
   !  write(*,*) "Density is really small. I forget why this matters."
   ENDIF
+
+  ! voronoi
   if (acceptor_end .ne. 0) then
     DO ir = 1, dfftp%nnr
       i = index0 + ir - 1
@@ -230,7 +233,9 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
                 DBLE( j )*inv_nr2*at(ip,2) + &
                 DBLE( k )*inv_nr3*at(ip,3)
       END DO
-      mindist=5.D6
+      
+      mindonor=5d6
+      minacceptor=5d6
       DO iatom= acceptor_start, acceptor_end
         cm(:) = tau(:,iatom)
         myr(:) = r(:) - cm(:)
@@ -238,32 +243,42 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
         s(:) = s(:) - ANINT(s(:))
         myr(:) = MATMUL( at(:,:), s(:) )
         dist = SQRT( SUM( myr * myr ) )*alat
-        IF(dist .le. mindist) THEN
-          mindist=dist
+        IF(dist .le. minacceptor) THEN
+          minacceptor=dist
         END IF
       END DO
-      on_frag = .TRUE.
-      DO iatom=1, nat
-        IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) THEN
-          CYCLE
-        END IF
+      DO iatom= donor_start, donor_end
         cm(:) = tau(:,iatom)
         myr(:) = r(:) - cm(:)
         s(:) = MATMUL( myr(:), bg(:,:) )
         s(:) = s(:) - ANINT(s(:))
         myr(:) = MATMUL( at(:,:), s(:) )
         dist = SQRT( SUM( myr * myr ) )*alat
-        IF(dist .lt. mindist) THEN
-          mindist = dist
-          on_frag = .FALSE.
-          EXIT
-        ENDIF
+        IF(dist .le. mindonor) THEN
+          mindonor=dist
+        END IF
       END DO
-      IF(on_frag) THEN
-        vpoten(ir) = vpoten(ir) - epcdft_amp
-      ELSE ! FIX TO BE DONOR ONLY
-        vpoten(ir) = vpoten(ir) + epcdft_amp
-      ENDIF
+      on_donor = .TRUE.
+      on_acceptor = .TRUE.
+      !write(*,*)" mindist are ",mindonor," ",minacceptor
+      DO iatom=1, nat
+        IF ((.not. on_donor).and. (.not. on_acceptor)) CYCLE
+        IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) CYCLE
+        IF ((iatom.ge.donor_start) .AND. (iatom.le.donor_end) ) CYCLE
+        cm(:) = tau(:,iatom)
+        myr(:) = r(:) - cm(:)
+        s(:) = MATMUL( myr(:), bg(:,:) )
+        s(:) = s(:) - ANINT(s(:))
+        myr(:) = MATMUL( at(:,:), s(:) )
+        dist = SQRT( SUM( myr * myr ) )*alat
+        IF(dist .lt. mindonor) on_donor = .FALSE.
+        IF(dist .lt. minacceptor) on_acceptor=.FALSE.        
+      END DO
+      if (mindonor.lt.minacceptor) on_acceptor=.FALSE.
+      if (minacceptor.lt.mindonor) on_donor=.FALSE.
+      !write(*,*)" bools are ",on_donor," ",on_acceptor
+      IF(on_donor) vpoten(ir) = vpoten(ir) - epcdft_amp
+      IF(on_acceptor) vpoten(ir) = vpoten(ir) + epcdft_amp
     END DO 
   else ! APPLY POTENTIAL WITHIN WELL OF SIZE EPCDFT_WIDTH
     DO ir = 1, dfftp%nnr
@@ -301,14 +316,6 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   
   !dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   !write(*,*) "vpoten is ",sum(vpoten(:))
-  RETURN
-
-  oldamp = epcdft_amp
-  IF (ionode) WRITE(*,*)"    #e's   in well     : ",einwells," electrons"
-  enumerr = epcdft_electrons - einwells
-  epcdft_amp = epcdft_amp - enumerr * ABS(epcdft_amp)*.1
-  IF(ionode) WRITE(*,*)"    New field Amp      : ",epcdft_amp," Ry" 
-  !
   RETURN
   !
 END SUBROUTINE add_epcdft_efield

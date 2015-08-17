@@ -1071,7 +1071,7 @@ CONTAINS
 
     SUBROUTINE qexml_write_epcdft( do_epcdft, donor_start, donor_end, &
          acceptor_start, acceptor_end, &
-         hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
+         hirshfeld, epcdft_charge, epcdft_amp, epcdft_width, epcdft_shift, &
          epcdft_thr, epcdft_old_amp, epcdft_delta_fld, conv_epcdft)
       !------------------------------------------------------------------------
       !
@@ -1082,7 +1082,7 @@ CONTAINS
       INTEGER, INTENT(in)   :: acceptor_end   ! 
       LOGICAL, INTENT(in)   :: hirshfeld      ! 
       LOGICAL, INTENT(in)   :: conv_epcdft    ! 
-      REAL(DP), INTENT(in) :: epcdft_electrons! 
+      REAL(DP), INTENT(in) :: epcdft_charge! 
       REAL(DP), INTENT(in) :: epcdft_delta_fld! 
       REAL(DP), INTENT(in) :: epcdft_amp      ! 
       REAL(DP), INTENT(in) :: epcdft_width    ! 
@@ -1109,7 +1109,7 @@ CONTAINS
       !
       CALL iotk_write_dat( ounit, "EPCDFT_DELTA_FLD", epcdft_delta_fld )
       !
-      CALL iotk_write_dat( ounit, "FRAGMENT_ELECTRONS", epcdft_electrons )
+      CALL iotk_write_dat( ounit, "FRAGMENT_ELECTRONS", epcdft_charge )
       !
       CALL iotk_write_dat( ounit, "EPCDFT_AMP", epcdft_amp )
       !
@@ -2996,7 +2996,7 @@ CONTAINS
 
     SUBROUTINE qexml_read_epcdft(do_epcdft, donor_start,donor_end, &
       & acceptor_start, acceptor_end,  &
-      & hirshfeld, epcdft_electrons, epcdft_amp, epcdft_width, epcdft_shift, &
+      & hirshfeld, epcdft_charge, epcdft_amp, epcdft_width, epcdft_shift, &
       & epcdft_thr, epcdft_old_amp, found, epcdft_delta_fld, conv_epcdft, ierr)
       IMPLICIT NONE
       !------------------------------------------------------------------------
@@ -3008,7 +3008,7 @@ CONTAINS
       INTEGER, OPTIONAL, INTENT(out)   :: acceptor_end   ! 
       LOGICAL, OPTIONAL, INTENT(out)   :: hirshfeld      ! 
       LOGICAL, OPTIONAL, INTENT(out)   :: conv_epcdft    ! 
-      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_electrons! 
+      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_charge! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_delta_fld! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_amp      ! 
       REAL(DP), OPTIONAL, INTENT(out) :: epcdft_width    ! 
@@ -3025,7 +3025,7 @@ CONTAINS
       INTEGER   :: acceptor_end_ ! 
       LOGICAL   :: hirshfeld_      ! 
       LOGICAL   :: conv_epcdft_    ! 
-      REAL(DP) :: epcdft_electrons_! 
+      REAL(DP) :: epcdft_charge_! 
       REAL(DP) :: epcdft_delta_fld_! 
       REAL(DP) :: epcdft_amp_      ! 
       REAL(DP) :: epcdft_width_    ! 
@@ -3061,7 +3061,7 @@ CONTAINS
       CALL iotk_scan_dat( iunit, "EPCDFT_DELTA_FLD", epcdft_delta_fld_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
-      CALL iotk_scan_dat( iunit, "FRAGMENT_ELECTRONS", epcdft_electrons_ , IERR=ierr)
+      CALL iotk_scan_dat( iunit, "FRAGMENT_ELECTRONS", epcdft_charge_ , IERR=ierr)
       IF ( ierr /= 0 ) RETURN
       !
       CALL iotk_scan_dat( iunit, "EPCDFT_AMP", epcdft_amp_ , IERR=ierr)
@@ -3093,7 +3093,7 @@ CONTAINS
       IF ( present(epcdft_width) )           epcdft_width         = epcdft_width_
       IF ( present(epcdft_shift) )           epcdft_shift         = epcdft_shift_
       IF ( present(epcdft_thr) )           epcdft_thr         = epcdft_thr_
-      IF ( present(epcdft_electrons) )           epcdft_electrons         = epcdft_electrons_
+      IF ( present(epcdft_charge) )           epcdft_charge         = epcdft_charge_
       IF ( present(epcdft_delta_fld) )           epcdft_delta_fld         = epcdft_delta_fld_
       IF ( present(epcdft_old_amp) )           epcdft_old_amp         = epcdft_old_amp_
       

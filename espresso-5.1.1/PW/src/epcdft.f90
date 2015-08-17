@@ -16,7 +16,7 @@ SUBROUTINE epcdft_controller()
   !   due to the constraining potential from cdft and prints it. 
   !   It also calculates the total number of 
   !   electrons within the applied well. If this number is not
-  !   equal to that of epcdft_electrons within epcdft_thr, 
+  !   equal to that of epcdft_charge within epcdft_thr, 
   !   the amplitude of the well is changed and the scf loop is restarted. 
   !
   !   do_epcdft - flag to do cdft
@@ -26,7 +26,7 @@ SUBROUTINE epcdft_controller()
   !   acceptor_end   - last atom in voronoi cell or in acceptor (if hirshfeld)
   !                    if zero user defined well is used (not working right now)
   !
-  !   epcdft_electrons - number of electrons in voronoi cell or on acceptor
+  !   epcdft_charge - number of electrons in voronoi cell or on acceptor
   !
   !   epcdft_amp - amplitude of voronoi cell or lagrange multiplier for hirshfeld
   !
@@ -34,7 +34,7 @@ SUBROUTINE epcdft_controller()
   !
   !   epcdft_shift -  energy correction to etot due to constraining potential
   !
-  !   epcdft_thr - threshold on number of electrons to match epcdft_electrons
+  !   epcdft_thr - threshold on number of electrons to match epcdft_charge
   !
   !   hirshfeld - if .true. hirshfeld is used rather than voronoi cells
   !
@@ -52,7 +52,7 @@ SUBROUTINE epcdft_controller()
                             eopreg, forcefield, etotefield
   USE epcdft,        ONLY : do_epcdft, donor_start, &
                             acceptor_start, acceptor_end, &
-                            donor_end, epcdft_electrons, &
+                            donor_end, epcdft_charge, &
                             epcdft_amp, epcdft_width, epcdft_shift, &
                             epcdft_thr, hirshfeld, conv_epcdft, epcdft_delta_fld
   USE force_mod,     ONLY : lforce
@@ -75,7 +75,7 @@ SUBROUTINE epcdft_controller()
   REAL(DP) :: tmp
   REAL(DP) :: dv
   REAL(DP) :: einwell                              ! number of electrons in well
-  REAL(DP) :: enumerr                              ! epcdft_electrons - einwell  (e number error)
+  REAL(DP) :: enumerr                              ! epcdft_charge - einwell  (e number error)
   LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
   LOGICAL  :: zero                                 ! used to run cdft with zero constraining potential
   REAL(DP) :: safe_epcdft_amp                      ! used for zero constraining potential run 
@@ -176,9 +176,9 @@ SUBROUTINE epcdft_controller()
         !
       ELSE
         !
-        IF(vpotens(i,1) .NE. 0.D0)THEN
+        IF(vpotens(i,1) .lt. 0.D0)THEN
           einwell = einwell + rhosup(i) * dv
-        ELSE
+        ELSE IF (vpotens(i,1).gt. 0.D0) THEN
           einwell = einwell - rhosup(i) * dv
         ENDIF
         !
@@ -214,16 +214,16 @@ SUBROUTINE epcdft_controller()
     ! the correction is - of the energy
     epcdft_shift = -1.D0 * epcdft_shift
     !
-    IF (.not.zero) WRITE(*,*)"    E field correction : ",epcdft_shift," Ry"
-    WRITE(*,*)"    #e's   in well     : ",einwell," electrons"
+    IF (.not.zero) WRITE(*,*)"    E field correction              :  ",epcdft_shift,"Ry"
+    WRITE(*,*)"    Difference of charges           : ",einwell," electrons"
     !
     ! is there a localization condition?
     !
-    IF(epcdft_amp .NE. 0.D0)THEN
+    IF(epcdft_amp .ne. 0.D0)THEN
       !
       ! is the localization condition satisfied?
       !
-      enumerr = epcdft_electrons - einwell 
+      enumerr = epcdft_charge - einwell 
       !
       ! conv_epcdft = false will restart scf
       !
@@ -231,8 +231,8 @@ SUBROUTINE epcdft_controller()
         !
         conv_epcdft = .FALSE.
         !
-        WRITE(*,*) "    Surplus/deficit electrons    :  ", enumerr,    "electrons"
-        WRITE(*,*) "    epcdft_thr                   :  ", epcdft_thr, "electrons"
+        WRITE(*,*) "    Surplus(+)/deficit(-) charge    :  ", -enumerr,    "electrons"
+        WRITE(*,*) "    epcdft_thr                      :  ", epcdft_thr, "electrons"
         !
       ELSE
         conv_epcdft =.true.
@@ -291,7 +291,7 @@ SUBROUTINE epcdft_controller()
       ELSE
          !
          CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
-                            einwell,         last_einwell, epcdft_electrons)
+                            einwell,         last_einwell, epcdft_charge)
          !
          ! abs of the change in amp must be <= |delta_fld|
          !
