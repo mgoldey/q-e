@@ -16,6 +16,7 @@ PROGRAM epcdft_coupling
   !
   CALL epcdft_get_s ( ) ! create overlap matrix
   !
+  CALL epcdft_get_rs_w ( ) ! create weight matrix
   CALL epcdft_get_w ( ) ! create weight matrix
   !
   CALL epcdft_get_h ( ) ! create hamiltonian

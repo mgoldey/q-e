@@ -1,8 +1,8 @@
 &CONTROL
   calculation  = "scf",
-  prefix       = "left",
-  outdir       = "./out",
-  pseudo_dir   = "../pseudo",
+  prefix       = "right",
+  outdir       = "out",
+  pseudo_dir   = "../../../pseudo",
   do_epcdft    = .true.,
   verbosity = "high" 
   wf_collect = .true.
@@ -10,7 +10,7 @@
 &SYSTEM
   nosym = .true.
   ibrav     = 1,
-  a         = 14,
+  a         = 15,
   nat       = 2,
   ntyp      = 1,
   ecutwfc   = 80,
@@ -18,14 +18,11 @@
   nspin   = 2,
   tot_magnetization = 1
   hirshfeld = .TRUE.
-  donor_start = 1
-  donor_end   = 1
-  acceptor_start = 2
-  acceptor_end   = 2
+  fragment_atom1    = 2,
+  fragment_atom2    = 2,
   epcdft_amp        = 3.30E-01,
-  epcdft_charge  = 1.,
+  epcdft_electrons  = 1.,
   epcdft_thr = 1.0E-02
-  epcdft_delta_fld = 0.02D0
 /
 &ELECTRONS
  ! startingpot = 'file'

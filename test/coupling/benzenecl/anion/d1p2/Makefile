@@ -1,12 +1,12 @@
-include ../Makefile.inc
-all: left.out right.out coupling.out
+include ../../../../Makefile.inc
+all: benzene.out cl.out coupling.out
 clean: 
 	rm -rf *.out out 
 
-left.out: left.in
+benzene.out: benzene.in
 	$(PW_CMD) < $^ > $@
 
-right.out: right.in
+cl.out: cl.in
 	$(PW_CMD) < $^ > $@
 
 coupling.out: coupling.in

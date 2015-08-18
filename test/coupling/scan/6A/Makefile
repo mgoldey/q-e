@@ -1,4 +1,4 @@
-include ../Makefile.inc
+include ../../../Makefile.inc
 all: left.out right.out coupling.out
 clean: 
 	rm -rf *.out out 
