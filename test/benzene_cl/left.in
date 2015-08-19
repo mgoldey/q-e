@@ -6,11 +6,11 @@
     wf_collect = .true.
     verbosity = "high" 
   do_epcdft    = .true.,
-restart_mode = 'restart'
+!restart_mode = 'restart'
 /
 &system
     ibrav=1, 
-    celldm(1) =30.d0, 
+    a = 12,
     nat=13, 
     ntyp=3,
     ecutwfc = 70.d0, 
@@ -19,16 +19,20 @@ restart_mode = 'restart'
     tot_charge = -1
     nspin = 2,
     tot_magnetization = 0
+    assume_isolated = 'mt'
   hirshfeld = .TRUE.
-  fragment_atom1    = 1,
-  fragment_atom2    = 12,
-  epcdft_amp        = -3.6884E-01,
-  epcdft_electrons  = -1.D0,
-  epcdft_thr = 1.0E-02
+  donor_start    = 1,
+  donor_end    = 12,
+  acceptor_start = 13
+  acceptor_end = 13
+  epcdft_amp        = -0.6884E-01,
+  epcdft_charge  = -1.D0,
+  epcdft_thr = 5.0E-01
+  epcdft_delta_fld = 0.05D0
 / 
 &electrons 
     diago_full_acc=.true.
-    conv_thr = 1.D-8
+    conv_thr = 1.D-4
 !    mixing_beta = 0.20
 !electron_maxstep = 40
 !startingpot = 'file'
@@ -36,7 +40,7 @@ restart_mode = 'restart'
 ATOMIC_SPECIES 
 C   12.0107  C.pbe-mt_fhi.UPF 
 H   1.00794  H.pbe-mt_fhi.UPF 
-Cl  1.0      Cl.UPF
+Cl  1.0     Cl.pbe-mt_fhi.UPF 
 K_POINTS {Gamma}
 ATOMIC_POSITIONS {angstrom} 
 C       0.0000   1.3970 0.0000 
