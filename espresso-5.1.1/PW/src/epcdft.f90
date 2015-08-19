@@ -77,6 +77,8 @@ SUBROUTINE epcdft_controller()
   INTEGER  :: i, is, iatom
   REAL(DP) :: tmp
   REAL(DP) :: dv
+  REAL(DP) :: acharge, dcharge                     ! acceptor/donor charge 
+  REAL(DP) :: achargep, dchargep                   ! acceptor/donor charge parallel
   REAL(DP) :: einwell                              ! number of electrons in well
   REAL(DP) :: einwellp                             ! number of electrons in well
   REAL(DP) :: epcdft_shiftp                        ! size of shift
@@ -116,9 +118,12 @@ SUBROUTINE epcdft_controller()
   epcdft_shiftp = 0.D0
   zero =.false.
   next_epcdft_amp = 0.D0
+  acharge = 0.D0
+  dcharge = 0.D0
+  achargep = 0.D0
+  dchargep = 0.D0
   !einwellp  = 0.D0
   !epcdft_shiftp = 0.D0
-
   !
   ! gather the grids for serial calculation
   !
@@ -158,9 +163,26 @@ SUBROUTINE epcdft_controller()
       ! need number of electrons on 
       ! acceptor so negetive of vpotens is used
       IF (nspin.eq.1) THEN
+        !
         einwellp = einwellp - ( vpotenp(i,1) / safe_epcdft_amp ) * rho%of_r(i,1) * dv
+        !
+        ! count charge, electrons are (-) 
+        IF(vpotenp(i,1)/safe_epcdft_amp<0.D0) THEN
+          achargep = achargep - ABS( vpotenp(i,1) / safe_epcdft_amp ) * rho%of_r(i,1) * dv
+        ELSE IF(vpotenp(i,1)/safe_epcdft_amp>0.D0) THEN
+          dchargep = dchargep - ABS( vpotenp(i,1) / safe_epcdft_amp ) * rho%of_r(i,1) * dv
+        ENDIF
+        !
       ELSE 
+        !
         einwellp = einwellp - ( vpotenp(i,1) / safe_epcdft_amp ) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
+        !
+        IF(vpotenp(i,1)/safe_epcdft_amp<0.D0) THEN
+          achargep = achargep - ABS( vpotenp(i,1) / safe_epcdft_amp ) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
+        ELSE IF(vpotenp(i,1)/safe_epcdft_amp>0.D0) THEN 
+          dchargep = dchargep - ABS( vpotenp(i,1) / safe_epcdft_amp ) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
+        ENDIF
+        !
       ENDIF
       !
     ELSE
@@ -187,9 +209,17 @@ SUBROUTINE epcdft_controller()
   CALL MP_SUM(einwellp,intra_image_comm) ! RIGHT COMM?
   epcdft_shift=epcdft_shiftp
   einwell=einwellp
+  !
+  CALL MP_SUM(achargep,intra_image_comm) 
+  acharge=achargep
+  CALL MP_SUM(dchargep,intra_image_comm)
+  dcharge=dchargep
 #else
   epcdft_shift=epcdft_shiftp
   einwell=einwellp
+  !
+  acharge=achargep
+  dcharge=dchargep
 #endif
   !
   ! count nuc charge
@@ -201,8 +231,10 @@ SUBROUTINE epcdft_controller()
       !
       IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) THEN
         einwell = einwell - zv(ityp(iatom))
+        acharge = acharge + zv(ityp(iatom)) 
       ELSE IF ((iatom.ge.donor_start) .AND. (iatom.le.donor_end) ) THEN
         einwell = einwell + zv(ityp(iatom))
+        dcharge = dcharge + zv(ityp(iatom))
       ENDIF
       !
     ELSE ! just a well around one atom
@@ -221,8 +253,11 @@ SUBROUTINE epcdft_controller()
   epcdft_shift = -1.D0 * epcdft_shift
   !
   IF(ionode) THEN
-    IF (.not.zero) WRITE(*,*)"    E field correction              :  ",epcdft_shift,"Ry"
-    WRITE(*,*)"    Difference of charges           : ",einwell," electrons"
+    IF (.not.zero) CALL pprint("E field correction",epcdft_shift,'Ry','e')
+    IF (.not.zero) WRITE(*,*)""
+    CALL pprint("Donor charge",dcharge,'e','f')
+    CALL pprint("Acceptor charge",acharge,'e','f')
+    CALL pprint("Difference of charges",einwell,'e','f')
   ENDIF
   !
   ! is there a localization condition?
@@ -239,8 +274,9 @@ SUBROUTINE epcdft_controller()
       !
       conv_epcdft = .FALSE.
       !
-      WRITE(*,*) "    Surplus(+)/deficit(-) charge    :  ", -enumerr,    "electrons"
-      WRITE(*,*) "    epcdft_thr                      :  ", epcdft_thr, "electrons"
+      WRITE(*,*)""
+      CALL pprint("epcdft_thr",epcdft_thr,'e','e')
+      CALL pprint("Surplus(+)/deficit(-) charge",-enumerr,'e','e')
       !
     ELSE
       conv_epcdft =.true.
@@ -319,7 +355,7 @@ SUBROUTINE epcdft_controller()
     !
     CALL mp_bcast( epcdft_amp, ionode_id, intra_image_comm ) ! what is best bcast this or enumerr?
     !
-    IF(ionode) WRITE(*,*)"    New field Amp      : ",epcdft_amp," Ry"
+    IF(ionode) CALL pprint("New field Amp",epcdft_amp,"Ry",'e')
     !
     ! epcdft_shift = 0.D0 ! this var is added to etot before 
     !                   ! this routine is called during next scf loop
@@ -462,5 +498,34 @@ SUBROUTINE actual_write_cube(func,nr1,nr2,nr3,ounit)
         WRITE(ounit,'(6E13.5)') (func(i1,i2,i3),i3=1,nr3)
      ENDDO
   ENDDO
+  !
+END SUBROUTINE
+!
+SUBROUTINE pprint( strg, num, ustrg, a)
+  !
+  ! write strg, num and ustrg
+  ! a is used to determine the format of num
+  !
+  USE kinds, ONLY:DP
+  !
+  IMPLICIT NONE
+  REAL(DP),INTENT(IN)::num
+  CHARACTER(LEN=*),INTENT(IN)::strg, ustrg
+  CHARACTER(LEN=1),INTENT(IN)::a
+  CHARACTER(LEN=32)::trimstrg
+  CHARACTER(LEN=6)::utrimstrg
+  !
+  trimstrg = strg
+  utrimstrg = ustrg
+  !
+  SELECT CASE(a)
+    CASE('f','F')
+      WRITE(*,1)trimstrg,num,utrimstrg
+    CASE('e','E')
+      WRITE(*,2)trimstrg,num,utrimstrg
+  END SELECT
+  !
+  1 FORMAT(5x,A32,':',1x,F23.16,1x,A6)
+  2 FORMAT(5x,A32,':',1x,e23.16,1x,A6)
   !
 END SUBROUTINE
