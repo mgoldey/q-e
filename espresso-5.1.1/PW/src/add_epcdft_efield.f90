@@ -419,7 +419,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
       ENDDO ! m
     ENDDO ! l 
   ENDDO ! atom
-  CALL mp_bcast( orboc, ionode_id, intra_image_comm )
+  !CALL mp_bcast( orboc, ionode_id, intra_image_comm )
 
   !call write_cube_r ( 84332, 'vtop.cube',  REAL(vtop,KIND=DP))
   !call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
@@ -429,7 +429,8 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   !
   vtop = vtop / vbot
   DO ir = 1, n
-    if (abs(vtop(ir)).gt.1.0) vtop(ir)=0d0  
+    if (abs(REAL(vtop(ir))).gt.1.0) vtop(ir)=0.0  
+    if (vtop(ir) /= vtop(ir)) vtop(ir)=0.0
   ENDDO
   !
   !
