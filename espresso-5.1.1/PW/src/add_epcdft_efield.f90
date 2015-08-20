@@ -429,8 +429,8 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   
   CALL mp_sum( orboc, intra_image_comm )
 
-  call write_cube_r ( 84332, 'vtop.cube',  REAL(vtop,KIND=DP))
-  call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
+  !call write_cube_r ( 84332, 'vtop.cube',  REAL(vtop,KIND=DP))
+  !call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
   
   !
   ! combine vtop and vbot and fft(?) to v(r)
@@ -451,7 +451,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   v(:) = REAL(vtop(:),KIND=DP)
   
   !
-  call write_cube_r ( 84332, 'v',  v )
+  !call write_cube_r ( 84332, 'v.cube',  v )
   !
   DEALLOCATE( wfcatomg )
   DEALLOCATE( wfcatomr )
