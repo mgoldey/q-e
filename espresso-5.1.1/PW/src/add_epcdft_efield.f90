@@ -336,6 +336,9 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE gvecs,                ONLY : nls, nlsm
   USE fft_interfaces,       ONLY : invfft
   USE wavefunctions_module, ONLY : psic
+  USE mp_images,     ONLY : intra_image_comm
+  USE mp,            ONLY : mp_bcast, mp_sum
+  USE io_global,     ONLY : stdout,ionode, ionode_id
   !
   IMPLICIT NONE
   !
@@ -377,9 +380,9 @@ SUBROUTINE calc_hirshfeld_v( v, n )
     !
     ! Prune low values away
     !
-    DO ir=1, n
-      if (abs(wfcatomr(ir,s)).lt.1d-6) wfcatomr(ir,s)=0.D0
-    ENDDO  
+    !DO ir=1, n
+    !  if (abs(wfcatomr(ir,s)).lt.1d-6) wfcatomr(ir,s)=0.D0
+    !ENDDO  
     !
   ENDDO
   !
@@ -416,19 +419,23 @@ SUBROUTINE calc_hirshfeld_v( v, n )
       ENDDO ! m
     ENDDO ! l 
   ENDDO ! atom
+  CALL mp_bcast( orboc, ionode_id, intra_image_comm )
+
+  !call write_cube_r ( 84332, 'vtop.cube',  REAL(vtop,KIND=DP))
+  !call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
+  
   !
   ! combine vtop and vbot and fft(?) to v(r)
   !
+  vtop = vtop / vbot
   DO ir = 1, n
-    if (abs(vbot(ir)).gt.1d-6) THEN 
-      vtop(ir)=vtop(ir)/vbot(ir)
-    ELSE 
-      vtop(ir)=0d0
-    ENDIF
+    if (abs(vtop(ir)).gt.1.0) vtop(ir)=0d0  
   ENDDO
-  !vtop = vtop / vbot
   !
+  !
+  !call write_cube_r ( 84332, 'v.cube',  REAL(vtop,KIND=DP))
   v(:) = REAL(vtop(:),KIND=DP)
+  
   !
   !call write_wfc_cube_r ( 84332, 'v',  v )
   !
