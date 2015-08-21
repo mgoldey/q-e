@@ -341,6 +341,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE mp,            ONLY : mp_bcast, mp_sum
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE klist,         ONLY : nelec
+  USE cell_base,     ONLY : omega
   !
   IMPLICIT NONE
   !
@@ -357,6 +358,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   COMPLEX(DP) :: normfac
   COMPLEX(DP) :: cutoff
   COMPLEX(DP) :: vbottot
+  REAL(DP) :: dv
   !
   ALLOCATE( wfcatomg(npwx, natomwfc) )
   ALLOCATE( wfcatomr(n, natomwfc) )
@@ -368,6 +370,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   v = 0.D0
   psic = 0.D0
   orbi = 0 
+  dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   !
   ! load atomic wfcs
   CALL gk_sort (xk (1, 1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
@@ -433,13 +436,15 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   !call write_cube_r ( 84332, 'vtop.cube',  REAL(vtop,KIND=DP))
   !call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
   !
+  ! force normalization
   !
   vbottot = SUM(vbot)
   CALL mp_sum( vbottot, intra_image_comm )
-  normfac=REAL(nelec,KIND=DP)/REAL(vbottot,KIND=DP)
+  normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP)*dv)
+  vtop = normfac * vtop
+  vbot = normfac * vbot
   !
-  ! A=nelec/sum ; A v < thr; thr/A > v; thr*sum/nelec
-  cutoff = 1.D-6/normfac
+  cutoff = 1.D-5
   vtop = vtop / vbot
   DO ir = 1, n
     if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) vtop(ir)=0.D0  
