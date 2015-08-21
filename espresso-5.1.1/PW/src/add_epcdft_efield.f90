@@ -325,7 +325,6 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE basis,                ONLY : natomwfc
   USE wvfct,                ONLY : npw, npwx, ecutwfc, igk, g2kin
   USE klist,                ONLY : xk, nks
-  use electrons_base,        ONLY : nel
   USE gvect,                ONLY : ngm, g
   USE cell_base,            ONLY : tpiba2
   USE uspp_param,           ONLY : upf
@@ -341,7 +340,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE mp_images,     ONLY : intra_image_comm
   USE mp,            ONLY : mp_bcast, mp_sum
   USE io_global,     ONLY : stdout,ionode, ionode_id
-
+  USE klist,         ONLY : nelec
   !
   IMPLICIT NONE
   !
@@ -426,30 +425,27 @@ SUBROUTINE calc_hirshfeld_v( v, n )
       ENDDO ! m
     ENDDO ! l 
   ENDDO ! atom
-  
-  CALL mp_sum( orboc, intra_image_comm )
-
+  !
+  ! M.G.s bar
+  !CALL mp_sum( orboc, intra_image_comm )
+  !
   !call write_cube_r ( 84332, 'vtop.cube',  REAL(vtop,KIND=DP))
   !call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
-  
   !
-  ! combine vtop and vbot and fft(?) to v(r)
   !
-  if (nspin.eq.2)  normfac=(nel(1)+nel(2))/sum(vbot(:))
-  if (nspin.eq.1)  normfac=nel(1)/sum(vbot(:))
-
+  normfac=REAL(nelec,KIND=DP)/sum(vbot)
+  !
   ! A=nelec/sum ; A v < thr; thr/A > v; thr*sum/nelec
-  cutoff=1e-8/normfac
+  cutoff = 1.D-6/normfac
   vtop = vtop / vbot
   DO ir = 1, n
-    if (abs(REAL(vbot(ir))).lt.REAL(cutoff)) vtop(ir)=0.0  
-    if (vtop(ir) /= vtop(ir)) vtop(ir)=0.0
+    if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) vtop(ir)=0.D0  
+    if (vtop(ir) /= vtop(ir)) vtop(ir)=0.D0
   ENDDO
   !
   !
   !call write_cube_r ( 84332, 'v.cube',  REAL(vtop,KIND=DP))
   v(:) = REAL(vtop(:),KIND=DP)
-  
   !
   !call write_cube_r ( 84332, 'v.cube',  v )
   !
