@@ -356,6 +356,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   COMPLEX(DP) :: vbot(n) ! bottom of the hirshfeld potential fraction
   COMPLEX(DP) :: normfac
   COMPLEX(DP) :: cutoff
+  COMPLEX(DP) :: vbottot
   !
   ALLOCATE( wfcatomg(npwx, natomwfc) )
   ALLOCATE( wfcatomr(n, natomwfc) )
@@ -433,7 +434,9 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   !call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
   !
   !
-  normfac=REAL(nelec,KIND=DP)/sum(vbot)
+  vbottot = SUM(vbot)
+  CALL mp_sum( vbottot, intra_image_comm )
+  normfac=REAL(nelec,KIND=DP)/REAL(vbottot,KIND=DP)
   !
   ! A=nelec/sum ; A v < thr; thr/A > v; thr*sum/nelec
   cutoff = 1.D-6/normfac
