@@ -444,7 +444,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   vtop = normfac * vtop
   vbot = normfac * vbot
   !
-  cutoff = 1.D-5
+  cutoff = 1.D-9
   vtop = vtop / vbot
   DO ir = 1, n
     if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) vtop(ir)=0.D0  
