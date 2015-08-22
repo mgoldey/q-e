@@ -10,10 +10,10 @@
 /
 &system
     ibrav=1, 
-    a = 17,
+    a = 12, ! both CPMD and QE are converged at 17
     nat=13, 
     ntyp=3,
-    ecutwfc = 90.d0, 
+    ecutwfc = 70.d0, 
     nbnd=40,
     nosym=.true.
     nspin = 2,
@@ -24,7 +24,7 @@
   donor_end    = 12,
   acceptor_start = 13
   acceptor_end = 13
-  epcdft_amp        = 1.1731E-01,
+  epcdft_amp        = 1.1730E-01,
   epcdft_charge  = 1.D0,
   epcdft_thr = 1.0E-04
   epcdft_delta_fld = 0.005D0
