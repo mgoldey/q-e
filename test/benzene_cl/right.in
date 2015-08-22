@@ -10,32 +10,32 @@
 /
 &system
     ibrav=1, 
-    a = 12,
+    a = 17,
     nat=13, 
     ntyp=3,
-    ecutwfc = 70.d0, 
+    ecutwfc = 90.d0, 
     nbnd=40,
     nosym=.true.
-    tot_charge = -1
     nspin = 2,
-    tot_magnetization = 0
+    tot_magnetization = 1
     assume_isolated = 'mt'
   hirshfeld = .TRUE.
   donor_start    = 1,
   donor_end    = 12,
   acceptor_start = 13
   acceptor_end = 13
-  epcdft_amp        = 0.4323E-01,
-  epcdft_charge  = 1.D0,
-  epcdft_thr = 5.0E-01
-  epcdft_delta_fld = 0.05D0
+  epcdft_amp        = -3.8779E-01,
+  epcdft_charge  = -1.D0,
+  epcdft_thr = 1.0E-04
+  epcdft_delta_fld = 0.005D0
 / 
 &electrons 
     diago_full_acc=.true.
-    conv_thr = 1.D-4
+    conv_thr = 1.D-8
+    diagonalization = 'cg'
 !    mixing_beta = 0.20
-electron_maxstep = 40
-startingpot = 'file'
+!electron_maxstep = 40
+!startingpot = 'file'
 / 
 ATOMIC_SPECIES 
 C   12.0107  C.pbe-mt_fhi.UPF 

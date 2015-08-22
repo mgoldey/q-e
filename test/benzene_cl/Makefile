@@ -10,4 +10,5 @@ right.out: right.in
 	$(PW_CMD) < $^ > $@
 
 coupling.out: coupling.in
+        sh ../../scripts/setup_coupling_input.sh left.out right.out > $^
 	$(CUP_CMD) < $^ > $@
