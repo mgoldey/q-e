@@ -19,6 +19,7 @@ SUBROUTINE epcdft_setup
   USE gvect,                ONLY : ngm, g
   USE wavefunctions_module, ONLY : evc
   USE cell_base,            ONLY : tpiba2
+  USE scf,                  ONLY : rho
   USE epcdft_mod  
   USE epcdft
   !
@@ -99,6 +100,7 @@ SUBROUTINE epcdft_setup
   CALL read_file()  ! for system 2
   CALL openfil_pp() ! open all files for scf run set filenames/units
   ALLOCATE( evc2 ( npwx, nbnd, nks ) )
+  evc2 = ( 0.D0, 0.D0 )
   !
   DO ik = 1, nks
     CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
@@ -106,10 +108,12 @@ SUBROUTINE epcdft_setup
   ENDDO
   !
   ALLOCATE( w ( dfftp%nnr , 2 ) )
+  w = 0.D0
   !
   ! setup weight function for system 2
-  fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
-  CALL read_cube(239841274, fil, w(:,2) )
+  CALL add_epcdft_efield(w(:,2),dtmp,rho%of_r,.TRUE.)
+  !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
+  !CALL read_cube(239841274, fil, w(:,2) )
   !
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
@@ -125,6 +129,7 @@ SUBROUTINE epcdft_setup
   CALL openfil_pp() 
   !
   ALLOCATE( evc1 ( npwx, nbnd, nks ) )
+  evc1 = ( 0.D0, 0.D0 )
   !
   DO ik = 1, nks
     CALL gk_sort( xk(1,ik), ngm, g, ecutwfc/tpiba2, npw, igk, g2kin )
@@ -134,8 +139,9 @@ SUBROUTINE epcdft_setup
   DEALLOCATE( evc )
   !
   ! setup weight function for system 1
-  fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
-  CALL read_cube(239841275, fil, w(:,1) )
+  CALL add_epcdft_efield(w(:,1),dtmp,rho%of_r,.TRUE.)
+  !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
+  !CALL read_cube(239841275, fil, w(:,1) )
   !
   IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
   !
@@ -144,8 +150,8 @@ SUBROUTINE epcdft_setup
   ALLOCATE( smat ( 2 , 2 , nks) )
   ALLOCATE( wmat ( 2 , 2, nks) )
   !
-  smat = 0.d0
-  wmat = 0.d0
+  smat = ( 0.D0, 0.D0 )
+  wmat = ( 0.D0, 0.D0 )
   !
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
                           occup1, occdown1, occup2, occdown2, debug,  s_spin, det_by_zgedi )
