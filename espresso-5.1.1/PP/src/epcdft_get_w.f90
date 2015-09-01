@@ -3,7 +3,10 @@
 SUBROUTINE epcdft_get_w
   !-----------------------------------------------------------------------
   !
-  !  <A|W|B> = <A|VA+VB|B> = N \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
+  !  Compute W matrix
+  !
+  !    <A|W|A> = <A|Wa/Wampa|A>  (divide by the amplitude)
+  !    <A|W|B> = <A|Wb/Wampb|B> = N \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
   !                                                                     ^-----cofactor----------^
   !
   USE kinds,                ONLY : DP
@@ -11,7 +14,7 @@ SUBROUTINE epcdft_get_w
   USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx
-  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat, wamp1, wamp2
   USE fft_base,             ONLY : dfftp
   USE mp,                   ONLY : mp_sum
   USE mp_images,            ONLY : intra_image_comm
@@ -19,17 +22,16 @@ SUBROUTINE epcdft_get_w
   IMPLICIT NONE
   !
   INTEGER :: ik, i, j
-  INTEGER :: occ(2) ! number of occupied states for that spin
-  COMPLEX(DP) :: wevc(npwx, nbnd) ! wtot*evc
-  COMPLEX(DP) :: wevc2(npwx, nbnd) ! wtot*evc2
-  REAL(DP) :: wtot(dfftp%nnr) ! tot W  w(:,1) + w(:,2)
+  INTEGER :: occ(2)                  ! number of occupied states for that spin
+  COMPLEX(DP) :: wevc(npwx, nbnd)    ! wtot*evc
+  COMPLEX(DP) :: wevc2(npwx, nbnd)   ! wtot*evc2
+  REAL(DP) :: wtot(dfftp%nnr)        ! tot W  w(:,1) + w(:,2)
   COMPLEX(DP), EXTERNAL :: dot
   COMPLEX(DP) :: cofc(nbnd,nbnd,2,2) ! cofactor ( i, j, ab ba, spin up down )
   !
   occ(1) = occup1
   occ(2) = occdown1
-  wtot(:) = w(:,1) + w(:,2)
-  wmat = 0.D0
+  wmat = ( 0.D0, 0.D0 )
   !
   ! create S matrix
   !
@@ -48,27 +50,37 @@ SUBROUTINE epcdft_get_w
     cofc(:,:,2,ik) = CONJG(cofc(:,:,1,ik))
     cofc(:,:,1,ik) = TRANSPOSE(cofc(:,:,1,ik))
     !
-    ! aux = w*phiA
+    ! wevc = w*evc
+    !
+    wtot(:) = w(:,1)/wamp1
     CALL w_psi(evc1(:,:,ik), wtot, wevc) 
+    !
+    wtot(:) = w(:,2)/wamp2
     CALL w_psi(evc2(:,:,ik), wtot, wevc2) 
     !
     DO i = 1, occ(ik)
       DO j = 1, occ(ik)
         !
-        ! <B|W|A>                                 
+        ! <A|W|A>                                 
+        IF(i==j) wmat(1,1,ik) = wmat(1,1,ik) + dot(evc1(:,i,ik), wevc(:,j))
+        !
+        ! <A|W|B>                                 
         wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,i,ik), wevc(:,j)) * cofc(i,j,1,ik)
         !
-        ! <A|W|B>
+        ! <B|W|A>                                 
         wmat(2,1,ik) = wmat(2,1,ik) + dot(evc1(:,i,ik), wevc2(:,j)) * cofc(i,j,2,ik)
         !
-      ENDDO
-    ENDDO
+        ! <B|W|B>                                 
+        IF(i==j) wmat(2,2,ik) = wmat(2,2,ik) + dot(evc2(:,i,ik), wevc2(:,j))
+        !
+      ENDDO !j
+    ENDDO !i
     !
   ENDDO !ik
   !
   CALL mp_sum(wmat,intra_image_comm)
   !
-  IF( ionode ) WRITE( stdout,* )"    W done Note"
+  IF( ionode ) WRITE( stdout,* )"    W done"
   !
 END SUBROUTINE epcdft_get_w
 !

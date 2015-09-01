@@ -4,24 +4,21 @@ SUBROUTINE epcdft_print
   !-----------------------------------------------------------------------
   !
   USE kinds, ONLY : DP
-  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, ohc, cor1, cor2
+  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, ohc, cor1, cor2, eig_of_w, debug
   USE klist, ONLY : nks
   USE io_global, ONLY : stdout, ionode
   USE constants,  ONLY : rytoev
   !
   IMPLICIT NONE
   !
-  LOGICAL :: epcdft_debug
   CHARACTER(LEN=256) title
-  !
-  epcdft_debug = .true.
   !
   IF(ionode) THEN
     !
     WRITE(stdout,1)
     WRITE(stdout,*)""
     !
-    IF(epcdft_debug) THEN
+    IF(debug) THEN
       !
       WRITE(stdout,4) free1, free2
       WRITE(stdout,7) free1+cor1, free2+cor2
@@ -36,7 +33,11 @@ SUBROUTINE epcdft_print
       !
       title='H' ; CALL pcmat( title, hc(:,:) )
       !
-      title='H lowdin orthogonalization'  ; CALL pcmat( title, ohc(:,:) )
+      IF(eig_of_w) THEN
+        title='H using W orthogonalization'  ; CALL pcmat( title, ohc(:,:) )
+      ELSE
+        title='H using lowdin orthogonalization'  ; CALL pcmat( title, ohc(:,:) )
+      ENDIF
       !
     ENDIF
     !
@@ -83,7 +84,7 @@ SUBROUTINE pcmat (title, m)
   WRITE(stdout,3) ( ( m(i,j) , j=1,2 ) , i=1,2)
   WRITE(*,*)""
   !
-  2 FORMAT(5x,A18)
+  2 FORMAT(5x,A100)
   !3 FORMAT(5x,'(',E12.4,',',E12.4,')',2x,'(',E12.4,',',E12.4,')')
   !3 FORMAT(5x,'(',F14.6,',',F14.6,')',2x,'(',F14.6,',',F14.6,')')
   3 FORMAT(5x,'(',e23.16,',',e23.16,')',2x,'(',e23.16,',',e23.16,')')

@@ -6,24 +6,32 @@ MODULE epcdft_mod
   !
   SAVE
   !
-  LOGICAL :: debug ! print extra info
-  LOGICAL :: s_spin ! calculate S matrix for each spin separately
-  LOGICAL :: det_by_zgedi
-  INTEGER :: iunwfc2 = 3636 ! unit for 2nd set of wfcs
+  LOGICAL :: debug = .true.     ! print extra info
+  LOGICAL :: s_spin             ! calculate S matrix for each spin separately
+  LOGICAL :: eig_of_w = .FALSE. ! use eigenstates of W to orthog H (default is false so use lowdin)
+  INTEGER :: iunwfc2 = 3636     ! unit for 2nd set of wfcs
   CHARACTER (len=256) :: outdir, outdir2, prefix2
-  INTEGER :: occup1, occup2 ! occupied up states for system 1, 2
-  INTEGER :: occdown1, occdown2 ! occupied down states for system 1, 2
-  INTEGER :: fragment1_atom1, fragment1_atom2, fragment2_atom1, fragment2_atom2 ! atoms in acceptor fragments for sys 1 and 2
-  REAL(DP) :: fragment1_amp, fragment2_amp ! amplitudes of weight functions (external pots)
-  REAL(DP) :: freeen1, freeen2 ! free energies system 1 and 2
+  !
+  ! wave vec vars
+  !
   COMPLEX(DP), ALLOCATABLE :: evc1(:,:,:) ! ks vecs for system 1 evc1(npwx, nbnd, spin)
   COMPLEX(DP), ALLOCATABLE :: evc2(:,:,:) ! ks vecs for system 2
   COMPLEX(DP), ALLOCATABLE :: smat(:,:,:) ! det of overlap matrix  smat(  aa ab , ba bb, up down ) 
-  COMPLEX(DP), ALLOCATABLE :: wmat(:,:,:) !  weigth matrix ( aa ab, ba bb, up down)
-  REAL(DP), ALLOCATABLE :: w(:,:) ! weight functions w( r , system )
+  INTEGER :: occup1, occup2               ! occupied up states for system 1, 2
+  INTEGER :: occdown1, occdown2           ! occupied down states for system 1, 2
+  !
+  ! weight function vars
+  !
+  INTEGER :: fragment1_atom1, fragment1_atom2, fragment2_atom1, fragment2_atom2 ! atoms in acceptor fragments for sys 1 and 2
+  REAL(DP), ALLOCATABLE :: w(:,:)         ! weight functions w( r , system ) with amplitude
+  REAL(DP) :: wamp1, wamp2                ! amplitude of external pot applied in cdft runs 1 and 2
+  COMPLEX(DP), ALLOCATABLE :: wmat(:,:,:) !  weigth matrix ( aa ab, ba bb, up down) without amplitude.
+  !
+  ! energy vars
+  !
   REAL(DP) :: free1, free2 ! free energies for system 1 and 2 (no correction)
-  COMPLEX(DP) :: hc(2,2) ! coupling matrix hc(a,b)
-  COMPLEX(DP) :: ohc(2,2) ! orthogonal coupling matrix ohc(a,b)
-  REAL(DP) :: cor1, cor2 ! energy corrections to the free energy for systems 1 and 2
+  REAL(DP) :: cor1, cor2   ! energy corrections to the free energy for systems 1 and 2
+  COMPLEX(DP) :: hc(2,2)   ! coupling matrix hc(a,b)
+  COMPLEX(DP) :: ohc(2,2)  ! orthogonal coupling matrix ohc(a,b)
   !
 ENDMODULE epcdft_mod

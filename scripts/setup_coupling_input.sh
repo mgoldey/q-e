@@ -30,7 +30,6 @@ cat>txt<< EOF
   occdown2     = $spindown
   debug        = .true.
   s_spin       = .true.
-  det_by_zgedi = .true.
   free1 = $thef1
   free2 = $thef2
   cor1 =  $thec1 

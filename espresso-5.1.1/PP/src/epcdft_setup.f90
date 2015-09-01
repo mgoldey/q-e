@@ -36,8 +36,8 @@ SUBROUTINE epcdft_setup
   REAL(DP) :: dtmp ! temp variable
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
-                       debug,  s_spin, det_by_zgedi, free1, free2,&
-                       hirshfeld, cor1, cor2
+                       debug,  s_spin, free1, free2,&
+                       hirshfeld, cor1, cor2, eig_of_w
   !
   ! setup vars and consistency checks
   !
@@ -76,7 +76,6 @@ SUBROUTINE epcdft_setup
   CALL mp_bcast( occdown2, ionode_id, world_comm )
   CALL mp_bcast( debug, ionode_id, world_comm )
   CALL mp_bcast( s_spin, ionode_id, world_comm )
-  CALL mp_bcast( det_by_zgedi, ionode_id, world_comm )
   CALL mp_bcast( free1, ionode_id, world_comm )
   CALL mp_bcast( free2, ionode_id, world_comm )
   CALL mp_bcast( hirshfeLd, ionode_id, world_comm )
@@ -112,6 +111,7 @@ SUBROUTINE epcdft_setup
   !
   ! setup weight function for system 2
   CALL add_epcdft_efield(w(:,2),dtmp,rho%of_r,.TRUE.)
+  wamp2 = epcdft_amp
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841274, fil, w(:,2) )
   !
@@ -140,6 +140,7 @@ SUBROUTINE epcdft_setup
   !
   ! setup weight function for system 1
   CALL add_epcdft_efield(w(:,1),dtmp,rho%of_r,.TRUE.)
+  wamp1 = epcdft_amp
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841275, fil, w(:,1) )
   !
@@ -154,7 +155,7 @@ SUBROUTINE epcdft_setup
   wmat = ( 0.D0, 0.D0 )
   !
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
-                          occup1, occdown1, occup2, occdown2, debug,  s_spin, det_by_zgedi )
+                          occup1, occdown1, occup2, occdown2, debug,  s_spin )
   !
   IF( ionode ) WRITE( stdout,*)" "
   IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
@@ -165,7 +166,7 @@ END SUBROUTINE epcdft_setup
 !
 !-----------------------------------------------------------------------------
 SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occup1, &
-                              occdown1, occup2, occdown2, debug,  s_spin, det_by_zgedi )
+                              occdown1, occup2, occdown2, debug,  s_spin )
   !--------------------------------------------------------------------------
   !
   !     this routine prints warnings and some data from the input file 
@@ -183,7 +184,7 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
   CHARACTER(*), INTENT(IN)    :: tmp_dir
   CHARACTER(*), INTENT(IN)    :: tmp_dir2
   INTEGER,      INTENT(IN)    :: occup1, occdown1, occup2, occdown2
-  LOGICAL,      INTENT(IN)    :: debug, s_spin, det_by_zgedi
+  LOGICAL,      INTENT(IN)    :: debug, s_spin
   !
   IF(ionode)THEN
      !
@@ -212,7 +213,6 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
      IF( ionode ) WRITE( stdout,*)"    outdir2      :", tmp_dir2
      IF( ionode ) WRITE( stdout,*)"    debug        :", debug
      IF( ionode ) WRITE( stdout,*)"    s_spin       :", s_spin
-     IF( ionode ) WRITE( stdout,*)"    det_by_zgedi :", det_by_zgedi
      IF( ionode ) WRITE( stdout,*)" "
      IF( ionode ) WRITE( stdout,*)"    # of spins   :", nks
      IF( ionode ) WRITE( stdout,*)"    # of bands   :", nbnd
