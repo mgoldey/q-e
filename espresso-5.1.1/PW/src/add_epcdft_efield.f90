@@ -528,11 +528,11 @@ SUBROUTINE calc_hirshfeld_v_pointlists( v, n )
       ! 
       IF( pointlist(ir) >= acceptor_start .and. pointlist(ir) <= acceptor_end )THEN ! acceptor
         !
-        vtop(ir) = vtop(ir) + rho(ir,s) 
+        vtop(ir) = vtop(ir) - rho(ir,s) 
         !
       ELSE IF ( pointlist(ir) >= donor_start .and. pointlist(ir) <= donor_end )THEN ! donor
         ! 
-        vtop(ir) = vtop(ir) - rho(ir,s)
+        vtop(ir) = vtop(ir) + rho(ir,s)
         !
       ENDIF 
       ! 
