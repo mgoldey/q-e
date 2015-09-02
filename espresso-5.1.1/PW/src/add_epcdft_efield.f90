@@ -337,7 +337,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE gvecs,                ONLY : nls, nlsm
   USE fft_interfaces,       ONLY : invfft
   USE wavefunctions_module, ONLY : psic
-  USE mp_images,     ONLY : intra_image_comm
+  USE mp_bands,     ONLY : intra_bgrp_comm
   USE mp,            ONLY : mp_bcast, mp_sum
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE klist,         ONLY : nelec
@@ -439,7 +439,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   ! force normalization
   !
   vbottot = SUM(vbot)
-  CALL mp_sum( vbottot, intra_image_comm )
+  CALL mp_sum( vbottot, intra_bgrp_comm )
   normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP)*dv)
   vtop = normfac * vtop
   vbot = normfac * vbot
