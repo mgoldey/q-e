@@ -195,8 +195,8 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   !
   IF (hirshfeld) THEN 
     hirshv=0.D0
-    CALL calc_hirshfeld_v_pointlists(hirshv, dfftp%nnr)
-    !CALL calc_hirshfeld_v(hirshv, dfftp%nnr)
+    !CALL calc_hirshfeld_v_pointlists(hirshv, dfftp%nnr)
+    CALL calc_hirshfeld_v(hirshv, dfftp%nnr)
     vpoten = vpoten + epcdft_amp * hirshv
     !write(*,*) "vpoten is ",sum(vpoten(:))
     RETURN
