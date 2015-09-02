@@ -194,8 +194,9 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   ! calculate hirshfeld potential array
   !
   IF (hirshfeld) THEN 
-    hirshv=0d0
-    CALL calc_hirshfeld_v(hirshv, dfftp%nnr)
+    hirshv=0.D0
+    CALL calc_hirshfeld_v_pointlists(hirshv, dfftp%nnr)
+    !CALL calc_hirshfeld_v(hirshv, dfftp%nnr)
     vpoten = vpoten + epcdft_amp * hirshv
     !write(*,*) "vpoten is ",sum(vpoten(:))
     RETURN
@@ -463,4 +464,95 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   RETURN
   !
 END SUBROUTINE calc_hirshfeld_v
+!
+!
+!--------------------------------------------------------------------------
+SUBROUTINE calc_hirshfeld_v_pointlists( v, n )
+  !--------------------------------------------------------------------------
+  ! 
+  !  Gamma only
+  !
+  !  calculate hirshfeld potential and put into v following :
+  !
+  !     J. Chem. Phys. 133, 244105 (2010); http://dx.doi.org/10.1063/1.3507878 
+  !     eqs. 6 & 7
+  !
+  USE kinds,            ONLY : DP
+  USE mp_bands,         ONLY : intra_bgrp_comm
+  USE noncollin_module, ONLY : pointlist, factlist
+  USE fft_base,         ONLY : dfftp
+  USE cell_base,        ONLY : omega
+  USE lsda_mod,         ONLY : nspin
+  USE mp,               ONLY : mp_sum
+  USE klist,            ONLY : nelec
+  USE epcdft,           ONLY : donor_start,donor_end,&
+                               acceptor_start,acceptor_end
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP), INTENT(INOUT) :: v(n) ! the hirshfeld potential
+  INTEGER, INTENT(IN) :: n        !dfftp%nnr
+  ! 
+  INTEGER :: s, na, nt, ir
+  REAL(DP) :: vtop(n)             ! top of the hirshfeld potential fraction
+  REAL(DP) :: vbot(n)             ! bottom of the hirshfeld potential fraction
+  REAL(DP) :: dv                  ! volume element
+  REAL(DP) :: vbot_tot
+  REAL(DP) :: rho(n,nspin)        ! atomic rho
+  REAL(DP) :: cutoff
+  ! 
+  dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
+  ! 
+  ! calculate atomic charge
+  ! 
+  print *, " is atomic rho saved somewhere? recalcing it now"
+  CALL atomic_rho (rho, nspin)
+  !
+  ! renormalize charge
+  !
+  vbot_tot = SUM(rho(:,1:nspin)) * dv
+  CALL mp_sum( vbot_tot, intra_bgrp_comm )
+  rho = rho * REAL(nelec,KIND=DP)/vbot_tot
+  DO s = 1, nspin
+    rho(:,s) = rho(:,s) * factlist(:) * dv
+  ENDDO
+  ! 
+  ! calc hirsh 
+  ! 
+  vbot = 0.D0
+  vtop = 0.D0
+  DO s = 1, nspin
+    DO ir = 1, n
+      ! 
+      ! top part of hirsh 
+      ! 
+      IF( pointlist(ir) >= acceptor_start .and. pointlist(ir) <= acceptor_end )THEN ! acceptor
+        !
+        vtop(ir) = vtop(ir) + rho(ir,s) 
+        !
+      ELSE IF ( pointlist(ir) >= donor_start .and. pointlist(ir) <= donor_end )THEN ! donor
+        ! 
+        vtop(ir) = vtop(ir) - rho(ir,s)
+        !
+      ENDIF 
+      ! 
+      ! top part of hirsh 
+      ! 
+      vbot(ir) = vbot(ir) + rho(ir,s)
+      ! 
+    ENDDO
+  ENDDO
+  !
+  ! set to zero places where atomic density is low
+  !
+  cutoff = 1.D-9
+  vtop = vtop / vbot
+  DO ir = 1, n
+    IF ( vbot(ir) .lt. cutoff ) vtop(ir) = 0.D0  
+    IF ( vtop(ir) /= vtop(ir) ) vtop(ir) = 0.D0
+  ENDDO
+  !
+  v = vtop
+  !
+END SUBROUTINE calc_hirshfeld_v_pointlists
 !
