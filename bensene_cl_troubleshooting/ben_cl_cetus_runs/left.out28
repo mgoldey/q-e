@@ -1,0 +1,1154 @@
+2015-08-22 22:30:27.883 (INFO ) [0xfffafcdc410] ibm.runjob.AbstractOptions: using properties file /bgsys/local/etc/bg.properties
+2015-08-22 22:30:27.891 (INFO ) [0xfffafcdc410] ibm.runjob.AbstractOptions: max open file descriptors: 65536
+2015-08-22 22:30:27.891 (INFO ) [0xfffafcdc410] ibm.runjob.AbstractOptions: core file limit: 18446744073709551615
+2015-08-22 22:30:27.892 (INFO ) [0xfffafcdc410] 46716:tatu.runjob.client: scheduler job id is 567211
+2015-08-22 22:30:27.897 (INFO ) [0xfff83b034e0] 46716:tatu.runjob.monitor: monitor started
+2015-08-22 22:30:32.003 (INFO ) [0xfff83b034e0] 46716:tatu.runjob.monitor: task record 1236897 created
+2015-08-22 22:30:32.004 (INFO ) [0xfffafcdc410] CET-20400-31731-128:46716:ibm.runjob.client.options.Parser: set local socket to runjob_mux from properties file
+2015-08-22 22:30:34.877 (INFO ) [0xfffafcdc410] CET-20400-31731-128:1295668:ibm.runjob.client.Job: job 1295668 started
+
+     Program PWSCF v.5.1.1 starts on 22Aug2015 at 22:30:34 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on    1024 processor cores
+     Number of MPI processes:              1024
+     Threads/MPI process:                     1
+     R & G space division:  proc/nbgrp/npool/nimage =    1024
+     Waiting for input...
+     Reading input from standard input
+
+     Current dimensions of program PWSCF are:
+     Max number of different atomic species (ntypx) = 10
+     Max number of k-points (npk) =  40000
+     Max angular momentum in pseudopotentials (lmaxx) =  3
+               file C.pbe-mt_fhi.UPF: wavefunction(s)  4f renormalized
+               file H.pbe-mt_fhi.UPF: wavefunction(s)  2p 4f renormalized
+               file Cl.pbe-mt_fhi.UPF: wavefunction(s)  4f renormalized
+
+     gamma-point specific algorithms are used
+     Message from routine setup:
+     the system is metallic, specify occupations
+
+     Subspace diagonalization in iterative solution of the eigenvalue problem:
+     scalapack distributed-memory algorithm (size of sub-group: 22* 22 procs)
+
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min          52      52     11                 9332     9332    1136
+     Max          54      54     14                 9394     9394    1202
+     Sum       54553   54553  13637              9587919  9587919 1198487
+     Tot       27277   27277   6819
+ 
+     Generating pointlists ...
+     new r_m :   0.0224 (alat units)  0.8450 (a.u.) for type    1
+     new r_m :   0.0224 (alat units)  0.8450 (a.u.) for type    2
+     new r_m :   0.0635 (alat units)  2.4011 (a.u.) for type    3
+2015-08-22 22:30:37.857 (INFO ) [0xfff83b034e0] 46716:tatu.runjob.monitor: tracklib completed
+
+
+     bravais-lattice index     =            1
+     lattice parameter (alat)  =      37.7945  a.u.
+     unit-cell volume          =   53986.6767 (a.u.)^3
+     number of atoms/cell      =           13
+     number of atomic types    =            3
+     number of electrons       =        37.00 (up:  19.00, down:  18.00)
+     number of Kohn-Sham states=           40
+     kinetic-energy cutoff     =     120.0000  Ry
+     charge density cutoff     =     480.0000  Ry
+     convergence threshold     =      1.0E-12
+     mixing beta               =       0.7000
+     number of iterations used =            8  plain     mixing
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Assuming isolated system, Martyna-Tuckerman method
+
+
+     celldm(1)=  37.794523  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (   1.000000   0.000000   0.000000 )  
+               a(2) = (   0.000000   1.000000   0.000000 )  
+               a(3) = (   0.000000   0.000000   1.000000 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  1.000000  0.000000  0.000000 )  
+               b(2) = (  0.000000  1.000000  0.000000 )  
+               b(3) = (  0.000000  0.000000  1.000000 )  
+
+
+     PseudoPot. # 1 for  C read from file:
+     ./C.pbe-mt_fhi.UPF
+     MD5 check sum: 058ca341f9d6d5327d9962fd88a91b65
+     Pseudo is Norm-conserving, Zval =  4.0
+     Generated using FHI98PP, converted with fhi2upf.x v.5.0.2
+     Using radial grid of  461 points,  3 beta functions with: 
+                l(1) =   0
+                l(2) =   1
+                l(3) =   3
+
+     PseudoPot. # 2 for  H read from file:
+     ./H.pbe-mt_fhi.UPF
+     MD5 check sum: a19bd5488733b3d98581df861506e80d
+     Pseudo is Norm-conserving, Zval =  1.0
+     Generated using FHI98PP, converted with fhi2upf.x v.5.0.2
+     Using radial grid of  387 points,  3 beta functions with: 
+                l(1) =   0
+                l(2) =   1
+                l(3) =   3
+
+     PseudoPot. # 3 for Cl read from file:
+     ./Cl.pbe-mt_fhi.UPF
+     MD5 check sum: 2690b95bbfe21454a1a3af22474751ef
+     Pseudo is Norm-conserving, Zval =  7.0
+     Generated using FHI98PP, converted with fhi2upf.x v.5.0.2
+     Using radial grid of  503 points,  3 beta functions with: 
+                l(1) =   0
+                l(2) =   1
+                l(3) =   3
+
+     atomic species   valence    mass     pseudopotential
+        C              4.00    12.01070      C( 1.00)
+        H              1.00     1.00794      H( 1.00)
+        Cl             7.00     1.00000     Cl( 1.00)
+
+     Starting magnetic structure 
+     atomic species   magnetization
+        C            0.000
+        H            0.000
+        Cl           0.000
+
+     No symmetry found
+
+
+                                    s                        frac. trans.
+
+      isym =  1     identity                                     
+
+ cryst.   s( 1) = (     1          0          0      )
+                  (     0          1          0      )
+                  (     0          0          1      )
+
+ cart.    s( 1) = (  1.0000000  0.0000000  0.0000000 )
+                  (  0.0000000  1.0000000  0.0000000 )
+                  (  0.0000000  0.0000000  1.0000000 )
+
+
+     point group C_1 (1)    
+     there are  1 classes
+     the character table:
+
+       E    
+A      1.00
+
+     the symmetry operations in each class:
+     E        1
+
+   Cartesian axes
+
+     site n.     atom                  positions (alat units)
+         1           C   tau(   1) = (   0.0000000   0.0698500   0.0000000  )
+         2           C   tau(   2) = (   0.0604900   0.0349250   0.0000000  )
+         3           C   tau(   3) = (   0.0604900  -0.0349250   0.0000000  )
+         4           C   tau(   4) = (   0.0000000  -0.0698500   0.0000000  )
+         5           C   tau(   5) = (  -0.0604900  -0.0349250   0.0000000  )
+         6           C   tau(   6) = (  -0.0604900   0.0349250   0.0000000  )
+         7           H   tau(   7) = (   0.0000000   0.1240500   0.0000000  )
+         8           H   tau(   8) = (   0.1074300   0.0620250   0.0000000  )
+         9           H   tau(   9) = (   0.1074300  -0.0620250   0.0000000  )
+        10           H   tau(  10) = (   0.0000000  -0.1240500   0.0000000  )
+        11           H   tau(  11) = (  -0.1074300  -0.0620250   0.0000000  )
+        12           H   tau(  12) = (  -0.1074300   0.0620250   0.0000000  )
+        13           Cl  tau(  13) = (   0.0302450   0.0523875   0.1500000  )
+
+   Crystallographic axes
+
+     site n.     atom                  positions (cryst. coord.)
+         1           C   tau(   1) = (  0.0000000  0.0698500  0.0000000  )
+         2           C   tau(   2) = (  0.0604900  0.0349250  0.0000000  )
+         3           C   tau(   3) = (  0.0604900 -0.0349250  0.0000000  )
+         4           C   tau(   4) = (  0.0000000 -0.0698500  0.0000000  )
+         5           C   tau(   5) = ( -0.0604900 -0.0349250  0.0000000  )
+         6           C   tau(   6) = ( -0.0604900  0.0349250  0.0000000  )
+         7           H   tau(   7) = (  0.0000000  0.1240500  0.0000000  )
+         8           H   tau(   8) = (  0.1074300  0.0620250  0.0000000  )
+         9           H   tau(   9) = (  0.1074300 -0.0620250  0.0000000  )
+        10           H   tau(  10) = (  0.0000000 -0.1240500  0.0000000  )
+        11           H   tau(  11) = ( -0.1074300 -0.0620250  0.0000000  )
+        12           H   tau(  12) = ( -0.1074300  0.0620250  0.0000000  )
+        13           Cl  tau(  13) = (  0.0302450  0.0523875  0.1500000  )
+
+     number of k points=     2
+                       cart. coord. in units 2pi/alat
+        k(    1) = (   0.0000000   0.0000000   0.0000000), wk =   1.0000000
+        k(    2) = (   0.0000000   0.0000000   0.0000000), wk =   1.0000000
+
+                       cryst. coord.
+        k(    1) = (   0.0000000   0.0000000   0.0000000), wk =   1.0000000
+        k(    2) = (   0.0000000   0.0000000   0.0000000), wk =   1.0000000
+
+     Dense  grid:  4793960 G-vectors     FFT dimensions: ( 264, 264, 264)
+
+     Largest allocated arrays     est. size (Mb)     dimensions
+        Kohn-Sham Wavefunctions         0.35 Mb     (     572,   40)
+        NL pseudopotentials             1.25 Mb     (     572,  143)
+        Each V/rho on FFT grid          2.13 Mb     (   69696,   2)
+        Each G-vector array             0.04 Mb     (    4670)
+        G-vector shells                 0.02 Mb     (    2136)
+     Largest temporary arrays     est. size (Mb)     dimensions
+        Each subspace H/S matrix        0.00 Mb     (       1,    1)
+        Each <psi_i|beta_j> matrix      0.04 Mb     (     143,   40)
+        Arrays for rho mixing           8.51 Mb     (   69696,    8)
+ 
+     Using Hirshfeld
+        Amplitude [Ry a.u.] :  1.1821E-01
+        Acceptor Fragment start :          13
+        Acceptor Fragment end   :          13
+        Donor Fragment start :           1
+        Donor Fragment end   :          12
+ 
+
+     Initial potential from superposition of free atoms
+     Check: negative starting charge=(component1):   -0.003070
+     Check: negative starting charge=(component2):   -0.003070
+
+     starting charge   36.99968, renormalised to   37.00000
+
+     negative rho (up, down):  3.070E-03 3.070E-03
+     Starting wfc are  208 randomized atomic wfcs
+
+     total cpu time spent up to now is       39.3 secs
+
+     per-process dynamical memory:    57.0 Mb
+
+     Self-consistent Calculation
+
+     iteration #  1     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  1.00E-02,  avg # of iterations =  5.5
+
+     negative rho (up, down):  8.009E-04 7.987E-04
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8550    magn:    0.0333    constr:    0.0000
+     atom:    2    charge:    0.8558    magn:    0.0323    constr:    0.0000
+     atom:    3    charge:    0.8873    magn:    0.0005    constr:    0.0000
+     atom:    4    charge:    0.8594    magn:    0.0265    constr:    0.0000
+     atom:    5    charge:    0.8608    magn:    0.0257    constr:    0.0000
+     atom:    6    charge:    0.8866    magn:    0.0004    constr:    0.0000
+     atom:    7    charge:    0.4402    magn:    0.0005    constr:    0.0000
+     atom:    8    charge:    0.4408    magn:    0.0006    constr:    0.0000
+     atom:    9    charge:    0.4417    magn:   -0.0001    constr:    0.0000
+     atom:   10    charge:    0.4405    magn:    0.0005    constr:    0.0000
+     atom:   11    charge:    0.4411    magn:    0.0006    constr:    0.0000
+     atom:   12    charge:    0.4415    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.6610    magn:    0.0920    constr:    0.0000
+
+     total cpu time spent up to now is       50.8 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -696.00592965 Ry
+     hartree contribution      =     351.25317764 Ry
+     xc contribution           =     -30.93159475 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.46208204 Ry
+     Harris-Foulkes estimate   =    -103.24755667 Ry
+     estimated scf accuracy    <       1.31339228 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.00 Bohr mag/cell
+
+     iteration #  2     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  3.55E-03,  avg # of iterations =  5.4
+
+     negative rho (up, down):  3.716E-04 3.737E-04
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8520    magn:    0.0261    constr:    0.0000
+     atom:    2    charge:    0.8514    magn:    0.0253    constr:    0.0000
+     atom:    3    charge:    0.8425    magn:   -0.0014    constr:    0.0000
+     atom:    4    charge:    0.8586    magn:    0.0176    constr:    0.0000
+     atom:    5    charge:    0.8580    magn:    0.0171    constr:    0.0000
+     atom:    6    charge:    0.8428    magn:   -0.0016    constr:    0.0000
+     atom:    7    charge:    0.4720    magn:   -0.0002    constr:    0.0000
+     atom:    8    charge:    0.4726    magn:   -0.0002    constr:    0.0000
+     atom:    9    charge:    0.4741    magn:   -0.0001    constr:    0.0000
+     atom:   10    charge:    0.4736    magn:   -0.0002    constr:    0.0000
+     atom:   11    charge:    0.4742    magn:   -0.0001    constr:    0.0000
+     atom:   12    charge:    0.4739    magn:   -0.0001    constr:    0.0000
+     atom:   13    charge:    6.2843    magn:    0.3691    constr:    0.0000
+
+     total cpu time spent up to now is       59.2 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -687.11775381 Ry
+     hartree contribution      =     348.96524516 Ry
+     xc contribution           =     -30.65887926 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.59638013 Ry
+     Harris-Foulkes estimate   =    -102.87973079 Ry
+     estimated scf accuracy    <       0.50693019 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.11 Bohr mag/cell
+
+     iteration #  3     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  1.37E-03,  avg # of iterations =  4.1
+
+     negative rho (up, down):  1.899E-04 1.914E-04
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8383    magn:    0.0328    constr:    0.0000
+     atom:    2    charge:    0.8381    magn:    0.0316    constr:    0.0000
+     atom:    3    charge:    0.8352    magn:   -0.0028    constr:    0.0000
+     atom:    4    charge:    0.8369    magn:    0.0253    constr:    0.0000
+     atom:    5    charge:    0.8365    magn:    0.0242    constr:    0.0000
+     atom:    6    charge:    0.8354    magn:   -0.0029    constr:    0.0000
+     atom:    7    charge:    0.4845    magn:   -0.0003    constr:    0.0000
+     atom:    8    charge:    0.4851    magn:   -0.0003    constr:    0.0000
+     atom:    9    charge:    0.4879    magn:   -0.0002    constr:    0.0000
+     atom:   10    charge:    0.4862    magn:   -0.0002    constr:    0.0000
+     atom:   11    charge:    0.4868    magn:   -0.0001    constr:    0.0000
+     atom:   12    charge:    0.4878    magn:   -0.0001    constr:    0.0000
+     atom:   13    charge:    6.4511    magn:    0.2948    constr:    0.0000
+
+     total cpu time spent up to now is       66.0 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -687.71297448 Ry
+     hartree contribution      =     348.15226663 Ry
+     xc contribution           =     -30.68958465 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.71339072 Ry
+     Harris-Foulkes estimate   =    -102.84175059 Ry
+     estimated scf accuracy    <       0.30787636 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.12 Bohr mag/cell
+
+     iteration #  4     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  8.32E-04,  avg # of iterations =  3.2
+
+     negative rho (up, down):  4.810E-05 4.850E-05
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8310    magn:    0.0366    constr:    0.0000
+     atom:    2    charge:    0.8307    magn:    0.0355    constr:    0.0000
+     atom:    3    charge:    0.8394    magn:   -0.0040    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0246    constr:    0.0000
+     atom:    5    charge:    0.8386    magn:    0.0236    constr:    0.0000
+     atom:    6    charge:    0.8393    magn:   -0.0040    constr:    0.0000
+     atom:    7    charge:    0.4906    magn:   -0.0006    constr:    0.0000
+     atom:    8    charge:    0.4911    magn:   -0.0006    constr:    0.0000
+     atom:    9    charge:    0.4931    magn:   -0.0002    constr:    0.0000
+     atom:   10    charge:    0.4930    magn:   -0.0006    constr:    0.0000
+     atom:   11    charge:    0.4936    magn:   -0.0005    constr:    0.0000
+     atom:   12    charge:    0.4931    magn:   -0.0002    constr:    0.0000
+     atom:   13    charge:    6.4470    magn:    0.3465    constr:    0.0000
+
+     total cpu time spent up to now is       71.6 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -690.02945524 Ry
+     hartree contribution      =     348.79295029 Ry
+     xc contribution           =     -30.77051980 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.75618901 Ry
+     Harris-Foulkes estimate   =    -102.76390788 Ry
+     estimated scf accuracy    <       0.01681505 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.12 Bohr mag/cell
+
+     iteration #  5     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     c_bands:  1 eigenvalues not converged
+     c_bands:  2 eigenvalues not converged
+     ethr =  4.54E-05,  avg # of iterations =  6.7
+
+     negative rho (up, down):  1.848E-05 1.869E-05
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8356    magn:    0.0393    constr:    0.0000
+     atom:    2    charge:    0.8355    magn:    0.0382    constr:    0.0000
+     atom:    3    charge:    0.8407    magn:   -0.0053    constr:    0.0000
+     atom:    4    charge:    0.8369    magn:    0.0253    constr:    0.0000
+     atom:    5    charge:    0.8368    magn:    0.0244    constr:    0.0000
+     atom:    6    charge:    0.8407    magn:   -0.0052    constr:    0.0000
+     atom:    7    charge:    0.4903    magn:   -0.0009    constr:    0.0000
+     atom:    8    charge:    0.4908    magn:   -0.0009    constr:    0.0000
+     atom:    9    charge:    0.4922    magn:   -0.0002    constr:    0.0000
+     atom:   10    charge:    0.4925    magn:   -0.0008    constr:    0.0000
+     atom:   11    charge:    0.4930    magn:   -0.0007    constr:    0.0000
+     atom:   12    charge:    0.4922    magn:   -0.0002    constr:    0.0000
+     atom:   13    charge:    6.4521    magn:    0.3495    constr:    0.0000
+
+     total cpu time spent up to now is       81.6 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.50755155 Ry
+     hartree contribution      =     348.94237782 Ry
+     xc contribution           =     -30.78681142 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76030940 Ry
+     Harris-Foulkes estimate   =    -102.76266396 Ry
+     estimated scf accuracy    <       0.00614202 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.16 Bohr mag/cell
+
+     iteration #  6     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     c_bands:  2 eigenvalues not converged
+     c_bands:  1 eigenvalues not converged
+     ethr =  1.66E-05,  avg # of iterations =  4.7
+
+     negative rho (up, down):  7.162E-06 7.287E-06
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8360    magn:    0.0417    constr:    0.0000
+     atom:    2    charge:    0.8359    magn:    0.0407    constr:    0.0000
+     atom:    3    charge:    0.8410    magn:   -0.0062    constr:    0.0000
+     atom:    4    charge:    0.8388    magn:    0.0254    constr:    0.0000
+     atom:    5    charge:    0.8387    magn:    0.0246    constr:    0.0000
+     atom:    6    charge:    0.8411    magn:   -0.0062    constr:    0.0000
+     atom:    7    charge:    0.4894    magn:   -0.0012    constr:    0.0000
+     atom:    8    charge:    0.4899    magn:   -0.0011    constr:    0.0000
+     atom:    9    charge:    0.4912    magn:   -0.0002    constr:    0.0000
+     atom:   10    charge:    0.4918    magn:   -0.0009    constr:    0.0000
+     atom:   11    charge:    0.4923    magn:   -0.0008    constr:    0.0000
+     atom:   12    charge:    0.4912    magn:   -0.0002    constr:    0.0000
+     atom:   13    charge:    6.4579    magn:    0.3492    constr:    0.0000
+
+     total cpu time spent up to now is       89.2 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.46530201 Ry
+     hartree contribution      =     348.97583182 Ry
+     xc contribution           =     -30.79318358 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76147040 Ry
+     Harris-Foulkes estimate   =    -102.76171916 Ry
+     estimated scf accuracy    <       0.00082204 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.17 Bohr mag/cell
+
+     iteration #  7     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  2.22E-06,  avg # of iterations =  5.2
+
+     negative rho (up, down):  1.358E-06 1.395E-06
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8363    magn:    0.0434    constr:    0.0000
+     atom:    2    charge:    0.8363    magn:    0.0427    constr:    0.0000
+     atom:    3    charge:    0.8417    magn:   -0.0074    constr:    0.0000
+     atom:    4    charge:    0.8392    magn:    0.0253    constr:    0.0000
+     atom:    5    charge:    0.8391    magn:    0.0246    constr:    0.0000
+     atom:    6    charge:    0.8417    magn:   -0.0073    constr:    0.0000
+     atom:    7    charge:    0.4890    magn:   -0.0015    constr:    0.0000
+     atom:    8    charge:    0.4896    magn:   -0.0014    constr:    0.0000
+     atom:    9    charge:    0.4908    magn:   -0.0001    constr:    0.0000
+     atom:   10    charge:    0.4912    magn:   -0.0011    constr:    0.0000
+     atom:   11    charge:    0.4917    magn:   -0.0010    constr:    0.0000
+     atom:   12    charge:    0.4908    magn:   -0.0001    constr:    0.0000
+     atom:   13    charge:    6.4547    magn:    0.3568    constr:    0.0000
+
+     total cpu time spent up to now is       97.3 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.48026416 Ry
+     hartree contribution      =     349.00634446 Ry
+     xc contribution           =     -30.79456906 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76167397 Ry
+     Harris-Foulkes estimate   =    -102.76166299 Ry
+     estimated scf accuracy    <       0.00012048 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.18 Bohr mag/cell
+
+     iteration #  8     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  3.26E-07,  avg # of iterations =  5.8
+
+     negative rho (up, down):  1.512E-06 1.542E-06
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0448    constr:    0.0000
+     atom:    2    charge:    0.8360    magn:    0.0443    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0083    constr:    0.0000
+     atom:    4    charge:    0.8390    magn:    0.0253    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0248    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0082    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0017    constr:    0.0000
+     atom:    8    charge:    0.4897    magn:   -0.0017    constr:    0.0000
+     atom:    9    charge:    0.4908    magn:    0.0000    constr:    0.0000
+     atom:   10    charge:    0.4913    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4918    magn:   -0.0011    constr:    0.0000
+     atom:   12    charge:    0.4908    magn:    0.0000    constr:    0.0000
+     atom:   13    charge:    6.4564    magn:    0.3574    constr:    0.0000
+
+     total cpu time spent up to now is      106.1 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.37653435 Ry
+     hartree contribution      =     348.98857515 Ry
+     xc contribution           =     -30.79427403 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76172515 Ry
+     Harris-Foulkes estimate   =    -102.76172943 Ry
+     estimated scf accuracy    <       0.00005542 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.19 Bohr mag/cell
+
+     iteration #  9     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  1.50E-07,  avg # of iterations =  5.4
+
+     negative rho (up, down):  4.169E-08 4.417E-08
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0451    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0447    constr:    0.0000
+     atom:    3    charge:    0.8414    magn:   -0.0087    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0252    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0248    constr:    0.0000
+     atom:    6    charge:    0.8414    magn:   -0.0086    constr:    0.0000
+     atom:    7    charge:    0.4893    magn:   -0.0018    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0017    constr:    0.0000
+     atom:    9    charge:    0.4910    magn:    0.0000    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0011    constr:    0.0000
+     atom:   12    charge:    0.4910    magn:    0.0000    constr:    0.0000
+     atom:   13    charge:    6.4555    magn:    0.3586    constr:    0.0000
+
+     total cpu time spent up to now is      114.3 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.42984077 Ry
+     hartree contribution      =     348.99000773 Ry
+     xc contribution           =     -30.79443734 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174110 Ry
+     Harris-Foulkes estimate   =    -102.76174512 Ry
+     estimated scf accuracy    <       0.00002049 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.20 Bohr mag/cell
+
+     iteration # 10     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  5.54E-08,  avg # of iterations =  5.9
+
+     negative rho (up, down):  2.525E-08 2.568E-08
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0454    constr:    0.0000
+     atom:    2    charge:    0.8360    magn:    0.0451    constr:    0.0000
+     atom:    3    charge:    0.8414    magn:   -0.0090    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8388    magn:    0.0248    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0089    constr:    0.0000
+     atom:    7    charge:    0.4893    magn:   -0.0018    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0018    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0000    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0011    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0000    constr:    0.0000
+     atom:   13    charge:    6.4554    magn:    0.3587    constr:    0.0000
+
+     total cpu time spent up to now is      123.2 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41515660 Ry
+     hartree contribution      =     348.98931764 Ry
+     xc contribution           =     -30.79448851 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174577 Ry
+     Harris-Foulkes estimate   =    -102.76174501 Ry
+     estimated scf accuracy    <       0.00000106 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.20 Bohr mag/cell
+
+     iteration # 11     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  2.88E-09,  avg # of iterations =  6.3
+
+     negative rho (up, down):  1.006E-07 1.036E-07
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0456    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0453    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0091    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0252    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0249    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0090    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0018    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0018    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4556    magn:    0.3586    constr:    0.0000
+
+     total cpu time spent up to now is      132.6 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41775224 Ry
+     hartree contribution      =     348.98990380 Ry
+     xc contribution           =     -30.79462611 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174667 Ry
+     Harris-Foulkes estimate   =    -102.76174670 Ry
+     estimated scf accuracy    <       0.00000101 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 12     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  2.72E-09,  avg # of iterations =  4.6
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0456    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0093    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0250    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0093    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4897    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4913    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3585    constr:    0.0000
+
+     total cpu time spent up to now is      139.8 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41860568 Ry
+     hartree contribution      =     348.99113202 Ry
+     xc contribution           =     -30.79477404 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174691 Ry
+     Harris-Foulkes estimate   =    -102.76174683 Ry
+     estimated scf accuracy    <       0.00000011 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 13     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  2.91E-10,  avg # of iterations =  7.4
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0458    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0250    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0093    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4897    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4913    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3584    constr:    0.0000
+
+     total cpu time spent up to now is      150.5 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41578409 Ry
+     hartree contribution      =     348.99033630 Ry
+     xc contribution           =     -30.79472344 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174704 Ry
+     Harris-Foulkes estimate   =    -102.76174704 Ry
+     estimated scf accuracy    <       0.00000008 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 14     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  2.28E-10,  avg # of iterations =  5.7
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0250    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      159.0 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41691887 Ry
+     hartree contribution      =     348.98995598 Ry
+     xc contribution           =     -30.79469797 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174705 Ry
+     Harris-Foulkes estimate   =    -102.76174705 Ry
+     estimated scf accuracy    <       0.00000002 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 15     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  5.23E-11,  avg # of iterations =  5.1
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      166.8 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41768040 Ry
+     hartree contribution      =     348.98997096 Ry
+     xc contribution           =     -30.79470566 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174706 Ry
+     Harris-Foulkes estimate   =    -102.76174706 Ry
+     estimated scf accuracy    <          2.2E-09 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 16     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  5.87E-12,  avg # of iterations =  5.2
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      174.7 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41769246 Ry
+     hartree contribution      =     348.98999980 Ry
+     xc contribution           =     -30.79470737 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174706 Ry
+     Harris-Foulkes estimate   =    -102.76174706 Ry
+     estimated scf accuracy    <          9.5E-10 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 17     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  2.58E-12,  avg # of iterations =  4.7
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      182.0 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41763997 Ry
+     hartree contribution      =     348.99001777 Ry
+     xc contribution           =     -30.79470908 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174706 Ry
+     Harris-Foulkes estimate   =    -102.76174706 Ry
+     estimated scf accuracy    <          5.4E-10 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 18     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  1.45E-12,  avg # of iterations =  6.8
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      192.0 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41760728 Ry
+     hartree contribution      =     348.99000752 Ry
+     xc contribution           =     -30.79470844 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174706 Ry
+     Harris-Foulkes estimate   =    -102.76174706 Ry
+     estimated scf accuracy    <          2.6E-10 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 19     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  6.92E-13,  avg # of iterations =  4.4
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      198.9 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41763745 Ry
+     hartree contribution      =     348.99000664 Ry
+     xc contribution           =     -30.79470820 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174706 Ry
+     Harris-Foulkes estimate   =    -102.76174706 Ry
+     estimated scf accuracy    <          6.3E-11 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 20     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  1.71E-13,  avg # of iterations =  5.3
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      206.9 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41764210 Ry
+     hartree contribution      =     348.99001001 Ry
+     xc contribution           =     -30.79470826 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174706 Ry
+     Harris-Foulkes estimate   =    -102.76174706 Ry
+     estimated scf accuracy    <          8.1E-12 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 21     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  1.00E-13,  avg # of iterations =  3.8
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      213.0 secs
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41763372 Ry
+     hartree contribution      =     348.99001029 Ry
+     xc contribution           =     -30.79470827 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total energy              =    -102.76174706 Ry
+     Harris-Foulkes estimate   =    -102.76174706 Ry
+     estimated scf accuracy    <          2.7E-12 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     iteration # 22     ecut=   120.00 Ry     beta=0.70
+     CG style diagonalization
+     ethr =  1.00E-13,  avg # of iterations =  3.6
+ 
+     Magnetic moment per site:
+     atom:    1    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    2    charge:    0.8361    magn:    0.0457    constr:    0.0000
+     atom:    3    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    4    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    5    charge:    0.8389    magn:    0.0251    constr:    0.0000
+     atom:    6    charge:    0.8415    magn:   -0.0094    constr:    0.0000
+     atom:    7    charge:    0.4892    magn:   -0.0019    constr:    0.0000
+     atom:    8    charge:    0.4898    magn:   -0.0019    constr:    0.0000
+     atom:    9    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   10    charge:    0.4914    magn:   -0.0012    constr:    0.0000
+     atom:   11    charge:    0.4919    magn:   -0.0012    constr:    0.0000
+     atom:   12    charge:    0.4909    magn:    0.0001    constr:    0.0000
+     atom:   13    charge:    6.4557    magn:    0.3583    constr:    0.0000
+
+     total cpu time spent up to now is      218.8 secs
+
+     End of self-consistent calculation
+
+ ------ SPIN UP ------------
+
+
+          k = 0.0000 0.0000 0.0000 (599244 PWs)   bands (ev):
+
+   -21.2103 -18.6138 -18.3984 -18.2059 -14.7017 -14.6921 -12.6805 -10.9327
+   -10.8795 -10.1520  -9.9299  -9.1994  -8.0737  -8.0706  -7.2087  -6.6062
+    -6.4388  -6.2318  -5.9638  -1.3557  -1.0048  -0.1355   0.2053   0.2663
+     0.2735   0.3295   0.4213   0.4550   0.6342   0.6468   0.7118   0.7144
+     0.7237   0.7248   0.8085   0.8261   0.8342   0.8582   0.8620   0.8938
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
+     1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
+     1.0000   1.0000   1.0000   0.0000   0.0000   0.0000   0.0000   0.0000
+     0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000
+     0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000
+
+ ------ SPIN DOWN ----------
+
+
+          k = 0.0000 0.0000 0.0000 (599244 PWs)   bands (ev):
+
+   -21.0530 -18.3206 -18.1604 -18.0178 -14.6108 -14.5662 -12.6457 -10.8663
+   -10.8131 -10.0830  -9.9234  -8.7985  -8.0447  -8.0238  -6.5526  -6.4750
+    -6.2909  -5.8396  -5.4681  -0.8346  -0.7671  -0.1242   0.2274   0.2735
+     0.2770   0.3360   0.4221   0.4637   0.6437   0.6497   0.7129   0.7191
+     0.7250   0.7286   0.8144   0.8336   0.8348   0.8591   0.8633   0.8945
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
+     1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
+     1.0000   1.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000
+     0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000
+     0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000   0.0000
+
+     highest occupied, lowest unoccupied level (ev):    -5.8396   -5.4681
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41763333 Ry
+     hartree contribution      =     348.99001220 Ry
+     xc contribution           =     -30.79470843 Ry
+     ewald contribution        =     268.46058250 Ry
+
+!    total energy              =    -102.76174706 Ry
+     Harris-Foulkes estimate   =    -102.76174706 Ry
+     estimated scf accuracy    <          4.5E-13 Ry
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =    -689.41763333 Ry
+     hartree contribution      =     348.99001220 Ry
+     xc contribution           =     -30.79470843 Ry
+     ewald contribution        =     268.46058250 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.21 Bohr mag/cell
+
+     convergence has been achieved in  22 iterations
+ 
+     Using Hirshfeld
+        Amplitude [Ry a.u.] :  1.1821E-01
+        Acceptor Fragment start :          13
+        Acceptor Fragment end   :          13
+        Donor Fragment start :           1
+        Donor Fragment end   :          12
+ 
+ 
+     Using Hirshfeld
+        Amplitude [Ry a.u.] :  1.1821E-01
+        Acceptor Fragment start :          13
+        Acceptor Fragment end   :          13
+        Donor Fragment start :           1
+        Donor Fragment end   :          12
+ 
+     E field correction              : -0.2600651317543721E+01 Ry    
+ 
+     Donor charge                    :      0.6603840171092585 e     
+     Acceptor charge                 :     -0.3396225088466247 e     
+     Difference of charges           :      1.0000065259558824 e     
+
+     Writing output data file left.save
+ 
+     init_run     :     37.47s CPU     37.47s WALL (       1 calls)
+     electrons    :    183.96s CPU    183.96s WALL (       1 calls)
+
+     Called by init_run:
+     wfcinit      :      6.66s CPU      6.66s WALL (       1 calls)
+     potinit      :      1.85s CPU      1.85s WALL (       1 calls)
+
+     Called by electrons:
+     c_bands      :    139.20s CPU    139.20s WALL (      22 calls)
+     sum_band     :      8.05s CPU      8.05s WALL (      22 calls)
+     v_of_rho     :     18.71s CPU     18.71s WALL (      23 calls)
+     v_h          :      0.30s CPU      0.30s WALL (      23 calls)
+     v_xc         :     18.40s CPU     18.40s WALL (      23 calls)
+     mix_rho      :      0.99s CPU      0.99s WALL (      22 calls)
+
+     Called by c_bands:
+     init_us_2    :      0.41s CPU      0.41s WALL (      90 calls)
+     rcgdiagg     :    120.13s CPU    120.13s WALL (      44 calls)
+     wfcrot       :     21.86s CPU     21.86s WALL (      44 calls)
+
+     Called by sum_band:
+
+     Called by *cgdiagg:
+     h_psi        :    121.63s CPU    121.63s WALL (    7552 calls)
+     rdiaghg      :      3.38s CPU      3.38s WALL (      44 calls)
+     rdiaghg:chol :      0.25s CPU      0.25s WALL (      44 calls)
+     rdiaghg:inve :      0.05s CPU      0.05s WALL (      44 calls)
+     rdiaghg:para :      0.24s CPU      0.24s WALL (      88 calls)
+
+     Called by h_psi:
+     h_psi:vloc   :    104.90s CPU    104.90s WALL (    7552 calls)
+     h_psi:vnl    :     16.56s CPU     16.56s WALL (    7552 calls)
+     add_vuspsi   :     10.66s CPU     10.66s WALL (    7552 calls)
+
+     General routines
+     calbec       :      8.07s CPU      8.08s WALL (   15060 calls)
+     fft          :     10.79s CPU     10.79s WALL (    1105 calls)
+     fftw         :     98.91s CPU     98.92s WALL (   17992 calls)
+ 
+     Parallel routines
+     fft_scatter  :     42.94s CPU     42.95s WALL (   19097 calls)
+ 
+     PWSCF        :  4m39.75s CPU     4m39.75s WALL
+
+ 
+   This run was terminated on:  22:35:14  22Aug2015            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
+2015-08-22 22:35:34.787 (INFO ) [0xfffafcdc410] CET-20400-31731-128:1295668:ibm.runjob.client.Job: exited with status 0
+2015-08-22 22:35:34.787 (INFO ) [0xfffafcdc410] tatu.runjob.client: task exited with status 0
+2015-08-22 22:35:34.787 (INFO ) [0xfff83b034e0] 46716:tatu.runjob.monitor: monitor terminating
+2015-08-22 22:35:34.791 (INFO ) [0xfffafcdc410] tatu.runjob.client: monitor completed

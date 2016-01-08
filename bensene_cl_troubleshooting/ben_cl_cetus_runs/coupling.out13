@@ -1,0 +1,190 @@
+2015-08-20 16:21:22.007 (INFO ) [0xfffafe7c410] ibm.runjob.AbstractOptions: using properties file /bgsys/local/etc/bg.properties
+2015-08-20 16:21:22.010 (INFO ) [0xfffafe7c410] ibm.runjob.AbstractOptions: max open file descriptors: 65536
+2015-08-20 16:21:22.010 (INFO ) [0xfffafe7c410] ibm.runjob.AbstractOptions: core file limit: 18446744073709551615
+2015-08-20 16:21:22.012 (INFO ) [0xfffafe7c410] 5497:tatu.runjob.client: scheduler job id is 565150
+2015-08-20 16:21:22.039 (INFO ) [0xfff8f0e34e0] 5497:tatu.runjob.monitor: monitor started
+2015-08-20 16:21:26.348 (INFO ) [0xfff8f0e34e0] 5497:tatu.runjob.monitor: task record 1233428 created
+2015-08-20 16:21:26.349 (INFO ) [0xfffafe7c410] CET-02440-13771-128:5497:ibm.runjob.client.options.Parser: set local socket to runjob_mux from properties file
+2015-08-20 16:21:29.116 (INFO ) [0xfffafe7c410] CET-02440-13771-128:1292220:ibm.runjob.client.Job: job 1292220 started
+
+     Program epcdft_coupling v.5.1.1 starts on 20Aug2015 at 16:21:29 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on    1024 processor cores
+     Number of MPI processes:              1024
+     Threads/MPI process:                     1
+     R & G space division:  proc/nbgrp/npool/nimage =    1024
+     ======================================================================= 
+     SYSTEM 2 INFO
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1s, nr2s, nr3s values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file C.pbe-mt_fhi.UPF: wavefunction(s)  4f renormalized
+               file H.pbe-mt_fhi.UPF: wavefunction(s)  2p 4f renormalized
+               file Cl.pbe-mt_fhi.UPF: wavefunction(s)  4f renormalized
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min          82      82     20                18258    18258    2268
+     Max          84      84     22                18316    18316    2314
+     Sum       85225   85225  21329             18723953 18723953 2340509
+     Tot       42613   42613  10665
+ 
+     Generating pointlists ...
+     new r_m :   0.0179 (alat units)  0.8450 (a.u.) for type    1
+     new r_m :   0.0179 (alat units)  0.8450 (a.u.) for type    2
+     new r_m :   0.0508 (alat units)  2.4011 (a.u.) for type    3
+2015-08-20 16:21:37.189 (INFO ) [0xfff8f0e34e0] 5497:tatu.runjob.monitor: tracklib completed
+ 
+     Using Hirshfeld
+        Amplitude [Ry a.u.] : -3.8766E-01
+        Acceptor Fragment start :          13
+        Acceptor Fragment end   :          13
+        Donor Fragment start :           1
+        Donor Fragment end   :          12
+ 
+     ======================================================================= 
+     SYSTEM 1 INFO
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1s, nr2s, nr3s values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file C.pbe-mt_fhi.UPF: wavefunction(s)  4f renormalized
+               file H.pbe-mt_fhi.UPF: wavefunction(s)  2p 4f renormalized
+               file Cl.pbe-mt_fhi.UPF: wavefunction(s)  4f renormalized
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min          82      82     20                18258    18258    2268
+     Max          84      84     22                18316    18316    2314
+     Sum       85225   85225  21329             18723953 18723953 2340509
+     Tot       42613   42613  10665
+ 
+     Generating pointlists ...
+ 
+     Using Hirshfeld
+        Amplitude [Ry a.u.] :  1.1730E-01
+        Acceptor Fragment start :          13
+        Acceptor Fragment end   :          13
+        Donor Fragment start :           1
+        Donor Fragment end   :          12
+ 
+     ======================================================================= 
+  
+     ======================================================================= 
+  
+       EPCDFT_Coupling Code warnings:
+       1) Only works with norm conserving pseudos.
+       2) (which implies) that smooth grid = dense grid.
+       3) Run must be in serial.
+       4) No K-points.
+       5) Make sure your grids/cutoffs... are the same for both systems.
+       6) Previous PW runs must NOT use parallelization over k points.
+       7) occup1+occdown1 == occup2+occdown2.
+       8) if s_spin = .true. then  occup1 must = occup2.
+       9) if s_spin = .true. then occdown1 must = occdown2.
+  
+     ======================================================================= 
+  
+  
+     Data from input file :
+  
+     prefix1      :left                                                                                                                                                                                                                                                            
+     outdir1      :./out/                                                                                                                                                                                                                                                          
+     prefix2      :right                                                                                                                                                                                                                                                           
+     outdir2      :./out/                                                                                                                                                                                                                                                          
+     debug        : T
+     s_spin       : T
+     det_by_zgedi : T
+  
+     # of spins   : 2
+     # of bands   : 40
+     # occ up states in sys 1   : 19
+     # occ down states in sys 1 : 18
+     # occ up states in sys 2   : 19
+     # occ down states in sys 2 : 18
+  
+     ======================================================================= 
+     Progress : 
+     Setup done
+     S done
+     W is  -6.27547325278354151
+     W done in real space 
+     W done Note
+     H done
+     =======================================================================
+ 
+     F1 =   -102.78221   F2 =   -114.41476
+     E1 =   -105.36271   E2 =   -105.11081
+     C1 =     -2.58050   C2 =      9.30395
+ 
+ 
+     S up              
+     ( 0.9999999999999942E+00, 0.0000000000000000E+00)  (-0.9591283368704578E+00, 0.0000000000000000E+00)
+     (-0.9591283368704585E+00, 0.0000000000000000E+00)  ( 0.9999999999999980E+00, 0.0000000000000000E+00)
+ 
+ 
+     S down            
+     ( 0.9999999999999941E+00, 0.0000000000000000E+00)  (-0.1706172955212179E+00, 0.0000000000000000E+00)
+     (-0.1706172955212180E+00, 0.0000000000000000E+00)  ( 0.9999999999999960E+00, 0.0000000000000000E+00)
+ 
+ 
+     W up              
+     ( 0.0000000000000000E+00, 0.0000000000000000E+00)  ( 0.3303298336283263E+01, 0.0000000000000000E+00)
+     ( 0.2773271257574277E+01, 0.0000000000000000E+00)  ( 0.0000000000000000E+00, 0.0000000000000000E+00)
+ 
+ 
+     W down            
+     ( 0.0000000000000000E+00, 0.0000000000000000E+00)  ( 0.6151241516747786E+00, 0.0000000000000000E+00)
+     ( 0.5197781127162309E+00, 0.0000000000000000E+00)  ( 0.0000000000000000E+00, 0.0000000000000000E+00)
+ 
+ 
+     H                 
+     (-0.1053627111863446E+03, 0.0000000000000000E+00)  (-0.1719468588880413E+02, 0.0000000000000000E+00)
+     (-0.1728562632605207E+02, 0.0000000000000000E+00)  (-0.1051108060580181E+03, 0.0000000000000000E+00)
+ 
+ 
+     H lowdin orthogona
+     (-0.1053612704118893E+03, 0.0000000000000000E+00)  ( 0.2676983094911023E-01, 0.0000000000000000E+00)
+     (-0.6541328283344860E-01, 0.0000000000000000E+00)  (-0.1051059230679605E+03, 0.0000000000000000E+00)
+ 
+     |Sab| =       0.163644
+     |Hab| =       0.026770 Ry
+     |Hab| =       0.013385 Ha
+     |Hab| =       0.364222 eV
+ 
+     =======================================================================
+ 
+     epcdft_coupl :  9m 2.40s CPU     9m 2.40s WALL
+
+ 
+   This run was terminated on:  16:30:31  20Aug2015            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
+2015-08-20 16:30:48.335 (INFO ) [0xfffafe7c410] CET-02440-13771-128:1292220:ibm.runjob.client.Job: exited with status 0
+2015-08-20 16:30:48.336 (INFO ) [0xfffafe7c410] tatu.runjob.client: task exited with status 0
+2015-08-20 16:30:48.336 (INFO ) [0xfff8f0e34e0] 5497:tatu.runjob.monitor: monitor terminating
+2015-08-20 16:30:48.342 (INFO ) [0xfffafe7c410] tatu.runjob.client: monitor completed
