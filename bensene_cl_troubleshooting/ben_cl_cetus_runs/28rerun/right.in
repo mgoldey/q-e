@@ -1,0 +1,58 @@
+&control
+    calculation='scf'
+    pseudo_dir = './',
+    outdir='./out2'
+    prefix='right'
+    wf_collect = .true.
+    verbosity = "high" 
+  do_epcdft    = .true.,
+! restart_mode = 'restart'
+/
+&system
+    ibrav=1, 
+    a = 20,
+    nat=13, 
+    ntyp=3,
+    ecutwfc = 120.d0, 
+    nbnd=40,
+    nosym=.true.
+    nspin = 2,
+    tot_magnetization = 1
+    assume_isolated = 'mt'
+  hirshfeld = .TRUE.
+  donor_start    = 1,
+  donor_end    = 12,
+  acceptor_start = 13
+  acceptor_end = 13
+  epcdft_amp        = -0.38910578012977,
+  epcdft_charge  = -1.D0,
+  epcdft_thr = 1.0E-04
+  epcdft_delta_fld = 0.005D0
+/ 
+&electrons 
+    diago_full_acc=.true.
+    conv_thr = 1.D-12
+    diagonalization = 'cg'
+!    mixing_beta = 0.20
+!electron_maxstep = 40
+!startingpot = 'file'
+/ 
+ATOMIC_SPECIES 
+C   12.0107  C.pbe-mt_fhi.UPF 
+H   1.00794  H.pbe-mt_fhi.UPF 
+Cl  1.0     Cl.pbe-mt_fhi.UPF 
+K_POINTS {Gamma}
+ATOMIC_POSITIONS {angstrom} 
+C       0.0000   1.3970 0.0000 
+C       1.2098   0.6985 0.0000 
+C       1.2098  -0.6985 0.0000 
+C       0.0000  -1.3970 0.0000 
+C      -1.2098  -0.6985 0.0000 
+C      -1.2098   0.6985 0.0000 
+H       0.0000   2.4810 0.0000 
+H       2.1486   1.2405 0.0000 
+H       2.1486  -1.2405 0.0000 
+H       0.0000  -2.4810 0.0000 
+H      -2.1486  -1.2405 0.0000 
+H      -2.1486   1.2405 0.0000 
+Cl      0.6049 1.04775  3.0000
