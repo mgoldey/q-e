@@ -14,6 +14,8 @@ PROGRAM epcdft_coupling
   !
   CALL epcdft_setup ( ) ! allocate and read vars
   !
+  !CALL epcdft_match_phases ( ) ! match phases between both runs
+  !
   CALL epcdft_get_s ( ) ! create overlap matrix
   !
   CALL epcdft_get_rs_w ( ) ! create weight matrix
