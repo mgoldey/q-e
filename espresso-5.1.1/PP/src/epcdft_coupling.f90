@@ -4,6 +4,7 @@ PROGRAM epcdft_coupling
   !-----------------------------------------------------------------------
   USE environment, ONLY : environment_start, environment_end
   USE mp_global, ONLY : mp_startup
+  USE epcdft_mod, ONLY : debug
   !
   IMPLICIT NONE
   !
@@ -18,7 +19,8 @@ PROGRAM epcdft_coupling
   !
   CALL epcdft_get_s ( ) ! create overlap matrix
   !
-  CALL epcdft_get_rs_w ( ) ! create weight matrix
+  !CALL epcdft_get_rs_w ( ) ! create weight matrix
+  IF(debug) CALL epcdft_check_w ( ) ! check the <A/B|w|A/B> = c1/c2
   CALL epcdft_get_w ( ) ! create weight matrix
   !
   CALL epcdft_get_h ( ) ! create hamiltonian
