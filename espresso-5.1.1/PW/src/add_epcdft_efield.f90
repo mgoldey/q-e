@@ -372,6 +372,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   psic = 0.D0
   orbi = 0 
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
+  cutoff = 1.D-6
   !
   ! load atomic wfcs
   CALL gk_sort (xk (1, 1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
@@ -445,7 +446,6 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   vtop = normfac * vtop
   vbot = normfac * vbot
   !
-  cutoff = 1.D-9
   vtop = vtop / vbot
   DO ir = 1, n
     if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) vtop(ir)=0.D0  
@@ -502,6 +502,7 @@ SUBROUTINE calc_hirshfeld_v_pointlists( v, n )
   REAL(DP) :: cutoff
   ! 
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
+  cutoff = 1.D-9
   ! 
   ! calculate atomic charge
   ! 
@@ -545,7 +546,6 @@ SUBROUTINE calc_hirshfeld_v_pointlists( v, n )
   !
   ! set to zero places where atomic density is low
   !
-  cutoff = 1.D-9
   vtop = vtop / vbot
   DO ir = 1, n
     IF ( vbot(ir) .lt. cutoff ) vtop(ir) = 0.D0  
