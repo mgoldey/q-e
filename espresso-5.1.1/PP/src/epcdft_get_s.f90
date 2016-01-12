@@ -75,10 +75,6 @@ SUBROUTINE get_det(evc, evc2, r_s_aux, c_s_aux, occ, outdet)
   IF( gamma_only ) THEN 
       CALL calbec ( npw, evc, evc2, r_s_aux, occ ) ! get over laps of each state
       c_s_aux = CMPLX(r_s_aux, 0.D0, KIND=DP) ! pass real to complex
-      WRITE (stdout,*) ""
-      DO i = 1, occ
-        WRITE (stdout,'(20F6.2)') ( r_s_aux(i,j), j=1,occ)
-      ENDDO
       CALL zgedi_wrap( c_s_aux, occ, outdet ) ! find det of overlap matrix
   ELSE
       CALL calbec ( npw, evc, evc2, c_s_aux, occ )
