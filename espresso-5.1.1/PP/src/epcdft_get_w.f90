@@ -65,10 +65,10 @@ SUBROUTINE epcdft_get_w
         IF(i==j) wmat(1,1,ik) = wmat(1,1,ik) + dot(evc1(:,i,ik), wevc(:,j))
         !
         ! <A|W|B>                                 
-        wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,i,ik), wevc(:,j)) * cofc(i,j,1,ik)
+        wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,j,ik), wevc(:,i)) * cofc(i,j,1,ik)
         !
         ! <B|W|A>                                 
-        wmat(2,1,ik) = wmat(2,1,ik) + dot(evc1(:,i,ik), wevc2(:,j)) * cofc(i,j,2,ik)
+        wmat(2,1,ik) = wmat(2,1,ik) + dot(evc1(:,j,ik), wevc2(:,i)) * cofc(i,j,2,ik)
         !
         ! <B|W|B>                                 
         IF(i==j) wmat(2,2,ik) = wmat(2,2,ik) + dot(evc2(:,i,ik), wevc2(:,j))
