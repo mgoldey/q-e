@@ -29,6 +29,7 @@ cat>txt<< EOF
   occdown1     = $spindown
   occdown2     = $spindown
   debug        = .true.
+  eig_of_w     = .false.
   s_spin       = .true.
   free1 = $thef1
   free2 = $thef2
