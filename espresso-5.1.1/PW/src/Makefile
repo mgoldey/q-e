@@ -41,6 +41,7 @@ bp_strings.o \
 buffers.o \
 c_bands.o \
 c_phase_field.o \
+one_atom_wfc.o \
 orbm_kubo.o \
 ccgdiagg.o \
 cdiagh.o \
