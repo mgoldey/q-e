@@ -7,7 +7,7 @@
 !
 !
 !-----------------------------------------------------------------------
-SUBROUTINE one_atom_wfc (ik, wfcatom,iatom)
+SUBROUTINE one_atom_wfc (ik, wfcatom,iatom,nfuncs)
   !-----------------------------------------------------------------------
   !
   ! This routine computes the superposition of atomic wavefunctions
@@ -31,10 +31,11 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom)
   !
   integer, intent(in) :: ik
   integer, intent(in) :: iatom
-  complex(DP), intent(out) :: wfcatom (npwx, upf(ityp(iatom))%nwfc)
+  integer, intent(in) :: nfuncs
+  complex(DP), intent(out) :: wfcatom (npwx, nfuncs)
   !
   integer :: n_starting_wfc, lmax_wfc, nt, l, nb, na, m, lm, ig, iig, &
-             i0, i1, i2, i3, nwfcm, ipol, n1, n2, n3, natomwfc
+             i0, i1, i2, i3,  ipol, n1, n2, n3, natomwfc
   real(DP), allocatable :: qg(:), ylm (:,:), chiq (:,:), gk (:,:)
   complex(DP), allocatable :: sk (:), aux(:)
   complex(DP) :: kphase, lphase
@@ -49,12 +50,14 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom)
   call start_clock ('atomic_wfc')
 
   ! calculate max angular momentum required in wavefunctions
-  lmax_wfc = MAXVAL (upf(ityp(iatom))%lchi(1:upf(ityp(iatom))%nwfc) )
+  nt=ityp(iatom)
+  ! natomwfc=SUM(upf(nt)%oc(:))/2
+  ! natomwfc=upf(nt)%nwfc
+  lmax_wfc = MAXVAL (upf(nt)%lchi(1:upf(nt)%nwfc) )
   !
-  nwfcm = upf(ityp(iatom))%nwfc
-  natomwfc=upf(ityp(iatom))%nwfc
+  na=iatom
   !
-  allocate ( ylm (npw,(lmax_wfc+1)**2), chiq(npw,nwfcm), &
+  allocate ( ylm (npw,(lmax_wfc+1)**2), chiq(npw,upf(nt)%nwfc), &
              sk(npw), gk(3,npw), qg(npw) )
   !
   do ig = 1, npw
@@ -78,15 +81,14 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom)
   !
   ! chiq = radial fourier transform of atomic orbitals chi
   !
-  nt=ityp(iatom)
-  na=iatom
-!    if (ionode) write(*,*) "Atom ",iatom
-!    if (ionode) write(*,*) "itype ",nt
-!    if (ionode) write(*,*) "nwfc ",upf(nt)%nwfc
+  
+   if (ionode) write(*,*) "Atom ",iatom
+   if (ionode) write(*,*) "itype ",nt
+   if (ionode) write(*,*) "nwfc ",nfuncs
 !    if (ionode) write(*,*) "npw ",npw
-!    if (ionode) write(*,*) "x ",tau(1,na)
-!    if (ionode) write(*,*) "y ",tau(2,na)
-!    if (ionode) write(*,*) "z ",tau(3,na)
+   if (ionode) write(*,*) "x ",tau(1,na)
+   if (ionode) write(*,*) "y ",tau(2,na)
+   if (ionode) write(*,*) "z ",tau(3,na)
 
   do nb = 1, upf(nt)%nwfc
     if ( upf(nt)%oc (nb) >= 0.d0) then
@@ -107,11 +109,14 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom)
         enddo
     endif
   enddo
+   if (ionode) write(*,*) "made it here" ! works
 
   deallocate (qg, gk)
+  if (ionode) write(*,*) "made it here2"
   allocate ( aux(npw) )
   !
   wfcatom(:,:) = (0.0_dp, 0.0_dp)
+  !if (ionode) write(*,*) "made it here" !fail
   !
   arg = (xk(1,ik)*tau(1,na) + xk(2,ik)*tau(2,na) + xk(3,ik)*tau(3,na)) * tpi
   kphase = CMPLX(cos (arg), - sin (arg) ,kind=DP)
@@ -124,6 +129,7 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom)
                    bg (2, ipol) * tau (2, na) + &
                    bg (3, ipol) * tau (3, na)
   enddo
+  !if (ionode) write(*,*) "made it here" !fail
   do n1 = - dfftp%nr1, dfftp%nr1
     arg = tpi * n1 * bgtau (1)
     eigts1 (n1) = CMPLX(cos (arg), - sin (arg) ,kind=DP)
@@ -136,7 +142,7 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom)
     arg = tpi * n3 * bgtau (3)
     eigts3 (n3) = CMPLX(cos (arg), - sin (arg) ,kind=DP)
   enddo
-
+!  if (ionode) write(*,*) "made it here" !fail
   do ig = 1, npw
     iig = igk (ig)
     sk (ig) = kphase * eigts1 (mill (1,iig)) * &
@@ -147,7 +153,7 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom)
   do nb = 1, upf(nt)%nwfc
     if (upf(nt)%oc(nb) > 0.d0) then
        l = upf(nt)%lchi(nb)
-!        if (ionode) write(*,*) "l ",l
+       if (ionode) write(*,*) "l ",l
        lphase = (0.d0,1.d0)**l
        !
        !  the factor i^l MUST BE PRESENT in order to produce
@@ -183,12 +189,12 @@ CONTAINS
    DO m = 1, 2 * l + 1
       lm = l**2 + m
       n_starting_wfc = n_starting_wfc + 1
-      !if (ionode) write(*,*) "wf id ",n_starting_wfc
-!       if (ionode) write(*,*) "m ",m
+      if (ionode) write(*,*) "wf id ",n_starting_wfc
+      if (ionode) write(*,*) "m ",m
 
 
-      if (n_starting_wfc > natomwfc) call errore &
-         ('atomic_wfc___', 'internal error: too many wfcs', 1)
+!       if (n_starting_wfc > natomwfc) call errore &
+!          ('atomic_wfc___', 'internal error: too many wfcs', 1)
       !
       DO ig = 1, npw
          wfcatom (ig, n_starting_wfc) = lphase * &

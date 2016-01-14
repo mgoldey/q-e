@@ -105,6 +105,16 @@ SUBROUTINE run_pwscf ( exit_status )
         RETURN
      ENDIF
      !
+     ! epcdft check if charge is localized if epcdft
+     !
+     IF(do_epcdft) CALL epcdft_controller()
+     CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
+     !
+     IF (do_epcdft .and. .not. conv_epcdft ) THEN
+      CALL hinit1()
+      CYCLE
+     ENDIF
+     !
      ! ... ionic section starts here
      !
      CALL start_clock( 'ions' )
@@ -129,16 +139,6 @@ SUBROUTINE run_pwscf ( exit_status )
      ! ... send out forces to MM code in QM/MM run
      !
      CALL qmmm_update_forces(force)
-     !
-     ! epcdft check if charge is localized if epcdft
-     !
-     IF(do_epcdft) CALL epcdft_controller()
-     CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
-     !
-     IF (do_epcdft .and. .not. conv_epcdft ) THEN
-      CALL hinit1()
-      CYCLE
-     ENDIF
      !
      IF ( lmd .OR. lbfgs ) THEN
         !

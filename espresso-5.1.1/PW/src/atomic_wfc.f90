@@ -26,6 +26,8 @@ SUBROUTINE atomic_wfc (ik, wfcatom)
   USE noncollin_module, ONLY : noncolin, npol, angle1, angle2
   USE spin_orb,   ONLY : lspinorb, rot_ylm, fcoef, lmaxx, domag, &
                          starting_spin_angle
+  USE io_global,     ONLY : stdout,ionode, ionode_id
+                  
   !
   implicit none
   !
@@ -114,9 +116,13 @@ SUBROUTINE atomic_wfc (ik, wfcatom)
      enddo
      !
      nt = ityp (na)
+!       if (ionode) write(*,*) "Atom ",na
+!       if (ionode) write(*,*) "itype ",nt
+!       if (ionode) write(*,*) "nwfc ",upf(nt)%nwfc
      do nb = 1, upf(nt)%nwfc
         if (upf(nt)%oc(nb) >= 0.d0) then
            l = upf(nt)%lchi(nb)
+!            if (ionode) write(*,*) "l ",l
            lphase = (0.d0,1.d0)**l
            !
            !  the factor i^l MUST BE PRESENT in order to produce
@@ -350,6 +356,8 @@ CONTAINS
    DO m = 1, 2 * l + 1
       lm = l**2 + m
       n_starting_wfc = n_starting_wfc + 1
+!       if (ionode) write(*,*) "wf id ",n_starting_wfc
+!       if (ionode) write(*,*) "m ",m
       if (n_starting_wfc > natomwfc) call errore &
          ('atomic_wfc___', 'internal error: too many wfcs', 1)
       !

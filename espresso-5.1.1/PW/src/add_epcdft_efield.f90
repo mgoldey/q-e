@@ -323,7 +323,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   !
   USE kinds,                ONLY : DP
   USE control_flags,        ONLY : gamma_only
-  USE basis,                ONLY : natomwfc
+  !USE basis,                ONLY : natomwfc
   USE wvfct,                ONLY : npw, npwx, ecutwfc, igk, g2kin
   USE klist,                ONLY : xk, nks
   USE gvect,                ONLY : ngm, g
@@ -349,10 +349,11 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   REAL(DP), INTENT(INOUT) :: v(n) ! the hirshfeld potential
   INTEGER, INTENT(IN) :: n
   ! 
-  INTEGER :: na, nt, nb, l, m,ir, nwfcm
+  INTEGER :: na, nt, nb, l, m,ir, nwfcm ,nwfc
   COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g
   COMPLEX(DP), ALLOCATABLE :: wfcatomr (:) ! atomic wfcs in r
   INTEGER :: orbi ! orbital index for wfcatom
+  INTEGER :: nfuncs, lmax ! number of functions as derived from lmax
   REAL(DP) :: orboc ! occupation of orbital
   COMPLEX(DP) :: vtop(n) ! top of the hirshfeld potential fraction
   COMPLEX(DP) :: vbot(n) ! bottom of the hirshfeld potential fraction
@@ -362,7 +363,23 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   REAL(DP) :: dv
   character(len=1024) :: filename
   !
-  nwfcm = MAXVAL ( upf(1:ntyp)%nwfc )
+  !nwfcm = MAXVAL ( upf(1:ntyp)%nwfc )
+  nwfcm=0
+  lmax=0
+  DO na=1,nat
+    DO nb = 1, upf(nt)%nwfc ! for each orbital
+      if (upf(nt)%oc(nb) > 0.d0) then
+        l = upf(nt)%lchi(nb) ! get l 
+        if (l .gt. lmax) lmax=l
+      END IF
+    END DO
+    nfuncs=0
+    do l=0,lmax
+      nfuncs=nfuncs+(2*l+1)
+    end do
+    if (nfuncs .gt. nwfcm) nwfcm = nfuncs
+  END DO
+
   
   ALLOCATE( wfcatomr(n) )
   !
@@ -382,14 +399,16 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   !
   DO na = 1, nat ! for each atom
     nt = ityp (na) ! get atom type
-    ALLOCATE( wfcatomg(npwx, upf(nt)%nwfc) )
+    nwfc=sum(upf(nt)%oc(:))
+    ALLOCATE( wfcatomg(npwx, nwfc) )
 !     if (ionode) write(*,*) "Atom ",na
-    CALL one_atom_wfc (1, wfcatomg, na) 
+    CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
     orbi = 0 
     DO nb = 1, upf(nt)%nwfc ! for each orbital
       if (upf(nt)%oc(nb) > 0.d0) then
         l = upf(nt)%lchi(nb) ! get l 
         DO m = 1, 2*l+1 ! mag num
+          write(*,*) na,nb,l,m," is occupied with ", upf(nt)%oc(nb), " electrons"
           !  
           ! add all orbitals 
           ! each state weighted by orboc
