@@ -82,13 +82,13 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom,nfuncs)
   ! chiq = radial fourier transform of atomic orbitals chi
   !
   
-   if (ionode) write(*,*) "Atom ",iatom
-   if (ionode) write(*,*) "itype ",nt
-   if (ionode) write(*,*) "nwfc ",nfuncs
+!   if (ionode) write(*,*) "Atom ",iatom
+!   if (ionode) write(*,*) "itype ",nt
+!   if (ionode) write(*,*) "nwfc ",nfuncs
 !    if (ionode) write(*,*) "npw ",npw
-   if (ionode) write(*,*) "x ",tau(1,na)
-   if (ionode) write(*,*) "y ",tau(2,na)
-   if (ionode) write(*,*) "z ",tau(3,na)
+!   if (ionode) write(*,*) "x ",tau(1,na)
+!   if (ionode) write(*,*) "y ",tau(2,na)
+!   if (ionode) write(*,*) "z ",tau(3,na)
 
   do nb = 1, upf(nt)%nwfc
     if ( upf(nt)%oc (nb) >= 0.d0) then
@@ -109,10 +109,10 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom,nfuncs)
         enddo
     endif
   enddo
-   if (ionode) write(*,*) "made it here" ! works
+   !if (ionode) write(*,*) "made it here" ! works
 
   deallocate (qg, gk)
-  if (ionode) write(*,*) "made it here2"
+  !if (ionode) write(*,*) "made it here2"
   allocate ( aux(npw) )
   !
   wfcatom(:,:) = (0.0_dp, 0.0_dp)
@@ -153,7 +153,7 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom,nfuncs)
   do nb = 1, upf(nt)%nwfc
     if (upf(nt)%oc(nb) > 0.d0) then
        l = upf(nt)%lchi(nb)
-       if (ionode) write(*,*) "l ",l
+!       if (ionode) write(*,*) "l ",l
        lphase = (0.d0,1.d0)**l
        !
        !  the factor i^l MUST BE PRESENT in order to produce
@@ -178,7 +178,7 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom,nfuncs)
 
   call stop_clock ('atomic_wfc')
 
-  if (ionode) write(*,*) "Atom " ,iatom, " done"
+!  if (ionode) write(*,*) "Atom " ,iatom, " done"
   return
 
 CONTAINS
@@ -189,8 +189,8 @@ CONTAINS
    DO m = 1, 2 * l + 1
       lm = l**2 + m
       n_starting_wfc = n_starting_wfc + 1
-      if (ionode) write(*,*) "wf id ",n_starting_wfc
-      if (ionode) write(*,*) "m ",m
+!      if (ionode) write(*,*) "wf id ",n_starting_wfc
+!      if (ionode) write(*,*) "m ",m
 
 
 !       if (n_starting_wfc > natomwfc) call errore &

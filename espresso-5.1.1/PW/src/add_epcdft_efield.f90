@@ -323,7 +323,6 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   !
   USE kinds,                ONLY : DP
   USE control_flags,        ONLY : gamma_only
-  !USE basis,                ONLY : natomwfc
   USE wvfct,                ONLY : npw, npwx, ecutwfc, igk, g2kin
   USE klist,                ONLY : xk, nks
   USE gvect,                ONLY : ngm, g
@@ -343,6 +342,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE klist,         ONLY : nelec
   USE cell_base,     ONLY : omega
+  ! USE basis,                ONLY : natomwfc
   !
   IMPLICIT NONE
   !
@@ -352,6 +352,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   INTEGER :: na, nt, nb, l, m,ir, nwfcm ,nwfc
   COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g
   COMPLEX(DP), ALLOCATABLE :: wfcatomr (:) ! atomic wfcs in r
+  COMPLEX(DP), ALLOCATABLE :: total_atom_rho_r (:) ! total density of an atom in r
   INTEGER :: orbi ! orbital index for wfcatom
   INTEGER :: nfuncs, lmax ! number of functions as derived from lmax
   REAL(DP) :: orboc ! occupation of orbital
@@ -364,6 +365,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   character(len=1024) :: filename
   !
   !nwfcm = MAXVAL ( upf(1:ntyp)%nwfc )
+  !
   nwfcm=0
   lmax=0
   DO na=1,nat
@@ -379,9 +381,9 @@ SUBROUTINE calc_hirshfeld_v( v, n )
     end do
     if (nfuncs .gt. nwfcm) nwfcm = nfuncs
   END DO
-
-  
+  !
   ALLOCATE( wfcatomr(n) )
+  ALLOCATE( total_atom_rho_r(n) )
   !
   wfcatomg = 0.D0
   wfcatomr = 0.D0
@@ -391,6 +393,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   psic = 0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   cutoff = 1.D-6
+  total_atom_rho_r = 0.D0
   !
   ! load atomic wfcs
   CALL gk_sort (xk (1, 1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
@@ -398,17 +401,25 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   ! construct hirshfeld looping over all atomic states
   !
   DO na = 1, nat ! for each atom
+    !
     nt = ityp (na) ! get atom type
     nwfc=sum(upf(nt)%oc(:))
+    !
     ALLOCATE( wfcatomg(npwx, nwfc) )
-!     if (ionode) write(*,*) "Atom ",na
+    ! if (ionode) write(*,*) "Atom ",na
+    !
     CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
+    !
     orbi = 0 
     DO nb = 1, upf(nt)%nwfc ! for each orbital
-      if (upf(nt)%oc(nb) > 0.d0) then
+      !
+      IF (upf(nt)%oc(nb) > 0.d0) THEN ! if occupied
+        !
         l = upf(nt)%lchi(nb) ! get l 
+        !
         DO m = 1, 2*l+1 ! mag num
-          write(*,*) na,nb,l,m," is occupied with ", upf(nt)%oc(nb), " electrons"
+          !  
+          ! write(*,*) na,nb,l,m," is occupied with ", upf(nt)%oc(nb), " electrons"
           !  
           ! add all orbitals 
           ! each state weighted by orboc
@@ -417,45 +428,61 @@ SUBROUTINE calc_hirshfeld_v( v, n )
           !  
           orboc = REAL( upf(nt)%oc(nb) ,KIND=DP) / REAL( 2*l+1 ,KIND=DP)
           !
+          ! bring to real space
+          !
           wfcatomr = 0.D0
           wfcatomr(nl(igk(1:npw)))  = wfcatomg(1:npw,orbi)
           IF(gamma_only) wfcatomr(nlm(igk(1:npw))) = CONJG( wfcatomg(1:npw,orbi) )
-
+          !
           ! convert atomic(g) -> |atomic(r)|^2
+          !
           CALL invfft ('Dense', wfcatomr(:), dfftp)
           wfcatomr(:) = wfcatomr(:) * CONJG(wfcatomr(:))
-!           if (na < 10) then
-!             write(filename,"(A6,I1,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
-!           else
-!             write(filename,"(A6,I2,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
-!           ENDIF
-!           CALL write_cube_r ( 84332, filename,  REAL(wfcatomr,KIND=DP))
-!           !
-          IF( na >= acceptor_start .and. na <= acceptor_end )THEN ! atom in acceptor
-            !
-            vtop(:) = vtop(:) - orboc * wfcatomr( : ) 
-            !
-          ELSE IF ( na >= donor_start .and. na <= donor_end )THEN ! atom in donor
-            ! 
-            vtop(:) = vtop(:) + orboc * wfcatomr( : ) 
-            !
-          ENDIF 
           !
-          vbot(:) = vbot(:) + orboc * wfcatomr( : ) 
+          ! add orbital density to total density of atom
+          !
+          total_atom_rho_r(:) = total_atom_rho_r(:) + orboc * wfcatomr(:)
+          !
+          ! if (na < 10) then
+          !   write(filename,"(A6,I1,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
+          ! else
+          !   write(filename,"(A6,I2,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
+          ! ENDIF
+          ! CALL write_cube_r ( 84332, filename,  REAL(wfcatomr,KIND=DP))
           !
         ENDDO ! m
-      ENDIF
+      ENDIF ! end if occupied
     ENDDO ! l 
+    !
+    ! add this atoms density to the hirshfeld potential
+    !
+    IF( na >= acceptor_start .and. na <= acceptor_end )THEN ! atom in acceptor
+      !
+      vtop(:) = vtop(:) - total_atom_rho_r( : ) 
+      !
+    ELSE IF ( na >= donor_start .and. na <= donor_end )THEN ! atom in donor
+      ! 
+      vtop(:) = vtop(:) + total_atom_rho_r( : ) 
+      !
+    ENDIF 
+    !
+    vbot(:) = vbot(:) + total_atom_rho_r( : ) 
+    !
     DEALLOCATE( wfcatomg )
+    !
+    ! reset total atom density for next atom
+    !
+    total_atom_rho_r = 0.D0
+    !
   ENDDO ! atom
   !
   ! M.G.s bar
   !CALL mp_sum( orboc, intra_image_comm )
-!   !
-!   call write_cube_r ( 84332, 'vtop.cube',  REAL(vtop,KIND=DP))
-!   call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
-!   !
-  ! force normalization
+  !  
+  ! call write_cube_r ( 84332, 'vtop.cube',  REAL(vtop,KIND=DP))
+  ! call write_cube_r ( 84332, 'vbot.cube',  REAL(vbot,KIND=DP))
+  !  
+  ! hirshfeld normalization
   !
   vbottot = SUM(vbot)
   CALL mp_sum( vbottot, intra_bgrp_comm )
