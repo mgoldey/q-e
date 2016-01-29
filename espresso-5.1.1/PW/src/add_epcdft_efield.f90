@@ -385,7 +385,6 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   ALLOCATE( wfcatomr(n) )
   ALLOCATE( total_atom_rho_r(n) )
   !
-  wfcatomg = 0.D0
   wfcatomr = 0.D0
   vtop = 0.D0
   vbot = 0.D0
@@ -406,6 +405,7 @@ SUBROUTINE calc_hirshfeld_v( v, n )
     nwfc=sum(upf(nt)%oc(:))
     !
     ALLOCATE( wfcatomg(npwx, nwfc) )
+    wfcatomg = 0.D0
     ! if (ionode) write(*,*) "Atom ",na
     !
     CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
