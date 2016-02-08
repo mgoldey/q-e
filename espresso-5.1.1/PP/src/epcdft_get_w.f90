@@ -152,7 +152,7 @@ FUNCTION gdot(a, b) result(c)
   ! return real dot prod of two complex vec using gamma point tricks
   !
   USE kinds,      ONLY : DP 
-  USE pwcom,      ONLY : npwx
+  USE pwcom,      ONLY : npwx, npw
   USE gvect,      ONLY : gstart
   !
   IMPLICIT NONE
