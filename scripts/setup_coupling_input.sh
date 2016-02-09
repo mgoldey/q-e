@@ -8,18 +8,12 @@
 #
 e1=`awk '/! /{print $5}' $1 | tail -n 1`
 e2=`awk '/! /{print $5}' $2 | tail -n 1`
-echo $1 $e1
-echo $2 $e2
 #
 c1=`awk '/correction /{print $4}' $1 | tail -n 1`
 c2=`awk '/correction /{print $4}' $2 | tail -n 1`
-echo $1 $c1
-echo $2 $c2
 #
 f1=`echo "$e1 - $c1" | bc `
 f2=`echo "$e2 - $c2" | bc `
-echo $1 $f1
-echo $2 $f2
 #
 spinup=`awk '/\(up:  /{print $7}' $1`
 spindown=`awk '/\(up:  /{print $9}' $1`
