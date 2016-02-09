@@ -152,7 +152,7 @@ FUNCTION gdot(a, b) result(c)
   ! return real dot prod of two complex vec using gamma point tricks
   !
   USE kinds,      ONLY : DP 
-  USE pwcom,      ONLY : npwx
+  USE pwcom,      ONLY : npwx, npw
   USE gvect,      ONLY : gstart
   !
   IMPLICIT NONE
@@ -161,7 +161,7 @@ FUNCTION gdot(a, b) result(c)
   REAL(DP), EXTERNAL :: DDOT
   REAL(DP) :: c
   !
-  c = 2._DP * DDOT(2*npwx, a, 1, b, 1)
+  c = 2._DP * DDOT(2*npw, a, 1, b, 1)
   !
   IF(gstart==2) THEN
      c = c - REAL(a(1),KIND=DP)*REAL(b(1),KIND=DP)
