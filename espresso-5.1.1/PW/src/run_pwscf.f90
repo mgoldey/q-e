@@ -107,8 +107,8 @@ SUBROUTINE run_pwscf ( exit_status )
      !
      ! epcdft check if charge is localized if epcdft
      !
-     IF(do_epcdft) CALL epcdft_controller()
-     CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
+     !IF(do_epcdft) CALL epcdft_controller()
+     !CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
      !
      IF (do_epcdft .and. .not. conv_epcdft ) THEN
       CALL hinit1()

@@ -10,31 +10,33 @@
 /
 &system
     ibrav=1, 
-    a = 17,
+    a = 12,
     nat=13, 
     ntyp=3,
-    ecutwfc = 90.d0, 
-!   nbnd=40,
+    ecutwfc = 75.d0, 
+    nbnd=44,
 !   nosym=.true.
     nspin = 2,
-    tot_magnetization = 1
+    tot_magnetization = 0.
+    tot_charge=-1
+    starting_magnetization(3)=1.0
     assume_isolated = 'mt'
     hirshfeld = .TRUE.
     donor_start    = 1,
     donor_end    = 12,
     acceptor_start = 13
     acceptor_end = 13
-    epcdft_amp        = -3.8823E-01,
+    epcdft_amp        = -3e-1,
     epcdft_charge  = -1.D0,
-    epcdft_thr = 1.0E-05
-    epcdft_delta_fld = 0.005D0
+    epcdft_thr = 1.0E-02
+    epcdft_delta_fld = 0.3D0
 / 
 &electrons 
     diago_full_acc=.true.
-    conv_thr = 1.D-12
+!    conv_thr = 1.D-12
 !   diagonalization = 'cg'
 !   mixing_beta = 0.20
-    electron_maxstep = 1000
+!   electron_maxstep = 40
 !   startingpot = 'file'
 / 
 ATOMIC_SPECIES 

@@ -1,5 +1,5 @@
 include ../Makefile.inc
-all: left.out right.out coupling.out
+all: left.out right.out coupling.out 
 clean:
 	rm -rf out *.out tmp.pp *.cube
 

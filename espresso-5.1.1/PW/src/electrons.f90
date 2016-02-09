@@ -325,6 +325,7 @@ SUBROUTINE electrons_scf ( no_printout )
   USE iso_c_binding,        ONLY : c_int
   !
   USE plugin_variables,     ONLY : plugin_etot
+  USE epcdft,           ONLY : do_epcdft, conv_epcdft, epcdft_shift
   !
   IMPLICIT NONE
   !
@@ -716,6 +717,13 @@ SUBROUTINE electrons_scf ( no_printout )
      ! ... adds possible external contribution from plugins to the energy
      !
      etot = etot + plugin_etot 
+
+     !IF(conv_elec .and. do_epcdft) CALL epcdft_controller()
+     IF(do_epcdft) CALL epcdft_controller()
+
+     IF(do_epcdft) etot=etot+epcdft_shift
+     !IF(conv_epcdft) write(*,*) "epcdft is converged with energy shift ", epcdft_shift
+
      !
      IF ( .NOT. no_printout ) CALL print_energies ( )
      !
@@ -728,6 +736,8 @@ SUBROUTINE electrons_scf ( no_printout )
         ! ... print out ESM potentials if desired
         !
         IF ( do_comp_esm ) CALL esm_printpot()
+
+        
         !
         WRITE( stdout, 9110 ) iter
         !
@@ -1032,12 +1042,12 @@ SUBROUTINE electrons_scf ( no_printout )
        USE constants,     ONLY : eps8
        USE control_flags, ONLY : lmd
        USE extfield,      ONLY : eopreg
-       USE epcdft,        ONLY : do_epcdft
+       USE epcdft,        ONLY : do_epcdft, epcdft_shift
        !
-       IF(do_epcdft) THEN
+       IF(do_epcdft .and. .not. conv_elec) &
         WRITE( stdout, 9060 ) &
         ( eband + deband ), ehart, ( etxc - etxcc ), ewld
-       ENDIF
+       
        !
        IF ( ( conv_elec .OR. MOD( iter, iprint ) == 0 ) .AND. .NOT. lmd ) THEN
           !
@@ -1056,6 +1066,7 @@ SUBROUTINE electrons_scf ( no_printout )
           IF ( ts_vdw )  WRITE ( stdout , 9076 ) 2.0d0*EtsvdW
           IF ( textfor)  WRITE ( stdout , 9077 ) eext
           IF ( tefield )            WRITE( stdout, 9061 ) etotefield
+          IF ( do_epcdft )            WRITE( stdout, 9062 ) epcdft_shift
           IF ( lda_plus_u )         WRITE( stdout, 9065 ) eth
           IF ( ABS (descf) > eps8 ) WRITE( stdout, 9069 ) descf
           IF ( okpaw )              WRITE( stdout, 9067 ) epaw
@@ -1108,6 +1119,7 @@ SUBROUTINE electrons_scf ( no_printout )
             /'     xc contribution           =',F17.8,' Ry' &
             /'     ewald contribution        =',F17.8,' Ry' )
 9061 FORMAT( '     electric field correction =',F17.8,' Ry' )
+9062 FORMAT( '     CDFT correction           =',F17.8,' Ry' )
 9065 FORMAT( '     Hubbard energy            =',F17.8,' Ry' )
 9067 FORMAT( '     one-center paw contrib.   =',F17.8,' Ry' )
 9069 FORMAT( '     scf correction            =',F17.8,' Ry' )

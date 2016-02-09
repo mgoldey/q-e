@@ -6,11 +6,20 @@
 # sh scrpt.sh left.out right.out > coupling.in
 #
 #
-thef1=`awk '/! /{print $5}' $1 | tail -n 1`
-thec1=`awk '/correction /{print $5}' $1 | tail -n 1`
+e1=`awk '/! /{print $5}' $1 | tail -n 1`
+e2=`awk '/! /{print $5}' $2 | tail -n 1`
+echo $1 $e1
+echo $2 $e2
 #
-thef2=`awk '/! /{print $5}' $2 | tail -n 1`
-thec2=`awk '/correction /{print $5}' $2 | tail -n 1`
+c1=`awk '/correction /{print $4}' $1 | tail -n 1`
+c2=`awk '/correction /{print $4}' $2 | tail -n 1`
+echo $1 $c1
+echo $2 $c2
+#
+f1=`echo "$e1 - $c1" | bc `
+f2=`echo "$e2 - $c2" | bc `
+echo $1 $f1
+echo $2 $f2
 #
 spinup=`awk '/\(up:  /{print $7}' $1`
 spindown=`awk '/\(up:  /{print $9}' $1`
@@ -31,10 +40,10 @@ cat>txt<< EOF
   debug        = .true.
   eig_of_w     = .false.
   s_spin       = .true.
-  free1 = $thef1
-  free2 = $thef2
-  cor1 =  $thec1 
-  cor2 =  $thec2
+  free1 = $f1
+  free2 = $f2
+  cor1 =  $c1 
+  cor2 =  $c2
 /
 EOF
 #

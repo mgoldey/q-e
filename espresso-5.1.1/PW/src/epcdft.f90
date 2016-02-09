@@ -137,7 +137,8 @@ SUBROUTINE epcdft_controller()
   ! this call only calulates vpoten
   !
   CALL add_epcdft_efield(vpotenp(:,1), epcdft_shift, rho%of_r, .true. )
-  CALL add_epcdft_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
+  vpotenp(:,2)=vpotenp(:,1)
+  !CALL add_epcdft_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
   !
   IF (zero) epcdft_amp=0.D0
   !
@@ -259,6 +260,8 @@ SUBROUTINE epcdft_controller()
     CALL pprint("Acceptor charge",acharge,'e','f')
     CALL pprint("Difference of charges",einwell,'e','f')
   ENDIF
+
+  ! IF(.NOT.conv_elec) RETURN
   !
   ! is there a localization condition?
   !

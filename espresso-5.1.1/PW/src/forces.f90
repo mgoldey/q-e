@@ -47,6 +47,8 @@ SUBROUTINE forces()
   USE london_module, ONLY : force_london
   USE xdm_module,    ONLY : force_xdm
   USE tsvdw_module,  ONLY : FtsvdW
+  USE epcdft,           ONLY : do_epcdft, conv_epcdft
+
   !
   IMPLICIT NONE
   !
@@ -56,6 +58,7 @@ SUBROUTINE forces()
                            forceion(:,:), &
                            force_disp(:,:),&
                            force_disp_xdm(:,:),&
+                           force_epcdft(:,:),&
                            force_mt(:,:), &
                            forcescc(:,:), &
                            forces_bp_efield(:,:), &
@@ -123,6 +126,12 @@ SUBROUTINE forces()
      force_disp_xdm = 0._dp
      force_disp_xdm = force_xdm(nat)
   end if
+
+  IF (do_epcdft) THEN
+    ALLOCATE (force_epcdft(3,nat))
+    force_epcdft=0._dp
+    CALL EPCDFT_FORCE(force_epcdft,rho%of_r)
+  ENDIF
      
   !
   ! ... The SCF contribution
@@ -179,6 +188,7 @@ SUBROUTINE forces()
         !
         IF ( llondon ) force(ipol,na) = force(ipol,na) + force_disp(ipol,na)
         IF ( lxdm )    force(ipol,na) = force(ipol,na) + force_disp_xdm(ipol,na)
+        IF (do_epcdft) force(ipol,na) = force(ipol,na) + force_epcdft(ipol,na)
         ! factor 2 converts from Ha to Ry a.u.
         IF ( ts_vdw )  force(ipol,na) = force(ipol,na) + 2.0_dp*FtsvdW(ipol,na)
         IF ( tefield ) force(ipol,na) = force(ipol,na) + forcefield(ipol,na)
@@ -290,6 +300,13 @@ SUBROUTINE forces()
            WRITE( stdout, 9035) na, ityp(na), (2.0d0*FtsvdW(ipol,na), ipol=1,3)
         END DO
      END IF
+
+    IF ( do_epcdft ) THEN
+        WRITE( stdout, '(5x,"The CDFT correction term to forces")')
+        DO na = 1, nat
+           WRITE( stdout, 9035) na, ityp(na), ( force_epcdft(ipol,na), ipol = 1, 3 )
+        END DO
+     END IF
      !
   END IF
   !
@@ -333,9 +350,22 @@ SUBROUTINE forces()
      !
   END IF
   !
+  IF ( do_epcdft .AND. iverbosity > 0 ) THEN
+     !
+     sum_mm = 0.D0
+     DO na = 1, nat
+        sum_mm = sum_mm + &
+                 force_epcdft(1,na)**2 + force_epcdft(2,na)**2 + force_epcdft(3,na)**2
+     END DO
+     sum_mm = SQRT( sum_mm )
+     WRITE ( stdout, '(/,5x, "Total CDFT Force = ",F12.6)') sum_mm
+     !
+  END IF
+  !
   DEALLOCATE( forcenl, forcelc, forcecc, forceh, forceion, forcescc )
   IF ( llondon )  DEALLOCATE ( force_disp )
   IF ( lxdm ) DEALLOCATE( force_disp_xdm ) 
+  IF ( do_epcdft ) DEALLOCATE( force_epcdft ) 
   IF ( lelfield ) DEALLOCATE ( forces_bp_efield )
   !
   lforce = .TRUE.

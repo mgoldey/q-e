@@ -1,3 +1,9 @@
+left.out -105.53375902
+right.out -105.33722318
+left.out -7.39445126
+right.out 6.95175472
+left.out -98.13930776
+right.out -112.28897790
 &INPUTPP
   prefix       = "left",
   outdir       = "./out",
@@ -5,12 +11,13 @@
   outdir2      = "./out",
   occup1       = 19
   occup2       = 19
-  occdown1     = 18
-  occdown2     = 18
+  occdown1     = 19
+  occdown2     = 19
   debug        = .true.
+  eig_of_w     = .false.
   s_spin       = .true.
-  free1 = -102.77526172
-  free2 = -114.42623688
-  cor1 =  -0.2585555199610383E+01 
-  cor2 =  0.9317522458800633E+01
+  free1 = -98.13930776
+  free2 = -112.28897790
+  cor1 =  -7.39445126 
+  cor2 =  6.95175472
 /
