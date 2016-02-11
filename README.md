@@ -17,14 +17,16 @@ This README would normally document whatever steps are necessary to get your app
 ### INPUT Flags ###
 * assume_isolated = 'mt' - for isolated systems
 * do_epcdft - needs to be set to .true.
-* hirshfeld - if set to .true. then hirshfeld partitioning is used rather than voronoi cell (default .false.)
-* fragment_atom1 - atom # to designate start of fragment
-* fragment_atom2 - atom # to designate end of fragment (set to zero if only one atom)
-* epcdft_width - radius of potential well in bohr (for only one atom)
-* epcdft_amp - strength of potential in Ry a.u.
-* epcdft_electrons - charge difference between inside the well/acceptor and outside. Example: epcdft_electrons = 1 will force one additional electron in well/on acceptor
-* epcdft_thr - threshold on number of electrons in well (default 1.D-4)
 * examples in test - run all using make
+* NEW EPCDFT CARD for multiple constraints (all hirshfield for now)
+
+Example CARD INPUT
+EPCDFT
+1 1e-4 1e-2
+delta_charge 13 13 1 12 1.0 0.21
+
+Number of constraints, tolerance, delta_fld
+type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
 
 ### PP Flags ###
 * Using plot_num = 12 will plot the weight times the lagrange multiplier (read from successful run)
