@@ -16,28 +16,8 @@ SUBROUTINE epcdft_controller()
   !   due to the constraining potential from cdft and prints it. 
   !   It also calculates the total number of 
   !   electrons within the applied well. If this number is not
-  !   equal to that of epcdft_charge within epcdft_thr, 
+  !   equal to that of the target charge within epcdft_tol, 
   !   the amplitude of the well is changed and the scf loop is restarted. 
-  !
-  !   do_epcdft - flag to do cdft
-  !
-  !   acceptor_start - first atom in voronoi cell or in acceptor (if hirshfeld)
-  !
-  !   acceptor_end   - last atom in voronoi cell or in acceptor (if hirshfeld)
-  !                    if zero user defined well is used (not working right now)
-  !
-  !   epcdft_charge - number of electrons in voronoi cell or on acceptor
-  !
-  !   epcdft_amp - amplitude of voronoi cell or lagrange multiplier for hirshfeld
-  !
-  !   epcdft_width - width of the user defined well (not working right now
-  !
-  !   epcdft_shift -  energy correction to etot due to constraining potential
-  !
-  !   epcdft_thr - threshold on number of electrons to match epcdft_charge
-  !
-  !   hirshfeld - if .true. hirshfeld is used rather than voronoi cells
-  !
   !
   !
   USE io_global,     ONLY : stdout, ionode
@@ -50,11 +30,7 @@ SUBROUTINE epcdft_controller()
   USE cell_base,     ONLY : alat, at, omega, bg, saw
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
                             eopreg, forcefield, etotefield
-  USE epcdft,        ONLY : do_epcdft, donor_start, &
-                            acceptor_start, acceptor_end, &
-                            donor_end, epcdft_charge, &
-                            epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_thr, hirshfeld, conv_epcdft, epcdft_delta_fld
+  USE epcdft,        ONLY : do_epcdft, conv_epcdft,epcdft_shift
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -69,12 +45,18 @@ SUBROUTINE epcdft_controller()
   USE control_flags, ONLY : iverbosity, conv_elec
   USE scf,           ONLY : rho
   USE io_files,  ONLY : tmp_dir, prefix
+
+  ! here's the meat
+  USE input_parameters, ONLY : epcdft_locs,epcdft_guess,nconstr_epcdft, &
+                    & epcdft_tol, epcdft_type,epcdft_target, epcdft_delta_fld
+
   !
   IMPLICIT NONE
   !
   ! local variables
   !
-  INTEGER  :: i, is, iatom
+  INTEGER  :: i, is, iatom,iconstraint
+  INTEGER  :: ictr=0
   REAL(DP) :: tmp
   REAL(DP) :: dv
   REAL(DP) :: acharge, dcharge                     ! acceptor/donor charge 
@@ -87,30 +69,34 @@ SUBROUTINE epcdft_controller()
   LOGICAL  :: zero                                 ! used to run cdft with zero constraining potential
   REAL(DP) :: safe_epcdft_amp                      ! used for zero constraining potential run 
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp ! ef is added to this potential
-  REAL(DP) :: next_epcdft_amp                      ! guess of amp for next iteration
+  REAL(DP) :: next_epcdft_amp,epcdft_amp           ! guess of amp for next iteration
   CHARACTER(LEN=256) :: filename                   ! cube file for final cdft potential
   !
   ! SAVED VARS
   !
-  REAL(DP) :: last_epcdft_amp = 0.D0 ! used to determine next guess for potential
-  REAL(DP) :: last_einwell = 0.D0    ! used to determine next guess for potential
+  REAL(DP), DIMENSION(:), allocatable,save :: last_epcdft_amp(:) ! used to determine next guess for potential
+  REAL(DP), DIMENSION(:), allocatable,save :: last_einwell(:) ! used to determine next guess for potential
   LOGICAL :: first = .TRUE.          ! used to determine next guess for potential
-  SAVE last_epcdft_amp
-  SAVE last_einwell 
+  SAVE ictr
   SAVE first
+  if (ictr.eq.0) THEN
+    allocate(last_epcdft_amp(nconstr_epcdft))
+    allocate(last_einwell(nconstr_epcdft))
+    last_epcdft_amp=0.D0
+    last_einwell=0.D0
+  ENDIF
   !
-  ! dont do anything unless the calculation is converged
-  !
-  IF(.NOT.conv_elec) RETURN
+  ! Don't try to update too often or else the number of electrons will sometimes go the wrong way and mess up the solver
+  ictr=ictr+1
+  if (conv_elec) ictr=8
+  if (mod(ictr,10) .ne. 8) RETURN
   !
   ! calc is converged lets compute and print the correction
   !
   ! first setup vars
   ALLOCATE(vpotenp(dfftp%nnr, nspin))
+
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
-  vpotenp  = 0.D0
-  einwell  = 0.D0
-  einwellp  = 0.D0
   tmp      = 0.D0
   elocflag = .TRUE.
   etotefield = 0.D0
@@ -122,95 +108,69 @@ SUBROUTINE epcdft_controller()
   dcharge = 0.D0
   achargep = 0.D0
   dchargep = 0.D0
-  !einwellp  = 0.D0
-  !epcdft_shiftp = 0.D0
   !
   ! gather the grids for serial calculation
   !
-  IF (epcdft_amp .eq. 0.D0) THEN
-    zero=.true.
-    epcdft_amp=1.D0 
-  ENDIF
-  !
-  safe_epcdft_amp = epcdft_amp
-  !
-  ! this call only calulates vpoten
-  !
-  CALL add_epcdft_efield(vpotenp(:,1), epcdft_shift, rho%of_r, .true. )
-  vpotenp(:,2)=vpotenp(:,1)
-  !CALL add_epcdft_efield(vpotenp(:,2), epcdft_shift, rho%of_r, .true. )
-  !
-  IF (zero) epcdft_amp=0.D0
-  !
-  ! begin calculation of the correction 
-  !
-  ! combine up and down parts of rho
-  ! rhosup(:) = rhosup(:) + rhosdown(:) 
-  ! vpotens(:,1)=vpotens(:,1)+vpotens(:,2)
-  !
-  DO i=1, dfftp%nnr
-    !
-    ! calculate energy correction
-    !
-    IF (nspin.eq.1) THEN
-      epcdft_shiftp = epcdft_shiftp + (vpotenp(i,1)) * rho%of_r(i,1) * dv
-    ELSE 
-      epcdft_shiftp = epcdft_shiftp + vpotenp(i,1) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
+  DO iconstraint=1,nconstr_epcdft
+    zero=.false.
+    einwell  = 0.D0
+    einwellp  = 0.D0
+    epcdft_shiftp=0.D0
+    epcdft_amp=epcdft_guess(iconstraint)
+    IF (epcdft_amp .eq. 0.D0) THEN
+      zero=.true.
+      epcdft_amp=1.D0 
     ENDIF
+    safe_epcdft_amp = epcdft_amp
     !
-    ! count number of electrons in well 
+    ! this call only calulates vpoten - hardcoded to hirshfeld right now
     !
-    IF(hirshfeld) THEN
-      ! need number of electrons on 
-      ! acceptor so negetive of vpotens is used
+    vpotenp=0.D0
+    
+    if (.true.) CALL calc_hirshfeld_v(vpotenp,iconstraint)
+    !write(*,*) iconstraint,sum(vpotenp(:,1)*rho%of_r(:,1))*dv,sum(vpotenp(:,2)*rho%of_r(:,2))*dv
+    !
+    IF (zero) epcdft_amp=0.D0
+    !
+    ! begin calculation of the correction 
+    !
+    DO i=1, dfftp%nnr
+      !
+      ! calculate energy correction
+      !
       IF (nspin.eq.1) THEN
-        !
-        einwellp = einwellp - ( vpotenp(i,1) / safe_epcdft_amp ) * rho%of_r(i,1) * dv
-        !
-        ! count charge, electrons are (-) 
-        IF(vpotenp(i,1)/safe_epcdft_amp<0.D0) THEN
-          achargep = achargep - ABS( vpotenp(i,1) / safe_epcdft_amp ) * rho%of_r(i,1) * dv
-        ELSE IF(vpotenp(i,1)/safe_epcdft_amp>0.D0) THEN
-          dchargep = dchargep - ABS( vpotenp(i,1) / safe_epcdft_amp ) * rho%of_r(i,1) * dv
-        ENDIF
-        !
-      ELSE 
-        !
-        einwellp = einwellp - ( vpotenp(i,1) / safe_epcdft_amp ) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
-        !
-        IF(vpotenp(i,1)/safe_epcdft_amp<0.D0) THEN
-          achargep = achargep - ABS( vpotenp(i,1) / safe_epcdft_amp ) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
-        ELSE IF(vpotenp(i,1)/safe_epcdft_amp>0.D0) THEN 
-          dchargep = dchargep - ABS( vpotenp(i,1) / safe_epcdft_amp ) * (rho%of_r(i,1) +rho%of_r(i,2)) * dv
-        ENDIF
-        !
+        epcdft_shiftp = epcdft_shiftp + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv
+      ELSE
+        epcdft_shiftp = epcdft_shiftp + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv + epcdft_amp * vpotenp(i,2) * rho%of_r(i,2) * dv
       ENDIF
       !
-    ELSE
+      ! count number of electrons in well - this must depend on the well
       !
-      IF(vpotenp(i,1) .lt. 0.D0)THEN
-        IF (nspin.eq.1) THEN
-          einwellp = einwellp + rho%of_r(i,1) * dv
-        ELSE 
-          einwellp = einwellp + (rho%of_r(i,1) +rho%of_r(i,2)) * dv
+      SELECT CASE( epcdft_type(iconstraint) )
+      CASE('charge','delta_charge')
+        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv - vpotenp(i,2) * rho%of_r(i,2) * dv
+        !
+        IF(vpotenp(i,1)<0.D0) THEN
+          achargep = achargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) +vpotenp(i,2) * rho%of_r(i,2)) * dv
+        ELSE IF(vpotenp(i,1)>0.D0) THEN
+          dchargep = dchargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) +vpotenp(i,2) * rho%of_r(i,2)) * dv
         ENDIF
-      ELSE IF (vpotenp(i,1).gt. 0.D0) THEN
-        IF (nspin.eq.1) THEN
-          einwellp = einwellp - rho%of_r(i,1) * dv
-        ELSE
-          einwellp = einwellp - (rho%of_r(i,1) +rho%of_r(i,2)) * dv
+      CASE('spin','delta_spin')
+        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
+        !
+        IF(vpotenp(i,1)<0.D0) THEN
+          achargep = achargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) -vpotenp(i,2) * rho%of_r(i,2)) * dv
+        ELSE IF(vpotenp(i,1)>0.D0) THEN
+          dchargep = dchargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) -vpotenp(i,2) * rho%of_r(i,2)) * dv
         ENDIF
-      ENDIF
-      !
-    ENDIF
-    !
-  ENDDO
+      END SELECT
+    END DO
 #ifdef __MPI
-  CALL MP_SUM(epcdft_shiftp,intra_image_comm) ! RIGHT COMM?
-  CALL MP_SUM(einwellp,intra_image_comm) ! RIGHT COMM?
+  CALL MP_SUM(epcdft_shiftp,intra_image_comm) 
+  CALL MP_SUM(einwellp,intra_image_comm) 
   epcdft_shift=epcdft_shiftp
   einwell=einwellp
-  !
+!
   CALL MP_SUM(achargep,intra_image_comm) 
   acharge=achargep
   CALL MP_SUM(dchargep,intra_image_comm)
@@ -222,147 +182,131 @@ SUBROUTINE epcdft_controller()
   acharge=achargep
   dcharge=dchargep
 #endif
-  !
-  ! count nuc charge
-  !
-  DO iatom=1, nat
     !
-    ! Voronoi and Hirshfeld below
-    IF (acceptor_end.ne.0) THEN
-      !
-      IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) THEN
-        einwell = einwell - zv(ityp(iatom))
-        acharge = acharge + zv(ityp(iatom)) 
-      ELSE IF ((iatom.ge.donor_start) .AND. (iatom.le.donor_end) ) THEN
-        einwell = einwell + zv(ityp(iatom))
-        dcharge = dcharge + zv(ityp(iatom))
-      ENDIF
-      !
-    ELSE ! just a well around one atom
-      !
-      IF (iatom.eq.acceptor_start) THEN
-        einwell = einwell - zv(ityp(iatom))
-      ELSE
-        einwell = einwell + zv(ityp(iatom))
-      ENDIF
-      !
-    ENDIF
+    ! count nuc charge
     !
-  ENDDO ! atoms
-  !
-  ! the correction is - of the energy
-  epcdft_shift = -1.D0 * epcdft_shift
-  !
-  IF(ionode) THEN
-    IF (.not.zero) CALL pprint("E field correction",epcdft_shift,'Ry','e')
-    IF (.not.zero) WRITE(*,*)""
-    CALL pprint("Donor charge",dcharge,'e','f')
-    CALL pprint("Acceptor charge",acharge,'e','f')
-    CALL pprint("Difference of charges",einwell,'e','f')
-  ENDIF
+    SELECT CASE( epcdft_type(iconstraint) )
+      CASE('charge','delta_charge')
+        DO iatom=1, nat
+          !
+          IF ((iatom.ge.epcdft_locs(1,iconstraint)) .AND. (iatom.le.epcdft_locs(2,iconstraint)) ) THEN
+            !write(*,*) iatom, epcdft_locs(1,iconstraint), epcdft_locs(2,iconstraint)
+            einwell = einwell - zv(ityp(iatom))
+            acharge = acharge + zv(ityp(iatom)) 
+          ELSE IF ((iatom.ge.epcdft_locs(3,iconstraint)) .AND. (iatom.le.epcdft_locs(4,iconstraint)) ) THEN
+            !write(*,*) iatom, epcdft_locs(3,iconstraint), epcdft_locs(4,iconstraint)
+            einwell = einwell + zv(ityp(iatom))
+            dcharge = dcharge + zv(ityp(iatom))
+          ENDIF
+          !
+        ENDDO ! atoms
+      END SELECT
+    !
+    !
+    ! the correction is - of the energy
+    epcdft_shift = -1.D0 * epcdft_shift
+    !   
 
-  ! IF(.NOT.conv_elec) RETURN
-  !
-  ! is there a localization condition?
-  !
-  IF(epcdft_amp .ne. 0.D0) THEN
+
     !
-    ! is the localization condition satisfied?
+    ! is there a localization condition?
     !
-    enumerr = epcdft_charge - einwell 
-    !
-    ! conv_epcdft = false will restart scf
-    !
-    IF( ABS(enumerr) .GE. epcdft_thr .and. .not. zero .and. ionode) THEN
+    IF(epcdft_amp .ne. 0.D0) THEN
       !
-      conv_epcdft = .FALSE.
+      ! is the localization condition satisfied?
       !
-      WRITE(*,*)""
-      CALL pprint("epcdft_thr",epcdft_thr,'e','e')
-      CALL pprint("Surplus(+)/deficit(-) charge",-enumerr,'e','e')
+      enumerr = epcdft_target(iconstraint) - einwell 
       !
-    ELSE
-      conv_epcdft =.true.
-      ! WRITE OUT potential
-      !call write_wfc_cube_r ( 84332, 'v',  v )
-    ENDIF
-    !
-  ENDIF ! localization condition
-  !
-  IF (zero) THEN
-      ! IF(ionode) write(*,*) "All except for number of electrons is meaningless - EXITING NOW"
-    conv_epcdft =.true.
-  ENDIF
-  !
-  CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
-  !
-  IF(conv_epcdft)THEN  ! cdft done write external pot to cube
-    !
-    filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft'
-    CALL write_cube_r ( 9519395, filename, vpotenp(:,1) )
-    !
-  ENDIF
-  !
-  DEALLOCATE(vpotenp)
-  !
-  ! if the charge is not localized
-  !
-  IF(.NOT.conv_epcdft .AND. epcdft_amp .NE. 0)THEN
-    !
-    ! update applied field and restart scf
-    !
-    IF(ionode) THEN
+      ! conv_epcdft = false will restart scf
       !
-      WRITE(*,*)""
-      WRITE(*,*)"    -----------------------------------------------"
-      WRITE(*,*)""
-      WRITE(*,*)"                     SCF converged but..."
-      WRITE(*,*)""
-      WRITE(*,*)"    electron localization condition NOT satisfied"
-      WRITE(*,*)"    restarting scf with different applied potential"
-      WRITE(*,*)""
-      !
-      ! find next guess for epcdft_amp
-      !
-      IF(first) THEN
-         !
-         first = .FALSE.
-         !
-         next_epcdft_amp = epcdft_amp + SIGN(0.001D0, enumerr) 
-         !
+      IF( ABS(enumerr) .GE. epcdft_tol .and. .not. zero .and. ionode) THEN
+        !
+        conv_epcdft = .FALSE.
+        !
+!         WRITE(*,*)""
+!         CALL pprint("epcdft_tol",epcdft_tol,'e','e')
+!         CALL pprint("Surplus(+)/deficit(-) charge",-enumerr,'e','e')
+        !
       ELSE
-         !
-         CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp, &
-                            einwell,         last_einwell, epcdft_charge)
-         !
-         ! abs of the change in amp must be <= |delta_fld|
-         !
-         IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. ABS(epcdft_delta_fld) ) THEN
-           !
-           next_epcdft_amp = epcdft_amp + SIGN(1.D0, next_epcdft_amp - epcdft_amp) * epcdft_delta_fld
-           !
-         ENDIF
-         !
+        conv_epcdft =.true.
       ENDIF
       !
-      ! save this iteration's einwell and amp
-      ! for the next iteration
-      last_einwell    = einwell
-      last_epcdft_amp = epcdft_amp
+    ENDIF ! localization condition
+    !
+    IF (zero) THEN
+      conv_epcdft =.true.
+    ENDIF
+    !
+    CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
+    !
+    IF(conv_epcdft .and. conv_elec )THEN  ! cdft done write external pot to cube
       !
-      ! The old iteration has passed away;
-      ! behold, the new iteration has come 
-      epcdft_amp = next_epcdft_amp
+      filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'rho_up'
+      CALL write_cube_r ( 9519395, filename, rho%of_r(:,1) )
+      filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'rho_down'
+      CALL write_cube_r ( 9519395, filename, rho%of_r(:,2) )
+      filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft_up'
+      CALL write_cube_r ( 9519395, filename, vpotenp(:,1) )
+      filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft_down'
+      CALL write_cube_r ( 9519395, filename, vpotenp(:,2) )
       !
     ENDIF
     !
-    CALL mp_bcast( epcdft_amp, ionode_id, intra_image_comm ) ! what is best bcast this or enumerr?
+    ! if the charge is not localized
     !
-    IF(ionode) CALL pprint("New field Amp",epcdft_amp,"Ry",'e')
-    !
-    ! epcdft_shift = 0.D0 ! this var is added to etot before 
-    !                   ! this routine is called during next scf loop
-  ENDIF
+    IF(.NOT.conv_epcdft .AND. epcdft_amp .NE. 0)THEN
+      !
+      ! update applied field and restart scf
+      !
+      IF(ionode) THEN
+        !
+        ! find next guess for epcdft_amp
+        !
+        IF(first) THEN
+           !
+           first = .FALSE.
+           !
+           next_epcdft_amp = epcdft_amp + SIGN(0.001D0, enumerr) 
+           !
+        ELSE
+           !
+           CALL secant_method(next_epcdft_amp, epcdft_amp,   last_epcdft_amp(iconstraint), &
+                              einwell,         last_einwell(iconstraint), epcdft_target(iconstraint))
+           !
+           ! abs of the change in amp must be <= |delta_fld|
+           !
+           IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. ABS(epcdft_delta_fld) ) THEN
+             !
+             next_epcdft_amp = epcdft_amp + SIGN(1.D0, next_epcdft_amp - epcdft_amp) * epcdft_delta_fld
+             !
+           ENDIF
+           !
+        ENDIF
+        !
+        ! save this iteration's einwell and amp
+        ! for the next iteration
+        last_einwell(iconstraint)    = einwell
+        last_epcdft_amp(iconstraint) = epcdft_amp
+        !
+        ! The old iteration has passed away;
+        ! behold, the new iteration has come 
+        epcdft_guess(iconstraint) = next_epcdft_amp
+        !
+      ENDIF
+      !
+      CALL mp_bcast( epcdft_guess(iconstraint), ionode_id, intra_image_comm ) ! what is best bcast this or enumerr?
+      !
+    ENDIF
+    IF(ionode) THEN
+      write(*,'(5x,a6,a2,a6,a9,a9,a9)') "D",'  ','A','Diff','Old','New'
+      write(*,'(5x,f6.3,a2,f6.3,f9.3,f9.3,f9.3)') dcharge,'  ',acharge,einwell,last_epcdft_amp,next_epcdft_amp
+    ENDIF
+    if (conv_epcdft .and. conv_elec) &
+      write(*,*) "Converged potential ",iconstraint," with strength  ", epcdft_guess(iconstraint)
+  END DO
+  DEALLOCATE(vpotenp)
+
+  !
   !
 END SUBROUTINE epcdft_controller
 !----------------------------------------------------------------------------

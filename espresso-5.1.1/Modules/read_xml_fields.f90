@@ -353,48 +353,6 @@ CONTAINS
     CASE ( 'epol' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, epol, ierr = ierr )
        !
-    CASE ( 'donor_start' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, donor_start, ierr = ierr )
-       !
-    CASE ( 'donor_end' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, donor_end, ierr = ierr )
-       !
-    CASE ( 'acceptor_start' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, acceptor_start, ierr = ierr )
-       !
-    CASE ( 'acceptor_end' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, acceptor_end, ierr = ierr )
-       !
-    CASE ( 'conv_epcdft' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, conv_epcdft, ierr = ierr )
-       !
-    CASE ( 'hirshfeld' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, hirshfeld, ierr = ierr )
-       !
-    CASE ( 'epcdft_charge' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_charge, ierr = ierr )
-       !
-    CASE ( 'epcdft_delta_fld' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_delta_fld, ierr = ierr )
-       !
-    CASE ( 'epcdft_width' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_width, ierr = ierr )
-       !
-    CASE ( 'epcdft_amp' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_amp, ierr = ierr )
-       !
-    CASE ( 'epcdft_shift' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_shift, ierr = ierr )
-       !
-    CASE ( 'epcdft_thr' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_thr, ierr = ierr )
-       !
-    CASE ( 'epcdft_old_amp' ) 
-       CALL iotk_scan_dat_inside( xmlinputunit, epcdft_old_amp, ierr = ierr )
-       !
-    CASE ( 'etot_conv_thr' )
-       CALL iotk_scan_dat_inside( xmlinputunit, etot_conv_thr, ierr = ierr )
-       !
     CASE ( 'exchange' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, tmpstr, ierr = ierr )
        exchange = clean_str(tmpstr)

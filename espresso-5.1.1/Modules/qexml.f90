@@ -66,13 +66,13 @@ MODULE qexml_module
   !
   PUBLIC :: qexml_write_header, qexml_write_control, qexml_write_status_cp, qexml_write_cell,  &
             qexml_write_moving_cell, qexml_write_ions, qexml_write_symmetry, qexml_write_efield, &
-            qexml_write_planewaves, qexml_write_spin, qexml_write_magnetization, qexml_write_epcdft, &
+            qexml_write_planewaves, qexml_write_spin, qexml_write_magnetization, &
             qexml_write_xc, qexml_write_exx, qexml_write_occ, qexml_write_bz, qexml_write_para, &
             qexml_write_bands_pw,qexml_write_bands_cp, qexml_write_bands_info, qexml_write_eig, &
             qexml_write_gk, qexml_write_wfc, qexml_write_rho
   !
   PUBLIC :: qexml_read_header, qexml_read_status_cp, qexml_read_cell, qexml_read_moving_cell, qexml_read_ions,      &
-            qexml_read_symmetry, qexml_read_efield, qexml_read_epcdft,  &
+            qexml_read_symmetry, qexml_read_efield,  &
             qexml_read_planewaves, qexml_read_spin, qexml_read_xc,    &
             qexml_read_occ, qexml_read_bz, qexml_read_phonon,         &
             qexml_read_bands_pw, qexml_read_bands_cp, qexml_read_bands_info,                  &
@@ -1067,63 +1067,6 @@ CONTAINS
       CALL iotk_write_end( ounit, "ELECTRIC_FIELD" )
       !
     END SUBROUTINE qexml_write_efield
-    !
-
-    SUBROUTINE qexml_write_epcdft( do_epcdft, donor_start, donor_end, &
-         acceptor_start, acceptor_end, &
-         hirshfeld, epcdft_charge, epcdft_amp, epcdft_width, epcdft_shift, &
-         epcdft_thr, epcdft_old_amp, epcdft_delta_fld, conv_epcdft)
-      !------------------------------------------------------------------------
-      !
-      LOGICAL, INTENT(in)   :: do_epcdft      ! 
-      INTEGER, INTENT(in)   :: donor_start    ! 
-      INTEGER, INTENT(in)   :: donor_end      ! 
-      INTEGER, INTENT(in)   :: acceptor_start ! 
-      INTEGER, INTENT(in)   :: acceptor_end   ! 
-      LOGICAL, INTENT(in)   :: hirshfeld      ! 
-      LOGICAL, INTENT(in)   :: conv_epcdft    ! 
-      REAL(DP), INTENT(in) :: epcdft_charge! 
-      REAL(DP), INTENT(in) :: epcdft_delta_fld! 
-      REAL(DP), INTENT(in) :: epcdft_amp      ! 
-      REAL(DP), INTENT(in) :: epcdft_width    ! 
-      REAL(DP), INTENT(in) :: epcdft_shift    ! 
-      REAL(DP), INTENT(in) :: epcdft_thr      ! 
-      REAL(DP), INTENT(in) :: epcdft_old_amp  ! 
-      !
-      !
-      CALL iotk_write_begin( ounit, "EPCDFT" )
-      !
-      CALL iotk_write_dat( ounit, "HAS_EPCDFT", do_epcdft)
-      !
-      CALL iotk_write_dat( ounit, "DONOR_START", donor_start)
-      !
-      CALL iotk_write_dat( ounit, "DONOR_END", donor_end)
-      !
-      CALL iotk_write_dat( ounit, "ACCEPTOR_START", acceptor_start)
-      !
-      CALL iotk_write_dat( ounit, "ACCEPTOR_END", acceptor_end)
-      !
-      CALL iotk_write_dat( ounit, "CONV_EPCDFT", conv_epcdft)
-      !
-      CALL iotk_write_dat( ounit, "HIRSHFELD", hirshfeld)
-      !
-      CALL iotk_write_dat( ounit, "EPCDFT_DELTA_FLD", epcdft_delta_fld )
-      !
-      CALL iotk_write_dat( ounit, "FRAGMENT_ELECTRONS", epcdft_charge )
-      !
-      CALL iotk_write_dat( ounit, "EPCDFT_AMP", epcdft_amp )
-      !
-      CALL iotk_write_dat( ounit, "EPCDFT_WIDTH", epcdft_width )
-      !
-      CALL iotk_write_dat( ounit, "ENERGY_SHIFT", epcdft_shift )
-      !
-      CALL iotk_write_dat( ounit, "ELECTRONS_IN_WELL_THR", epcdft_thr )
-      !
-      CALL iotk_write_dat( ounit, "EPCDFT_OLD_AMP", epcdft_old_amp )
-      !
-      CALL iotk_write_end( ounit, "EPCDFT" )
-      !
-    END SUBROUTINE qexml_write_epcdft
     !
     !
     !------------------------------------------------------------------------
@@ -2993,112 +2936,6 @@ CONTAINS
       IF ( present(eamp) )           eamp         = eamp_
       !
     END SUBROUTINE qexml_read_efield
-
-    SUBROUTINE qexml_read_epcdft(do_epcdft, donor_start,donor_end, &
-      & acceptor_start, acceptor_end,  &
-      & hirshfeld, epcdft_charge, epcdft_amp, epcdft_width, epcdft_shift, &
-      & epcdft_thr, epcdft_old_amp, found, epcdft_delta_fld, conv_epcdft, ierr)
-      IMPLICIT NONE
-      !------------------------------------------------------------------------
-      !
-      LOGICAL, OPTIONAL, INTENT(out)   :: do_epcdft      ! 
-      INTEGER, OPTIONAL, INTENT(out)   :: donor_start    ! 
-      INTEGER, OPTIONAL, INTENT(out)   :: donor_end      ! 
-      INTEGER, OPTIONAL, INTENT(out)   :: acceptor_start ! 
-      INTEGER, OPTIONAL, INTENT(out)   :: acceptor_end   ! 
-      LOGICAL, OPTIONAL, INTENT(out)   :: hirshfeld      ! 
-      LOGICAL, OPTIONAL, INTENT(out)   :: conv_epcdft    ! 
-      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_charge! 
-      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_delta_fld! 
-      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_amp      ! 
-      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_width    ! 
-      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_shift    ! 
-      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_thr      ! 
-      REAL(DP), OPTIONAL, INTENT(out) :: epcdft_old_amp  ! 
-      LOGICAL,             INTENT(out) :: found
-      INTEGER,             INTENT(out) :: ierr
-      !
-      LOGICAL   :: do_epcdft_      ! 
-      INTEGER   :: donor_start_ ! 
-      INTEGER   :: donor_end_ ! 
-      INTEGER   :: acceptor_start_ ! 
-      INTEGER   :: acceptor_end_ ! 
-      LOGICAL   :: hirshfeld_      ! 
-      LOGICAL   :: conv_epcdft_    ! 
-      REAL(DP) :: epcdft_charge_! 
-      REAL(DP) :: epcdft_delta_fld_! 
-      REAL(DP) :: epcdft_amp_      ! 
-      REAL(DP) :: epcdft_width_    ! 
-      REAL(DP) :: epcdft_shift_    ! 
-      REAL(DP) :: epcdft_thr_      ! 
-      REAL(DP) :: epcdft_old_amp_  ! 
-      ierr=0
-      !
-      CALL iotk_scan_begin( iunit, "EPCDFT", FOUND=found, IERR=ierr)
-      IF ( ( .NOT. found ).OR.( ierr /= 0 ) ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "HAS_EPCDFT", do_epcdft_, IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "DONOR_START", donor_start_, IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "DONOR_END", donor_end_, IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "ACCEPTOR_START", acceptor_start_, IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "ACCEPTOR_END", acceptor_end_, IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "CONV_EPCDFT", conv_epcdft_, IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "HIRSHFELD", hirshfeld_, IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "EPCDFT_DELTA_FLD", epcdft_delta_fld_ , IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "FRAGMENT_ELECTRONS", epcdft_charge_ , IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "EPCDFT_AMP", epcdft_amp_ , IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "EPCDFT_WIDTH", epcdft_width_ , IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "ENERGY_SHIFT", epcdft_shift_ , IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "ELECTRONS_IN_WELL_THR", epcdft_thr_ , IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_dat( iunit, "EPCDFT_OLD_AMP", epcdft_old_amp_ , IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-      !
-      CALL iotk_scan_end( iunit, "EPCDFT" , IERR=ierr)
-      IF ( ierr /= 0 ) RETURN
-
-      IF ( present(do_epcdft) )     do_epcdft      = do_epcdft_
-      IF ( present(donor_start) )   donor_start=donor_start_
-      IF ( present(donor_end) )       donor_end=donor_end_
-      IF ( present(acceptor_start) )   acceptor_start=acceptor_start_
-      IF ( present(acceptor_end) )       acceptor_end=acceptor_end_
-      IF ( present(hirshfeld) )            hirshfeld     = hirshfeld_
-      IF ( present(conv_epcdft) )            conv_epcdft     = conv_epcdft_
-      IF ( present(epcdft_amp) )           epcdft_amp         = epcdft_amp_
-      IF ( present(epcdft_width) )           epcdft_width         = epcdft_width_
-      IF ( present(epcdft_shift) )           epcdft_shift         = epcdft_shift_
-      IF ( present(epcdft_thr) )           epcdft_thr         = epcdft_thr_
-      IF ( present(epcdft_charge) )           epcdft_charge         = epcdft_charge_
-      IF ( present(epcdft_delta_fld) )           epcdft_delta_fld         = epcdft_delta_fld_
-      IF ( present(epcdft_old_amp) )           epcdft_old_amp         = epcdft_old_amp_
-      
-      !
-    END SUBROUTINE qexml_read_epcdft
     !
     !
     !------------------------------------------------------------------------

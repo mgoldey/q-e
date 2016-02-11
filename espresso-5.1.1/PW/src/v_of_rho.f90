@@ -83,11 +83,9 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
      CALL add_efield(v%of_r(1,is), etotefield, rho%of_r, .false. )
   END DO
   !
-  ! ... add epcdft electric field
+  ! ... add epcdft electric field - this should only run the first time
   ! 
-  DO is = 1, nspin_lsda
-     CALL add_epcdft_efield(v%of_r(1,is), etotefield, rho%of_r, .false. )
-  END DO
+  !CALL add_epcdft_efield(v%of_r,.false. )
   !
   ! ... add Tkatchenko-Scheffler potential (factor 2: Ha -> Ry)
   ! 

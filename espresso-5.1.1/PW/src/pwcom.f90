@@ -343,25 +343,14 @@ USE kinds, ONLY : DP
 !
 SAVE
 !
+
 LOGICAL :: &
      do_epcdft,       &! if .TRUE. a finite electric field is added to the
                        ! local potential
-     hirshfeld,       &! if .TRUE. use hirshfeld partitioning rather than
-                       ! voronoi
      conv_epcdft       ! localization condition flag
-INTEGER :: &
-     donor_start,    &   ! first atom of donor fragment
-     donor_end,      &   ! last atom of donor fragment
-     acceptor_start, &   ! first atom of acceptor fragment
-     acceptor_end        ! last atom of acceptor fragment
-REAL(DP) :: &
-     epcdft_charge,&! number of electrons
-     epcdft_delta_fld,&! max change in fld between cdft steps
-     epcdft_amp,      &! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
-     epcdft_width,    &! field width (in a.u.) 
-     epcdft_shift,    &! energy correction due to the field
-     epcdft_thr,      &! threshold on # of electrons in well
-     epcdft_old_amp    ! field amplitude (in a.u.) (1 a.u. = 51.44 10^11 V/m)
+
+REAL(DP) :: epcdft_shift ! energy shift from all fields
+
 REAL(DP), ALLOCATABLE :: &
      epcdft_forces(:,:)
 !

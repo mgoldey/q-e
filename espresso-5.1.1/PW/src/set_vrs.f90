@@ -43,6 +43,7 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   ! accumulates local potential contributions in to vrs 
   !
   USE kinds
+  USE epcdft,    ONLY : do_epcdft
   !
   implicit none
 
@@ -56,6 +57,11 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   ! input: the scf(H+xc) part of the local potential
 
   integer:: is
+  !write(*,*) "sum_vrs",sum(vr(:,1))
+  IF ( do_epcdft ) &
+    CALL add_epcdft_efield(vr,.TRUE.)
+  !write(*,*) "sum_vrs",sum(vr(:,1))
+  ! confirmed the potential was changing here
 
   do is = 1, nspin
      !

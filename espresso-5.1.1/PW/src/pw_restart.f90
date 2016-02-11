@@ -21,7 +21,7 @@ MODULE pw_restart
                           qexml_write_header, qexml_write_control ,   &
                           qexml_write_cell, qexml_write_moving_cell,  &
                           qexml_write_ions, qexml_write_symmetry,     &
-                          qexml_write_efield, qexml_write_epcdft, &
+                          qexml_write_efield, &
                           qexml_write_planewaves, &
                           qexml_write_spin, qexml_write_magnetization, &
                           qexml_write_xc, qexml_write_exx, qexml_write_occ, &
@@ -33,7 +33,7 @@ MODULE pw_restart
                           qexml_read_planewaves, qexml_read_ions, qexml_read_spin, &
                           qexml_read_magnetization, qexml_read_xc, qexml_read_occ, qexml_read_bz, &
                           qexml_read_bands_info, qexml_read_bands_pw, qexml_read_symmetry, &
-                          qexml_read_efield, qexml_read_para, qexml_read_exx, qexml_read_epcdft
+                          qexml_read_efield, qexml_read_para, qexml_read_exx
   !
   USE xml_io_base, ONLY :  rho_binary,read_wfc, write_wfc, create_directory
   !
@@ -72,7 +72,6 @@ MODULE pw_restart
              lbz_read     = .FALSE., &
              lbs_read     = .FALSE., &
              lefield_read = .FALSE., &
-             lepcdft_read = .FALSE., &
              lwfc_read    = .FALSE., &
              lsymm_read   = .FALSE.
   !
@@ -127,11 +126,6 @@ MODULE pw_restart
       USE scf,                  ONLY : rho
       USE extfield,             ONLY : tefield, dipfield, edir, &
                                        emaxpos, eopreg, eamp
-      USE epcdft,               ONLY : do_epcdft, donor_start, acceptor_start, &
-                                       donor_end, epcdft_charge, acceptor_end, &
-                                       epcdft_amp, epcdft_width, epcdft_shift, &
-                                       epcdft_thr, epcdft_old_amp, hirshfeld, &
-                                       epcdft_delta_fld, conv_epcdft
       USE io_rho_xml,           ONLY : write_rho
       USE mp_world,             ONLY : nproc
       USE mp_images,            ONLY : nproc_image
@@ -406,15 +400,6 @@ MODULE pw_restart
 !-------------------------------------------------------------------------------
          !
          CALL qexml_write_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp) 
-         !
-!-------------------------------------------------------------------------------
-! ... EPCDFT
-!-------------------------------------------------------------------------------
-         !
-         CALL qexml_write_epcdft(do_epcdft, donor_start,donor_end,acceptor_start,&
-              acceptor_end, &
-              hirshfeld, epcdft_charge, epcdft_amp, epcdft_width, epcdft_shift, &
-              epcdft_thr,epcdft_old_amp,epcdft_delta_fld,conv_epcdft)
          !
 !
 !-------------------------------------------------------------------------------
@@ -837,7 +822,7 @@ MODULE pw_restart
       LOGICAL            :: lcell, lpw, lions, lspin, linit_mag, &
                             lxc, locc, lbz, lbs, lwfc, lheader,          &
                             lsymm, lrho, lefield, ldim, &
-                            lef, lexx, lepcdft
+                            lef, lexx
       !
       LOGICAL            :: need_qexml
       INTEGER            :: tmp
@@ -874,7 +859,6 @@ MODULE pw_restart
       lefield = .FALSE.
       lef     = .FALSE.
       lexx    = .FALSE.
-      lepcdft = .FALSE.
       !
       SELECT CASE( what )
       CASE( 'header' )
@@ -922,7 +906,6 @@ MODULE pw_restart
          lbs     = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
-         lepcdft = .TRUE.
          need_qexml = .TRUE.
          !
       CASE( 'all' )
@@ -940,7 +923,6 @@ MODULE pw_restart
          lefield = .TRUE.
          lwfc    = .TRUE.
          lrho    = .TRUE.
-         lepcdft = .TRUE. 
          need_qexml = .TRUE.
          !
       CASE( 'reset' )
@@ -957,7 +939,6 @@ MODULE pw_restart
          lwfc_read    = .FALSE.
          lsymm_read   = .FALSE.
          lefield_read = .FALSE.
-         lepcdft_read = .FALSE.
          !
       CASE( 'ef' )
          !
@@ -1115,14 +1096,6 @@ MODULE pw_restart
             GOTO 100
          END IF
          !
-      END IF
-      IF ( lepcdft ) THEN
-         ! 
-         CALL read_epcdft( ierr )
-         IF ( ierr > 0 ) THEN
-            errmsg='error reading epcdft in xml data file'
-            GOTO 100
-         END IF
       END IF
       IF ( lrho ) THEN
          !
@@ -1696,63 +1669,6 @@ MODULE pw_restart
       RETURN
       !
     END SUBROUTINE read_efield
-    !
-    SUBROUTINE read_epcdft( ierr )
-      !----------------------------------------------------------------------
-      !
-      USE epcdft, ONLY : do_epcdft, donor_start,donor_end,acceptor_start,acceptor_end, hirshfeld, &
-                         epcdft_charge, epcdft_amp, epcdft_width, epcdft_shift, &
-                         epcdft_thr, epcdft_old_amp, epcdft_delta_fld, conv_epcdft
-
-      !
-      IMPLICIT NONE
-      !
-      INTEGER,          INTENT(OUT) :: ierr
-      LOGICAL                       :: found
-      !
-      ierr = 0
-      !
-      IF ( lepcdft_read ) RETURN
-      !
-      IF ( ionode ) THEN
-         CALL qexml_read_epcdft(DO_EPCDFT=do_epcdft, DONOR_START=donor_start,DONOR_END=donor_end,&
-          ACCEPTOR_START=acceptor_start,ACCEPTOR_END=acceptor_end, HIRSHFELD=hirshfeld, &
-          EPCDFT_CHARGE=epcdft_charge, EPCDFT_AMP=epcdft_amp, EPCDFT_WIDTH=epcdft_width, &
-          EPCDFT_SHIFT=epcdft_shift, EPCDFT_THR=epcdft_thr, EPCDFT_OLD_AMP=epcdft_old_amp, &
-          EPCDFT_DELTA_FLD=epcdft_delta_fld, &
-          CONV_EPCDFT=conv_epcdft, FOUND=found, IERR=ierr )
-      ENDIF
-      !
-      CALL mp_bcast( ierr, ionode_id, intra_image_comm )
-      !
-      IF ( ierr > 0 ) RETURN
-      !
-      IF ( (ionode).AND.(.NOT.found) ) THEN
-         !
-         do_epcdft  = .FALSE.
-         !
-      END IF
-      !
-      CALL mp_bcast( do_epcdft,        ionode_id, intra_image_comm )
-      CALL mp_bcast( donor_start,   ionode_id, intra_image_comm )
-      CALL mp_bcast( donor_end,   ionode_id, intra_image_comm )
-      CALL mp_bcast( acceptor_start,   ionode_id, intra_image_comm )
-      CALL mp_bcast( acceptor_end,   ionode_id, intra_image_comm )
-      CALL mp_bcast( hirshfeld,        ionode_id, intra_image_comm )
-      CALL mp_bcast( conv_epcdft,      ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_charge, ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_delta_fld, ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_amp,       ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_width,     ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_shift,     ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_thr,       ionode_id, intra_image_comm )
-      CALL mp_bcast( epcdft_old_amp,   ionode_id, intra_image_comm )
-      !
-      lepcdft_read = .TRUE.
-      !
-      RETURN
-      !
-    END SUBROUTINE read_epcdft
     !
     !------------------------------------------------------------------------
     SUBROUTINE read_planewaves( ierr )

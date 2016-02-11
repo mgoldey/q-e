@@ -440,23 +440,6 @@ MODULE input_parameters
         REAL(DP) :: eopreg = 0.0_DP
         REAL(DP) :: eamp = 0.0_DP
 
-          ! parameters for epcdft
-        INTEGER  :: donor_start = 0
-        INTEGER  :: donor_end = 0
-        INTEGER  :: acceptor_start = 0
-        INTEGER  :: acceptor_end = 0
-        LOGICAL  :: hirshfeld = .FALSE.
-        LOGICAL  :: conv_epcdft = .FALSE.
-        REAL(DP) :: epcdft_charge = 0.0_DP
-        REAL(DP) :: epcdft_delta_fld = 0.10_DP
-        REAL(DP) :: epcdft_amp = 0.0_DP
-        REAL(DP) :: epcdft_width = 0.0_DP
-        REAL(DP) :: epcdft_shift = 0.0_DP
-        REAL(DP) :: epcdft_thr = 1.0D-4
-        REAL(DP) :: epcdft_old_amp=0.0_DP
-
-
-
           ! Various parameters for noncollinear calculations
         LOGICAL  :: noncolin = .false.
         LOGICAL  :: lspinorb = .false.
@@ -571,16 +554,14 @@ MODULE input_parameters
              occupations, degauss, nspin, ecfixed,                            &
              qcutz, q2sigma, lda_plus_U, lda_plus_u_kind,                     &
              Hubbard_U, Hubbard_J, Hubbard_alpha,                             &
-             Hubbard_J0, Hubbard_beta, donor_start, donor_end, acceptor_start,&
-             acceptor_end,hirshfeld, epcdft_charge,epcdft_amp,epcdft_width,&
-             epcdft_shift, epcdft_thr,epcdft_old_amp, epcdft_delta_fld,       &
+             Hubbard_J0, Hubbard_beta,                                        &
              edir, emaxpos, eopreg, eamp, smearing, starting_ns_eigenvalue,   &
              U_projection_type, input_dft, la2F, assume_isolated,             &
              nqx1, nqx2, nqx3, ecutfock,                                      &
              exxdiv_treatment, x_gamma_extrapolation, yukawa, ecutvcut,       &
              exx_fraction, screening_parameter, ref_alat,                     &
              noncolin, lspinorb, starting_spin_angle, lambda, angle1, angle2, &
-             report, conv_epcdft,                                             &
+             report,                                                          &
              constrained_magnetization, B_field, fixed_magnetization,         &
              sic, sic_epsilon, force_pairing, sic_alpha,                      &
              tot_charge, tot_magnetization, spline_ps, one_atom_occupations,  &
@@ -1332,6 +1313,7 @@ MODULE input_parameters
         LOGICAL   :: tcell = .false.
         LOGICAL   :: tionvel = .false.
         LOGICAL   :: tconstr = .false.
+        LOGICAL   :: tepcdft = .false.
         LOGICAL   :: tksout = .false.
         LOGICAL   :: ttemplate = .false.
         LOGICAL   :: twannier = .false.
@@ -1412,6 +1394,22 @@ MODULE input_parameters
       REAL(DP),          ALLOCATABLE :: constr_inp(:,:)
       REAL(DP),          ALLOCATABLE :: constr_target_inp(:)
       LOGICAL,           ALLOCATABLE :: constr_target_set(:)
+
+!
+!    EPCDFT
+!
+      INTEGER :: epcdft_fields = 4   ! max number of fields that is allowed to
+                                     ! define a constraint
+
+      INTEGER  :: nconstr_epcdft    = 0
+      REAL(DP) :: epcdft_delta_fld =1.E-1_DP
+      REAL(DP) :: epcdft_tol = 1.E-4_DP
+      !
+      CHARACTER(len=20), ALLOCATABLE :: epcdft_type(:)   ! type
+      INTEGER,           ALLOCATABLE :: epcdft_locs(:,:) ! atoms start end (start end) ()-if delta
+      REAL(DP),          ALLOCATABLE :: epcdft_guess(:)  !  guess values of constraints
+      REAL(DP),          ALLOCATABLE :: epcdft_target(:) ! target values of constraints
+
 
 !
 !    KOHN_SHAM
@@ -1524,6 +1522,33 @@ SUBROUTINE reset_input_checks()
     RETURN
     !
   END SUBROUTINE allocate_input_constr
+
+
+  !-----------------------------------------------------------------------------
+  SUBROUTINE allocate_input_epcdft()
+  !-----------------------------------------------------------------------------
+  !
+  IF ( allocated( epcdft_type ) )   DEALLOCATE( epcdft_type )
+  IF ( allocated( epcdft_locs ) )   DEALLOCATE( epcdft_locs )
+  IF ( allocated( epcdft_guess ) )  DEALLOCATE( epcdft_guess )
+  IF ( allocated( epcdft_target ) ) DEALLOCATE( epcdft_target )
+  !
+  ALLOCATE( epcdft_type(   nconstr_epcdft ) )
+  ALLOCATE( epcdft_guess(  nconstr_epcdft ) )
+  ALLOCATE( epcdft_target( nconstr_epcdft ) )
+  !
+  ALLOCATE( epcdft_locs( epcdft_fields, nconstr_epcdft ) )
+  !
+  epcdft_type   = ' '
+  epcdft_locs   = 0
+  epcdft_target = 0.0_DP
+  epcdft_guess  = 0.0_DP
+  !
+  RETURN
+  !
+  END SUBROUTINE allocate_input_epcdft
+
+
 
   !-----------------------------------------------------------------------------
   SUBROUTINE allocate_input_iprnks( nksx, nspin )

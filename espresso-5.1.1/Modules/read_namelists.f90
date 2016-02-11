@@ -213,22 +213,6 @@ MODULE read_namelists_module
        eopreg = 0.1_DP
        eamp = 0.0_DP
 
-       ! epcdft variables
-       donor_start = 0
-       donor_end = 0
-       acceptor_start = 0
-       acceptor_end = 0
-       
-       hirshfeld = .FALSE.
-       conv_epcdft = .FALSE.
-       epcdft_charge = 0.0_DP
-       epcdft_delta_fld = 0.1_DP
-       epcdft_amp = 0.0_DP
-       epcdft_width = 0.0_DP
-       epcdft_shift = 0.0_DP
-       epcdft_thr = 1.0D-4
-       epcdft_old_amp = 0.0_DP
-
        !
        !  ... postprocessing of DOS & phonons & el-ph
        la2F = .FALSE.
@@ -796,22 +780,6 @@ MODULE read_namelists_module
        CALL mp_bcast( eopreg,                 ionode_id, intra_image_comm )
        CALL mp_bcast( eamp,                   ionode_id, intra_image_comm )
        
-       ! epcdft variables
-       CALL mp_bcast( donor_start,         ionode_id, intra_image_comm )
-       CALL mp_bcast( donor_end,         ionode_id, intra_image_comm )
-       CALL mp_bcast( acceptor_start,         ionode_id, intra_image_comm )
-       CALL mp_bcast( acceptor_end,         ionode_id, intra_image_comm )
-
-       CALL mp_bcast( hirshfeld,              ionode_id, intra_image_comm )
-       CALL mp_bcast( conv_epcdft,            ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_amp,             ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_charge,       ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_delta_fld,       ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_shift,           ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_thr,             ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_old_amp,             ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_width,           ionode_id, intra_image_comm )
-
        CALL mp_bcast( la2F,                   ionode_id, intra_image_comm )
        !
        ! ... non collinear broadcast

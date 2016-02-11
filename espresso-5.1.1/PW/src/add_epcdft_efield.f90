@@ -10,127 +10,48 @@
 !
 !
 !--------------------------------------------------------------------------
-SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
+SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !--------------------------------------------------------------------------
   !
   !   This routine adds constraining potential for cdft to the local potential. 
   !
-  !   Voronoi cells:
+  !   Voronoi cells
   !
-  !     acceptor_start - first atom in fragment to center potential well around 
-  !     acceptor_end - last atom  in fragment to center potential well around 
-  !     donor_start - first atom in fragment in donor
-  !     donor_end - last atom  in fragment in donor 
-  !     epcdft_amp - strength of potential in Ry a.u.
-  !     epcdft_charge - number of electrons that should be in well
-  !
-  !   User defined well around single atom:
-  !
-  !     acceptor_start - only atom to center potential well around 
-  !     acceptor_end - = 0
-  !     donor_start - do not use
-  !     donor_end - do not use
-  !     epccdft_width  - radius of potential well in alat
-  !     epcdft_amp - strength of potential in Ry a.u.
-  !     epcdft_charge - number of electrons that should be in well
+  !   User defined well around single atom
   !
   !   Hirshfeld partitioning following :
   !
   !     J. Chem. Phys. 133, 244105 (2010); http://dx.doi.org/10.1063/1.3507878 
   !     eqs. 6 & 7
   !
-  !     acceptor_start - first atom in fragment in acceptor
-  !     acceptor_end - last atom  in fragment in acceptor (all others are donors)
-  !     donor_start - first atom in fragment in donor
-  !     donor_end - last atom  in fragment in donor 
-  !     epcdft_amp - strength of potential in Ry a.u. 
-  !     epcdft_charge - ?? not sure yet
-  !
-  !
-  !
   USE kinds,         ONLY : DP
-  USE constants,     ONLY : fpi, eps8, e2, au_debye
-  USE ions_base,     ONLY : nat, ityp, zv
-  USE cell_base,     ONLY : alat, at, omega, bg, saw
-  USE epcdft,        ONLY : do_epcdft, donor_start, donor_end, &
-                            acceptor_start, acceptor_end, &
-                            epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_charge, hirshfeld
-  USE force_mod,     ONLY : lforce
+  USE epcdft,        ONLY : do_epcdft
   USE io_global,     ONLY : stdout,ionode
-  USE control_flags, ONLY : mixing_beta
   USE lsda_mod,      ONLY : nspin
-  USE mp_images,     ONLY : intra_image_comm
-  USE mp_bands,      ONLY : me_bgrp, intra_bgrp_comm
-  USE fft_base,      ONLY : dfftp, grid_scatter, grid_gather
-  USE mp,            ONLY : mp_bcast, mp_sum
-  USE control_flags, ONLY : iverbosity
-  !
-  ! ... Coulomb USE
-  !
-  USE ions_base,     ONLY : tau
-  
+  USE fft_base,      ONLY : dfftp !, grid_scatter, grid_gather
   IMPLICIT NONE
   !
   ! I/O variables
   !
-  REAL(DP),INTENT(INOUT) :: vpoten(dfftp%nnr)! ef is added to this potential
-  REAL(DP) :: dv                             ! volume element
-  REAL(DP) :: einwellp                       ! number of electrons in well
-  REAL(DP) :: einwells                       ! number of electrons in well
-  REAL(DP) :: enumerr                        ! epcdft_charge - einwell  (e number error)
-  REAL(DP) :: oldamp                         ! stores old external potential strength
-  SAVE oldamp
-  LOGICAL  :: elocflag                       ! true if charge localization condition is satisfied
-  REAL(DP),INTENT(INOUT) :: etotefield       ! contribution to etot due to ef
-  REAL(DP),INTENT(IN):: rho(dfftp%nnr,nspin) ! the density whose dipole is computed
+  REAL(DP),INTENT(INOUT) :: vpoten(dfftp%nnr,nspin)! ef is added to this potential
   LOGICAL,INTENT(IN)     :: iflag            ! set to true to force recalculation of field
   !
   ! local variables
   !
-  INTEGER :: index0, i, j, k
-  INTEGER :: ir, na, ipol, iatom
-  REAL(DP) :: length, vamp, value, sawarg, e_dipole, ion_dipole
-  REAL(DP) :: tot_dipole, bmod
-  INTEGER :: icfd(-1:1), ir_end, in 
-  INTEGER :: ix(-1:1),iy(-1:1),iz(-1:1)
-  REAL( DP ), DIMENSION( :, : ), ALLOCATABLE :: gradtmp
-  REAL( DP ), DIMENSION( :, : ), ALLOCATABLE :: grad
-  REAL(DP) :: hirshv(dfftp%nnr) ! constraining potential from hirshfeld partitioning
+  REAL(DP) :: vconstr (dfftp%nnr,nspin) ! constraining potential shape*weight
   !
   LOGICAL :: first=.TRUE.
+  LOGICAL :: hirshfeld=.TRUE.
+
   SAVE first
-
-  !
-  ! ... Coulomb Vars
-  !
-  INTEGER      :: ip
-  REAL( DP )   :: dist, mindonor, minacceptor
-  REAL( DP )   :: r( 3 ), myr(3), s( 3 ), cm(3)
-  REAL( DP )   :: inv_nr1, inv_nr2, inv_nr3
-  REAL( DP )   :: thresh
-  
-  LOGICAL :: on_donor    = .TRUE.
-  LOGICAL :: on_acceptor = .TRUE.
-
-  dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
-  einwellp = 0.D0
-  einwells = 0.D0
-  enumerr  = 0.D0 
-  oldamp = epcdft_amp
-
-  inv_nr1 = 1.D0 / DBLE( dfftp%nr1 )
-  inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
-  inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
 
   !---------------------
   !  Execution control
   !---------------------
+
   IF (.NOT. do_epcdft) RETURN
-  IF (.NOT. iflag) RETURN  !TURN OFF SELF-CONSISTENCY INSIDE SCF CYCLE OR ELSE!
-  if (iflag) first=.true.
-   
-  if (.not. first) RETURN
+  IF ((.NOT.first) .AND..NOT. iflag) RETURN
+  first=.FALSE.
 
   ! Necessary for restart/pp runs
   CALL init_at_1
@@ -138,180 +59,22 @@ SUBROUTINE add_epcdft_efield(vpoten,etotefield,rho,iflag)
   ! efield only needs to be added on the first iteration (of each SCF call)
   ! note that for relax calculations it has to be added
   ! again on subsequent relax steps. 
-  !
-  !---------------------
-  !  Variable initialization
-  !---------------------
-  !
-  cm(:) = 0.D0
-  !
-  ! print potential type used for cdft
-  !
-  IF (ionode) THEN
-    !
-    WRITE( stdout,*)
-    !
-    IF (hirshfeld) THEN
-      !
-      WRITE( stdout,'(5x,"Using Hirshfeld")')
-      WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-      WRITE( stdout,'(8x,"Acceptor Fragment start : ", I11.1)') acceptor_start
-      WRITE( stdout,'(8x,"Acceptor Fragment end   : ", I11.1)') acceptor_end
-      WRITE( stdout,'(8x,"Donor Fragment start : ", I11.1)') donor_start
-      WRITE( stdout,'(8x,"Donor Fragment end   : ", I11.1)') donor_end
-      WRITE( stdout,*)     
-      !
-    ELSE ! not hirshfeld then voronoi or user well
-      !
-      if (acceptor_end .ne. 0) then
-        !
-        write( stdout,'(5x,"Using Voronoi cells")')
-        WRITE( stdout,'(5x,"Adding the potential well":)')
-        WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-        WRITE( stdout,'(8x,"Acceptor Fragment start : ", I11.1)') acceptor_start
-        WRITE( stdout,'(8x,"Acceptor Fragment end   : ", I11.1)') acceptor_end
-        WRITE( stdout,'(8x,"Donor Fragment start : ", I11.1)') donor_start
-        WRITE( stdout,'(8x,"Donor Fragment end   : ", I11.1)') donor_end
-        WRITE( stdout,*)     
-        !
-      else
-        !
-        write( stdout,'(5x,"Using a distance-based cell")')
-        WRITE( stdout,'(5x,"Adding the potential well":)')
-        WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') epcdft_amp 
-        WRITE( stdout,'(8x,"Atom selected : ", I11.1)') acceptor_start
-        WRITE( stdout,'(8x,"Well size     : ", es11.4)') epcdft_width
-        WRITE( stdout,*)     
-        !
-      endif ! end if voronoi or user well
-      !
-    ENDIF !end if hirshfeld
-    !
-  ENDIF 
-  !
-  ! end print
-  !
+  
   ! calculate hirshfeld potential array
   !
   IF (hirshfeld) THEN 
-    hirshv=0.D0
-    !CALL calc_hirshfeld_v_pointlists(hirshv, dfftp%nnr)
-    CALL calc_hirshfeld_v(hirshv, dfftp%nnr)
-    vpoten = vpoten + epcdft_amp * hirshv
-    !write(*,*) "vpoten is ",sum(vpoten(:))
+    vconstr =0.D0
+    CALL calc_hirshfeld_v(vconstr,0)
+    vpoten= vpoten + vconstr 
     RETURN
   ENDIF
-  !
-  !
-  !
-  index0 = 0
-#if defined (__MPI)
-  DO i = 1, me_bgrp
-     index0 = index0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
-  END DO
-  ir_end = MIN(dfftp%nnr,dfftp%nr1x*dfftp%nr2x*dfftp%npl)
-#else
-  ir_end = dfftp%nnr
-#endif
-  
-  if (sum(rho).lt.1e-3) THEN
-  !  write(*,*) "Density is really small. I forget why this matters."
-  ENDIF
-
-  ! voronoi
-  if (acceptor_end .ne. 0) then
-    DO ir = 1, dfftp%nnr
-      i = index0 + ir - 1
-      k = i / (dfftp%nr1x*dfftp%nr2x)
-      i = i - (dfftp%nr1x*dfftp%nr2x)*k
-      j = i / dfftp%nr1x
-      i = i - dfftp%nr1x*j
-      DO ip = 1, 3
-        r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
-                DBLE( j )*inv_nr2*at(ip,2) + &
-                DBLE( k )*inv_nr3*at(ip,3)
-      END DO
-      
-      mindonor=5d6
-      minacceptor=5d6
-      DO iatom= acceptor_start, acceptor_end
-        cm(:) = tau(:,iatom)
-        myr(:) = r(:) - cm(:)
-        s(:) = MATMUL( myr(:), bg(:,:) )
-        s(:) = s(:) - ANINT(s(:))
-        myr(:) = MATMUL( at(:,:), s(:) )
-        dist = SQRT( SUM( myr * myr ) )*alat
-        IF(dist .le. minacceptor) THEN
-          minacceptor=dist
-        END IF
-      END DO
-      DO iatom= donor_start, donor_end
-        cm(:) = tau(:,iatom)
-        myr(:) = r(:) - cm(:)
-        s(:) = MATMUL( myr(:), bg(:,:) )
-        s(:) = s(:) - ANINT(s(:))
-        myr(:) = MATMUL( at(:,:), s(:) )
-        dist = SQRT( SUM( myr * myr ) )*alat
-        IF(dist .le. mindonor) THEN
-          mindonor=dist
-        END IF
-      END DO
-      on_donor = .TRUE.
-      on_acceptor = .TRUE.
-      !write(*,*)" mindist are ",mindonor," ",minacceptor
-      DO iatom=1, nat
-        IF ((.not. on_donor).and. (.not. on_acceptor)) CYCLE
-        IF ((iatom.ge.acceptor_start) .AND. (iatom.le.acceptor_end) ) CYCLE
-        IF ((iatom.ge.donor_start) .AND. (iatom.le.donor_end) ) CYCLE
-        cm(:) = tau(:,iatom)
-        myr(:) = r(:) - cm(:)
-        s(:) = MATMUL( myr(:), bg(:,:) )
-        s(:) = s(:) - ANINT(s(:))
-        myr(:) = MATMUL( at(:,:), s(:) )
-        dist = SQRT( SUM( myr * myr ) )*alat
-        IF(dist .lt. mindonor) on_donor = .FALSE.
-        IF(dist .lt. minacceptor) on_acceptor=.FALSE.        
-      END DO
-      if (mindonor.lt.minacceptor) on_acceptor=.FALSE.
-      if (minacceptor.lt.mindonor) on_donor=.FALSE.
-      !write(*,*)" bools are ",on_donor," ",on_acceptor
-      IF(on_donor) vpoten(ir) = vpoten(ir) - epcdft_amp
-      IF(on_acceptor) vpoten(ir) = vpoten(ir) + epcdft_amp
-    END DO 
-  else ! APPLY POTENTIAL WITHIN WELL OF SIZE EPCDFT_WIDTH
-    DO ir = 1, dfftp%nnr
-      i = index0 + ir - 1
-      k = i / (dfftp%nr1x*dfftp%nr2x)
-      i = i - (dfftp%nr1x*dfftp%nr2x)*k
-      j = i / dfftp%nr1x
-      i = i - dfftp%nr1x*j
-      DO ip = 1, 3
-        r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
-                DBLE( j )*inv_nr2*at(ip,2) + &
-                DBLE( k )*inv_nr3*at(ip,3)
-      END DO
-      iatom= acceptor_start
-      cm(:) = tau(:,iatom)
-      myr(:) = r(:) - cm(:)
-      s(:) = MATMUL( myr(:), bg(:,:) )
-      s(:) = s(:) - ANINT(s(:))
-      myr(:) = MATMUL( at(:,:), s(:) )
-      dist = SQRT( SUM( myr * myr ) )*alat
-      IF(dist .le. epcdft_width) THEN
-        vpoten(ir) = vpoten(ir) - epcdft_amp
-      ELSE
-        vpoten(ir) = vpoten(ir) + epcdft_amp
-      ENDIF
-    END DO 
-  ENDIF
-  RETURN
   !
 END SUBROUTINE add_epcdft_efield
 !
 !
 !
 !--------------------------------------------------------------------------
-SUBROUTINE calc_hirshfeld_v( v, n )
+SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   !--------------------------------------------------------------------------
   ! 
   !  Gamma only
@@ -330,8 +93,6 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE uspp_param,           ONLY : upf
   USE lsda_mod,      ONLY : nspin
   USE ions_base,  ONLY : nat, ntyp => nsp, ityp, tau
-  USE epcdft,               ONLY : donor_start,donor_end,&
-                                   acceptor_start,acceptor_end
   USE fft_base,             ONLY : dfftp, dffts
   USE gvect,                ONLY : nl, nlm
   USE gvecs,                ONLY : nls, nlsm
@@ -342,31 +103,31 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE klist,         ONLY : nelec
   USE cell_base,     ONLY : omega
-  ! USE basis,                ONLY : natomwfc
+
+  ! most important control variables are not in epcdft_mod
+  USE input_parameters, ONLY : epcdft_locs,epcdft_guess,nconstr_epcdft,epcdft_type
   !
   IMPLICIT NONE
   !
-  REAL(DP), INTENT(INOUT) :: v(n) ! the hirshfeld potential
-  INTEGER, INTENT(IN) :: n
+  REAL(DP), INTENT(INOUT) :: v(dfftp%nnr,nspin) ! the hirshfeld potential
+  INTEGER, INTENT(INOUT) :: iconstraint
   ! 
-  INTEGER :: na, nt, nb, l, m,ir, nwfcm ,nwfc
+  INTEGER :: na, nt, nb, l, m,n,ir, nwfcm ,nwfc,icon
   COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g
   COMPLEX(DP), ALLOCATABLE :: wfcatomr (:) ! atomic wfcs in r
   COMPLEX(DP), ALLOCATABLE :: total_atom_rho_r (:) ! total density of an atom in r
   INTEGER :: orbi ! orbital index for wfcatom
   INTEGER :: nfuncs, lmax ! number of functions as derived from lmax
   REAL(DP) :: orboc ! occupation of orbital
-  COMPLEX(DP) :: vtop(n) ! top of the hirshfeld potential fraction
-  COMPLEX(DP) :: vbot(n) ! bottom of the hirshfeld potential fraction
+  COMPLEX(DP) :: vtop(dfftp%nnr,nspin) ! top of the hirshfeld potential fraction
+  COMPLEX(DP) :: vbot(dfftp%nnr)       ! bottom of the hirshfeld potential fraction
   COMPLEX(DP) :: normfac
   COMPLEX(DP) :: cutoff
   COMPLEX(DP) :: vbottot
   REAL(DP) :: dv
   character(len=1024) :: filename
-  !
-  !nwfcm = MAXVAL ( upf(1:ntyp)%nwfc )
-  !
   
+  n=dfftp%nnr ! Just to be safe
   ! get the max number of wfs any atom will have
   nwfcm=0
   lmax=0
@@ -420,12 +181,8 @@ SUBROUTINE calc_hirshfeld_v( v, n )
         l = upf(nt)%lchi(nb) ! get l 
         !
         DO m = 1, 2*l+1 ! mag num
-          !  
-          ! write(*,*) na,nb,l,m," is occupied with ", upf(nt)%oc(nb), " electrons"
-          !  
-          ! add all orbitals 
-          ! each state weighted by orboc
-          !  
+          !
+          ! add all orbitals, each state weighted by orboc
           orbi = orbi + 1 ! update orbital index
           !  
           orboc = REAL( upf(nt)%oc(nb) ,KIND=DP) / REAL( 2*l+1 ,KIND=DP)
@@ -454,19 +211,96 @@ SUBROUTINE calc_hirshfeld_v( v, n )
           !
         ENDDO ! m
       ENDIF ! end if occupied
-    ENDDO ! l 
+    ENDDO ! nb 
     !
-    ! add this atoms density to the hirshfeld potential
+    ! add this atoms density to the hirshfeld potential, as appropriate
+    IF (iconstraint .eq. 0) THEN 
+      !write(*,*) iconstraint,nconstr_epcdft
+      DO icon=1,nconstr_epcdft
+        !write(*,*) na,icon,nconstr_epcdft,epcdft_type(icon),epcdft_guess(icon), &
+        !  epcdft_locs(1,icon),epcdft_locs(2,icon),epcdft_locs(3,icon),epcdft_locs(4,icon)
+        SELECT CASE( epcdft_type(icon) )
+        CASE('charge')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+          ENDIF
+        CASE('spin')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+          ENDIF
+        CASE('delta_charge')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            !write(*,*) na, epcdft_locs(1,icon),epcdft_locs(2,icon)
+            vtop(:,1) = vtop(:,1) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            !write(*,*) na, epcdft_locs(3,icon),epcdft_locs(4,icon)
+            vtop(:,1) = vtop(:,1) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+            !
+          ENDIF   
+        CASE('delta_spin')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,1) = vtop(:,1) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+            !
+          ENDIF
+        END SELECT
+      END DO
+    ELSE 
+      icon=iconstraint
+      !write(*,*) icon,nconstr_epcdft,epcdft_type(icon)
+      SELECT CASE( epcdft_type(icon) )
+        CASE('charge')
+          IF( na >= epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
+          ENDIF
+        CASE('spin')
+          IF( na >= epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + total_atom_rho_r( : ) 
+          ENDIF
+        CASE('delta_charge')
+          IF( na >= epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
+            !
+          ELSE IF( na >= epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,1) = vtop(:,1) + total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + total_atom_rho_r( : ) 
+            !
+          ENDIF   
+        CASE('delta_spin')
+          IF( na >= epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + total_atom_rho_r( : ) 
+            !
+          ELSE IF( na >= epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,1) = vtop(:,1) + total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
+            !
+          ENDIF
+      END SELECT
+    ENDIF
     !
-    IF( na >= acceptor_start .and. na <= acceptor_end )THEN ! atom in acceptor
-      !
-      vtop(:) = vtop(:) - total_atom_rho_r( : ) 
-      !
-    ELSE IF ( na >= donor_start .and. na <= donor_end )THEN ! atom in donor
-      ! 
-      vtop(:) = vtop(:) + total_atom_rho_r( : ) 
-      !
-    ENDIF 
     !
     vbot(:) = vbot(:) + total_atom_rho_r( : ) 
     !
@@ -491,18 +325,26 @@ SUBROUTINE calc_hirshfeld_v( v, n )
   normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP)*dv)
   vtop = normfac * vtop
   vbot = normfac * vbot
+  
   !
-  vtop = vtop / vbot
+  vtop(:,1) = vtop(:,1) / vbot
+  vtop(:,2) = vtop(:,2) / vbot
   DO ir = 1, n
-    if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) vtop(ir)=0.D0  
-    if (vtop(ir) /= vtop(ir)) vtop(ir)=0.D0
+    if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
+      vtop(ir,1)=0.D0  
+      vtop(ir,2)=0.D0  
+    ENDIF
+    if (vtop(ir,1) /= vtop(ir,1))  vtop(ir,1)=0.D0
+    if (vtop(ir,2) /= vtop(ir,2))  vtop(ir,2)=0.D0
   ENDDO
+  !write(*,*) real(sum(vtop))
   !
   !
   !call write_cube_r ( 84332, 'v.cube',  REAL(vtop,KIND=DP))
-  v(:) = REAL(vtop(:),KIND=DP)
+  v = REAL(vtop,KIND=DP)
   !
-!   call write_cube_r ( 84332, 'v.cube',  v )
+  !call write_cube_r ( 84332, 'vup.cube',  v(:,1) )
+  !call write_cube_r ( 84332, 'vdown.cube',  v(:,2) )
   !
   
   DEALLOCATE( wfcatomr )
@@ -521,10 +363,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   USE constants,     ONLY : fpi, eps8, e2, au_debye
   USE ions_base,     ONLY : nat, ntyp => nsp, ityp, tau, zv
   USE cell_base,     ONLY : alat, at, omega, bg, saw, tpiba2
-  USE epcdft,        ONLY : do_epcdft, donor_start, donor_end, &
-                            acceptor_start, acceptor_end, &
-                            epcdft_amp, epcdft_width, epcdft_shift, &
-                            epcdft_charge, hirshfeld
+  USE epcdft,        ONLY : do_epcdft
   USE force_mod,     ONLY : lforce
   USE control_flags, ONLY : mixing_beta
   USE lsda_mod,      ONLY : nspin
@@ -549,6 +388,9 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   USE klist,         ONLY : nelec, xk, nks
   USE control_flags,        ONLY : gamma_only
   USE cell_base,     ONLY : omega
+
+  ! most important control variables are not in epcdft_mod
+  USE input_parameters, ONLY : epcdft_locs,epcdft_guess,nconstr_epcdft,epcdft_type
   !
   IMPLICIT NONE
   !
@@ -572,37 +414,34 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   REAL( DP )   :: thresh
   
 
-  INTEGER :: nt, nb, l, m, nwfcm ,nwfc
+  INTEGER :: nt, nb, l, m, nwfcm ,nwfc,icon
   COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g
   COMPLEX(DP), ALLOCATABLE :: wfcatomr (:) ! atomic wfcs in r
-  COMPLEX(DP), ALLOCATABLE :: collected_atom (:) ! atomic wfcs in r - collected
+  COMPLEX(DP), ALLOCATABLE :: total_atom_rho_r (:) ! atomic wfcs in r - collected
   COMPLEX(DP), ALLOCATABLE :: shifted_atom (:) ! atomic wfcs in r -shifted and collected
   INTEGER :: orbi ! orbital index for wfcatom
   INTEGER :: nfuncs, lmax ! number of functions as derived from lmax
   REAL(DP) :: orboc ! occupation of orbital
   REAL(DP) :: dx ! finite shift in direction
   REAL(DP) :: force_idir ! force in given direction
-  COMPLEX(DP) :: v(dfftp%nnr) ! hirshfeld weighting function
-  COMPLEX(DP) :: v2(dfftp%nnr) ! hirshfeld weighting function
-  COMPLEX(DP) :: vtop(dfftp%nnr) ! top of the hirshfeld potential fraction
+  COMPLEX(DP) :: v(dfftp%nnr,2) ! hirshfeld weighting function
+  COMPLEX(DP) :: v2(dfftp%nnr) ! hirshfeld weighting function * rho
+  COMPLEX(DP) :: vtop(dfftp%nnr,2) ! top of the hirshfeld potential fraction
   COMPLEX(DP) :: vbot(dfftp%nnr) ! bottom of the hirshfeld potential fraction
 
 ! shifted
-  COMPLEX(DP) :: sv(dfftp%nnr) ! hirshfeld weighting function
-  COMPLEX(DP) :: svtop(dfftp%nnr) ! top of the hirshfeld potential fraction
+  COMPLEX(DP) :: sv(dfftp%nnr,2) ! hirshfeld weighting function for shifted atom
+  COMPLEX(DP) :: svtop(dfftp%nnr,2) ! top of the hirshfeld potential fraction
   COMPLEX(DP) :: svbot(dfftp%nnr) ! bottom of the hirshfeld potential fraction
 
   COMPLEX(DP) :: normfac, ival1,ival2
   COMPLEX(DP) :: cutoff
   COMPLEX(DP) :: vbottot, val
   character(len=1024) :: filename
+  LOGICAL :: hirshfeld=.true.
   
   !
   force=0._dp
-  IF ( .not. hirshfeld) THEN
-    if (ionode) write(*,*) "WARNING - you are not using hirshfeld, so go code up whatever you're doing. \nI'll just hand you an array of zeroes."
-    RETURN
-  ENDIF
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
 
   ! set up to be in bohr via one_atom_shifted_wfc
@@ -627,13 +466,13 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
   
   ALLOCATE( wfcatomr(dfftp%nnr) )
-  ALLOCATE( collected_atom(dfftp%nnr) )
+  ALLOCATE( total_atom_rho_r(dfftp%nnr) )
   ALLOCATE( shifted_atom(dfftp%nnr) )
   !
   n=dfftp%nnr
   wfcatomg = 0.D0
   wfcatomr = 0.D0
-  collected_atom=0.D0
+  total_atom_rho_r=0.D0
   shifted_atom=0.d0
   vtop = 0.D0
   vbot = 0.D0
@@ -675,15 +514,6 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
           ! convert atomic(g) -> |atomic(r)|^2
           CALL invfft ('Dense', wfcatomr(:), dfftp)
           wfcatomr(:) = wfcatomr(:) * CONJG(wfcatomr(:))
-          IF( na >= acceptor_start .and. na <= acceptor_end )THEN ! atom in acceptor
-            !
-            vtop(:) = vtop(:) - orboc * wfcatomr( : ) 
-            !
-          ELSE IF ( na >= donor_start .and. na <= donor_end )THEN ! atom in donor
-            ! 
-            vtop(:) = vtop(:) + orboc * wfcatomr( : ) 
-            !
-          ENDIF 
           !
           vbot(:) = vbot(:) + orboc * wfcatomr( : ) 
           !
@@ -697,62 +527,111 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   vbottot = SUM(vbot)*dv
   CALL mp_sum( vbottot, intra_bgrp_comm )
   normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP)*dv)
-  vtop(:) = normfac * vtop(:)
   vbot(:) = normfac * vbot(:)
-  !
-  v(:) = vtop(:) / vbot(:)
-  DO ir = 1, n
-    if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) v(ir)=0.D0  
-    if (v(ir) /= v(ir)) v(ir)=0.D0
-  ENDDO
-  if (nspin .eq. 2)  v2(:)=v(:)*(rho(:,1)+rho(:,2))
-  if (nspin .eq. 1)  v2(:)=v(:)*(rho(:,1))
-!   write(*,*) "dfftp%nnr is ", dfftp%nnr
-!   write(*,*) "v is ", real(sum(v),kind=dp)
-!   write(*,*) "vtop is ", real(sum(vtop),kind=dp)
-!   write(*,*) "vbot is ", real(sum(vbot),kind=dp)
-!   write(*,*) "v2 is ", real(sum(v2),kind=dp)
-!   write(*,*) "rho1 is ", real(sum(rho(:,1)),kind=dp)
-!   write(*,*) "rho2 is ", real(sum(rho(:,2)),kind=dp)
-!   !
- 
-  DO na = 1, nat ! for each atom
-    collected_atom=0.d0
-    nt = ityp (na) ! get atom type
-    nwfc=sum(upf(nt)%oc(:))
-    ALLOCATE( wfcatomg(npwx, nwfc) )
-    CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
-    orbi = 0 
-    DO nb = 1, upf(nt)%nwfc ! for each orbital
-      if (upf(nt)%oc(nb) > 0.d0) then
-        l = upf(nt)%lchi(nb) ! get l 
-        DO m = 1, 2*l+1 ! mag num
 
-          ! add all orbitals 
-          ! each state weighted by orboc
-          orbi = orbi + 1 ! update orbital index
-          orboc = REAL( upf(nt)%oc(nb) ,KIND=DP) / REAL( 2*l+1 ,KIND=DP)
-          wfcatomr = 0.D0
-          wfcatomr(nl(igk(1:npw)))  = wfcatomg(1:npw,orbi)
-          IF(gamma_only) wfcatomr(nlm(igk(1:npw))) = CONJG( wfcatomg(1:npw,orbi) )
+  DO icon=1,nconstr_epcdft
+    DO na = 1, nat ! for each atom
+      nt = ityp (na) ! get atom type
+      nwfc=sum(upf(nt)%oc(:))
+      ALLOCATE( wfcatomg(npwx, nwfc) )
+      CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
+      orbi = 0 
+      DO nb = 1, upf(nt)%nwfc ! for each orbital
+      !
+        IF (upf(nt)%oc(nb) > 0.d0) THEN ! if occupied
+          !
+          l = upf(nt)%lchi(nb) ! get l 
+          !
+          DO m = 1, 2*l+1 ! mag num
+            !
+            ! add all orbitals, each state weighted by orboc
+            orbi = orbi + 1 ! update orbital index
+            !  
+            orboc = REAL( upf(nt)%oc(nb) ,KIND=DP) / REAL( 2*l+1 ,KIND=DP)
+            !
+            ! bring to real space
+            !
+            wfcatomr = 0.D0
+            wfcatomr(nl(igk(1:npw)))  = wfcatomg(1:npw,orbi)
+            IF(gamma_only) wfcatomr(nlm(igk(1:npw))) = CONJG( wfcatomg(1:npw,orbi) )
+            !
+            ! convert atomic(g) -> |atomic(r)|^2
+            !
+            CALL invfft ('Dense', wfcatomr(:), dfftp)
+            wfcatomr(:) = wfcatomr(:) * CONJG(wfcatomr(:))
+            !
+            ! add orbital density to total density of atom
+            !
+            total_atom_rho_r(:) = total_atom_rho_r(:) + orboc * wfcatomr(:)
+            !
+            ! if (na < 10) then
+            !   write(filename,"(A6,I1,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
+            ! else
+            !   write(filename,"(A6,I2,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
+            ! ENDIF
+            ! CALL write_cube_r ( 84332, filename,  REAL(wfcatomr,KIND=DP))
+            !
+          ENDDO ! m
+        ENDIF ! end if occupied
+      ENDDO ! nb 
+      SELECT CASE( epcdft_type(icon) )
+        CASE('charge')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - normfac*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - normfac*total_atom_rho_r( : ) 
+          ENDIF
+        CASE('spin')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - normfac*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + normfac*total_atom_rho_r( : ) 
+          ENDIF
+        CASE('delta_charge')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            !write(*,*) na, epcdft_locs(1,icon),epcdft_locs(2,icon)
+            vtop(:,1) = vtop(:,1) - normfac*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - normfac*total_atom_rho_r( : ) 
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            !write(*,*) na, epcdft_locs(3,icon),epcdft_locs(4,icon)
+            vtop(:,1) = vtop(:,1) + normfac*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + normfac*total_atom_rho_r( : ) 
+            !
+          ENDIF   
+        CASE('delta_spin')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - normfac*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + normfac*total_atom_rho_r( : ) 
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,1) = vtop(:,1) + normfac*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - normfac*total_atom_rho_r( : ) 
+            !
+          ENDIF
+      END SELECT
+    END DO !atom
 
-          ! convert atomic(g) -> |atomic(r)|^2
-          CALL invfft ('Dense', wfcatomr(:), dfftp)
-          wfcatomr(:) = wfcatomr(:) * CONJG(wfcatomr(:))
-          collected_atom(:)=collected_atom(:)+wfcatomr(:)
-        ENDDO ! m
+    vtop(:,1) = vtop(:,1) / vbot
+    vtop(:,2) = vtop(:,2) / vbot
+    DO ir = 1, n
+      if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
+        vtop(ir,1)=0.D0  
+        vtop(ir,2)=0.D0  
       ENDIF
-    ENDDO ! l 
-    collected_atom(:)=collected_atom(:)*normfac
+      if (vtop(ir,1) /= vtop(ir,1))  vtop(ir,1)=0.D0
+      if (vtop(ir,2) /= vtop(ir,2))  vtop(ir,2)=0.D0
+    ENDDO
+    v2(:)=v(:,1)*rho(:,1)+v(:,2)*rho(:,2)
 
-!     write(*,*) "Atom ",na," collected with value ",sum(real(collected_atom(:)))
-    DO ipol=1,3
-      ! reset everything
-      svtop=vtop
-      svbot=vbot
-
-      shifted_atom=0.d0
-      CALL one_atom_shifted_wfc (1, wfcatomg, na,nwfc,ipol,dx) 
+    DO na = 1, nat ! for each atom
+      total_atom_rho_r=0.d0
+      nt = ityp (na) ! get atom type
+      nwfc=sum(upf(nt)%oc(:))
+      ALLOCATE( wfcatomg(npwx, nwfc) )
+      CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
       orbi = 0 
       DO nb = 1, upf(nt)%nwfc ! for each orbital
         if (upf(nt)%oc(nb) > 0.d0) then
@@ -770,70 +649,104 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
             ! convert atomic(g) -> |atomic(r)|^2
             CALL invfft ('Dense', wfcatomr(:), dfftp)
             wfcatomr(:) = wfcatomr(:) * CONJG(wfcatomr(:))
-            shifted_atom(:)=shifted_atom(:)+wfcatomr(:)
+            total_atom_rho_r(:)=total_atom_rho_r(:)+wfcatomr(:)
           ENDDO ! m
         ENDIF
-      ENDDO ! l 
-      shifted_atom(:)=shifted_atom(:)*normfac
-      IF( na >= acceptor_start .and. na <= acceptor_end )THEN ! atom in acceptor
-        svtop(:) = svtop(:) -(shifted_atom(:)-collected_atom(:))
-      ELSE IF ( na >= donor_start .and. na <= donor_end )THEN ! atom in donor
-        svtop(:) = svtop(:) +(shifted_atom(:)-collected_atom(:))
-      ENDIF 
-      svbot(:) = svbot(:) + (shifted_atom(:)-collected_atom(:))
-      
-      ! Calculate change in integrand and add to forces
-      sv=svtop/svbot
-      DO ir = 1, n
-        if (ABS(REAL(svbot(ir))).lt.REAL(cutoff)) sv(ir)=0.D0  
-        if (sv(ir) /= sv(ir)) sv(ir)=0.D0
-      ENDDO
+      ENDDO ! nb
+      total_atom_rho_r(:)=total_atom_rho_r(:)*normfac
 
-      !write(*,*) "sv is ", dv*REAL(sum(sv))
-      !write(*,*) "v is ", dv*REAL(sum(v))
+      DO ipol=1,3
+        ! reset everything
+        svtop=vtop
+        svbot=vbot
 
-!       if (na < 10) then
-!         write(filename,"(A6,I1,A1,I1)") "v_disp_",na,"_",ipol
-!       else
-!         write(filename,"(A6,I2,A1,I1)") "v_disp_",na,"_",ipol
-!       ENDIF
-!       CALL write_cube_r ( 84332, filename,  REAL(sv,KIND=DP))
-!       !
+        shifted_atom=0.d0
+        CALL one_atom_shifted_wfc (1, wfcatomg, na,nwfc,ipol,dx) 
+        orbi = 0 
+        DO nb = 1, upf(nt)%nwfc ! for each orbital
+          if (upf(nt)%oc(nb) > 0.d0) then
+            l = upf(nt)%lchi(nb) ! get l 
+            DO m = 1, 2*l+1 ! mag num
 
-      if (nspin .eq. 2)  sv(:)=sv(:)*(rho(:,1)+rho(:,2))
-      if (nspin .eq. 1)  sv(:)=sv(:)*(rho(:,1))
+              ! add all orbitals 
+              ! each state weighted by orboc
+              orbi = orbi + 1 ! update orbital index
+              orboc = REAL( upf(nt)%oc(nb) ,KIND=DP) / REAL( 2*l+1 ,KIND=DP)
+              wfcatomr = 0.D0
+              wfcatomr(nl(igk(1:npw)))  = wfcatomg(1:npw,orbi)
+              IF(gamma_only) wfcatomr(nlm(igk(1:npw))) = CONJG( wfcatomg(1:npw,orbi) )
 
-      !write(*,*) "sv is ", dv*REAL(sum(sv))
-      !write(*,*) "rho is ", dv*sum(rho)
-      !write(*,*) "rho up is ", dv*sum(rho(:,1))
-      !if (nspin .eq. 2) write(*,*) "rho down is ", dv*sum(rho(:,2))
+              ! convert atomic(g) -> |atomic(r)|^2
+              CALL invfft ('Dense', wfcatomr(:), dfftp)
+              wfcatomr(:) = wfcatomr(:) * CONJG(wfcatomr(:))
+              shifted_atom(:)=shifted_atom(:)+wfcatomr(:)
+            ENDDO ! m
+          ENDIF
+        ENDDO ! l 
+        shifted_atom(:)=shifted_atom(:)*normfac
+        SELECT CASE( epcdft_type(icon) )
+        CASE('charge')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            svtop(:,1) = svtop(:,1) - (shifted_atom(:) - total_atom_rho_r(:))
+            svtop(:,2) = svtop(:,2) - (shifted_atom(:) - total_atom_rho_r(:))
+          ENDIF
+        CASE('spin')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            svtop(:,1) = svtop(:,1) - (shifted_atom(:) - total_atom_rho_r(:))
+            svtop(:,2) = svtop(:,2) + (shifted_atom(:) - total_atom_rho_r(:))
+          ENDIF
+        CASE('delta_charge')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            !write(*,*) na, epcdft_locs(1,icon),epcdft_locs(2,icon)
+            svtop(:,1) = svtop(:,1) - (shifted_atom(:) - total_atom_rho_r(:))
+            svtop(:,2) = svtop(:,2) - (shifted_atom(:) - total_atom_rho_r(:))
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            !write(*,*) na, epcdft_locs(3,icon),epcdft_locs(4,icon)
+            svtop(:,1) = svtop(:,1) + (shifted_atom(:) - total_atom_rho_r(:))
+            svtop(:,2) = svtop(:,2) + (shifted_atom(:) - total_atom_rho_r(:))
+            !
+          ENDIF   
+        CASE('delta_spin')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            svtop(:,1) = svtop(:,1) - (shifted_atom(:) - total_atom_rho_r(:))
+            svtop(:,2) = svtop(:,2) + (shifted_atom(:) - total_atom_rho_r(:))
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            svtop(:,1) = svtop(:,1) + (shifted_atom(:) - total_atom_rho_r(:))
+            svtop(:,2) = svtop(:,2) - (shifted_atom(:) - total_atom_rho_r(:))
+            !
+          ENDIF
+        END SELECT
+        svbot(:) = vbot(:) + (shifted_atom(:)-total_atom_rho_r(:))
+            
 
-      force_idir=-epcdft_amp*dv*(REAL(sum(sv) ,KIND=DP)-real(sum(v2) ,KIND=DP))/dx
-      !write(*,*) "amp,dv,rho,v,sv"
-      !write(*,*) epcdft_amp, dv, dv*sum(rho),dv*real(sum(v2(:))),dv*real(sum(sv))
-      CALL mp_sum(force_idir, intra_bgrp_comm )
-      force(ipol,na)=force_idir
-      !write(*,*) na," ",ipol," ",force_idir, " ",&
-      !    & dx, " ", epcdft_amp, " ", dv," ",real(sum(sv) ,KIND=DP)," ",real(sum(v2) ,KIND=DP)
+        sv(:,1) = svtop(:,1) / svbot
+        sv(:,2) = svtop(:,2) / svbot
+        DO ir = 1, n
+          if (ABS(REAL(svbot(ir))).lt.REAL(cutoff)) THEN
+            sv(ir,1)=0.D0  
+            sv(ir,2)=0.D0  
+          ENDIF
+          if (sv(ir,1) /= sv(ir,1))  sv(ir,1)=0.D0
+          if (sv(ir,2) /= sv(ir,2))  sv(ir,2)=0.D0
+        ENDDO
+        sv(:,1)=sv(:,1)*rho(:,1)+sv(:,2)*rho(:,2)
 
-    ENDDO ! ipol
-    DEALLOCATE( wfcatomg )
-  ENDDO ! atom
-  
-    
+        force_idir=-epcdft_guess(icon)*dv*(REAL(sum(sv(:,1)) ,KIND=DP)-real(sum(v2) ,KIND=DP))/dx
+        CALL mp_sum(force_idir, intra_bgrp_comm )
+        force(ipol,na)=force(ipol,na)+force_idir
+      ENDDO ! ipol
+      DEALLOCATE( wfcatomg )
+    ENDDO ! atom
+  ENDDO ! icon
 !     CALL write_cube_r ( 84332, "v_hirsh.cub",  REAL(v,KIND=DP))
 !     CALL write_cube_r ( 84332, "rhoup.cub",  REAL(rho(:,1),KIND=DP))
 !     CALL write_cube_r ( 84332, "rhodown.cub",  REAL(rho(:,2),KIND=DP))
-
-!   write(*,*) "v is ", dv*REAL(sum(v))
-!   write(*,*) "vtop is ", dv*REAL(sum(vtop))
-!   write(*,*) "vbot is ", dv*REAL(sum(vbot))
-!    write(*,*) "dv is ", dv
-!   write(*,*) "nelec is ", nelec
-
-!   write(*,*) "vmax is ",MAXVAL(REAL(sv))
-!   write(*,*) "vmin is ",MINVAL(REAL(sv))
-  
   DEALLOCATE( wfcatomr )
   !
   RETURN

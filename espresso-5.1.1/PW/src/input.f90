@@ -72,20 +72,7 @@ SUBROUTINE iosys()
                             eamp_     => eamp, &
                             forcefield
   !
-  USE epcdft,        ONLY : do_epcdft_       => do_epcdft,        &  
-                            donor_start_  => donor_start,   &
-                            donor_end_  => donor_end,   &
-                            acceptor_start_  => acceptor_start,   &
-                            acceptor_end_  => acceptor_end,   &
-                            hirshfeld_       => hirshfeld,        &
-                            conv_epcdft_       => conv_epcdft,    &
-                            epcdft_charge_=> epcdft_charge, &
-                            epcdft_delta_fld_=> epcdft_delta_fld, &
-                            epcdft_amp_      => epcdft_amp,       &
-                            epcdft_width_    => epcdft_width,     &
-                            epcdft_shift_    => epcdft_shift,     &
-                            epcdft_thr_      => epcdft_thr,       &
-                            epcdft_old_amp_  => epcdft_old_amp,   &
+  USE epcdft,        ONLY : do_epcdft_       => do_epcdft, &
                             epcdft_forces
   !
   USE io_files,      ONLY : input_drho, output_drho, &
@@ -219,7 +206,7 @@ SUBROUTINE iosys()
                                nberrycyc, lkpoint_dir, efield_cart, lecrpa,    &
                                vdw_table_name, memory, tqmmm, do_epcdft,       &
                                lcalc_z2, z2_m_threshold, z2_z_threshold,       &
-                               efield_phase, do_epcdft
+                               efield_phase
 
   !
   ! ... SYSTEM namelist
@@ -241,10 +228,6 @@ SUBROUTINE iosys()
                                exx_fraction, screening_parameter, ecutfock, &
                                gau_parameter,                               &
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
-                               epcdft_amp, epcdft_width, epcdft_shift,        &
-                               epcdft_thr, epcdft_old_amp, acceptor_start,    & 
-                               epcdft_charge,donor_start,donor_end,        &
-                               acceptor_end,                                  &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
                                starting_spin_angle, assume_isolated,spline_ps,&
@@ -254,8 +237,7 @@ SUBROUTINE iosys()
                                one_atom_occupations,                          &
                                esm_bc, esm_efield, esm_w, esm_nfit,           &
                                space_group, uniqueb, origin_choice,           &
-                               rhombohedral, hirshfeld, epcdft_delta_fld,     &
-                               conv_epcdft           
+                               rhombohedral
   !
   ! ... ELECTRONS namelist
   !
@@ -1114,19 +1096,6 @@ SUBROUTINE iosys()
   eopreg_  = eopreg
   eamp_    = eamp
   do_epcdft_       = do_epcdft        
-  donor_start_  = donor_start   
-  donor_end_    = donor_end
-  acceptor_start_  = acceptor_start   
-  acceptor_end_    = acceptor_end
-  hirshfeld_       = hirshfeld  
-  conv_epcdft_       = conv_epcdft  
-  epcdft_charge_= epcdft_charge 
-  epcdft_delta_fld_= epcdft_delta_fld 
-  epcdft_amp_      = epcdft_amp       
-  epcdft_width_    = epcdft_width
-  epcdft_shift_    = epcdft_shift     
-  epcdft_thr_      = epcdft_thr    
-  epcdft_old_amp_  = epcdft_old_amp       
   dfftp%nr1     = nr1
   dfftp%nr2     = nr2
   dfftp%nr3     = nr3

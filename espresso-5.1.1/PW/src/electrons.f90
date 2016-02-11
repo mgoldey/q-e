@@ -721,8 +721,7 @@ SUBROUTINE electrons_scf ( no_printout )
      !IF(conv_elec .and. do_epcdft) CALL epcdft_controller()
      IF(do_epcdft) CALL epcdft_controller()
 
-     IF(do_epcdft) etot=etot+epcdft_shift
-     !IF(conv_epcdft) write(*,*) "epcdft is converged with energy shift ", epcdft_shift
+     !IF(do_epcdft) etot=etot+epcdft_shift ! appears to now be taken into account
 
      !
      IF ( .NOT. no_printout ) CALL print_energies ( )
@@ -1044,9 +1043,9 @@ SUBROUTINE electrons_scf ( no_printout )
        USE extfield,      ONLY : eopreg
        USE epcdft,        ONLY : do_epcdft, epcdft_shift
        !
-       IF(do_epcdft .and. .not. conv_elec) &
-        WRITE( stdout, 9060 ) &
-        ( eband + deband ), ehart, ( etxc - etxcc ), ewld
+!        IF(do_epcdft .and. .not. conv_elec) &
+!         WRITE( stdout, 9060 ) &
+!         ( eband + deband ), ehart, ( etxc - etxcc ), ewld
        
        !
        IF ( ( conv_elec .OR. MOD( iter, iprint ) == 0 ) .AND. .NOT. lmd ) THEN
