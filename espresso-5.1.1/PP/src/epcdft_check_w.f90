@@ -14,7 +14,7 @@ SUBROUTINE epcdft_check_w
   USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx
-  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, w, smat, wamp1, wamp2
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, w, smat
   USE fft_base,             ONLY : dfftp
   USE mp,                   ONLY : mp_sum
   USE mp_images,            ONLY : intra_image_comm

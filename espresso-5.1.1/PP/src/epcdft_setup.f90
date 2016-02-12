@@ -110,13 +110,6 @@ SUBROUTINE epcdft_setup
   !
   ! setup weight function for system 2
   CALL add_epcdft_efield(w(:,2),.TRUE.)
-  !
-  ! get fld str
-  !
-  wamp2 = 1.D0
-  DO ik = 1, nconstr_epcdft
-    wamp2 = wamp2 * epcdft_guess(ik)
-  ENDDO
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841274, fil, w(:,2) )
   !
@@ -145,13 +138,6 @@ SUBROUTINE epcdft_setup
   !
   ! setup weight function for system 1
   CALL add_epcdft_efield(w(:,1),.TRUE.)
-  !
-  ! get fld str
-  !
-  wamp1 = 1.D0
-  DO ik = 1, nconstr_epcdft
-    wamp1 = wamp1 * epcdft_guess(ik)
-  ENDDO
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841275, fil, w(:,1) )
   !
