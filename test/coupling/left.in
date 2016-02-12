@@ -3,7 +3,6 @@
   prefix       = "left",
   outdir       = "./out",
   pseudo_dir   = "../pseudo",
-  do_epcdft    = .true.,
   verbosity = "high" 
   wf_collect = .true.
 /
