@@ -166,6 +166,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
     !
     nt = ityp (na) ! get atom type
     nwfc=sum(upf(nt)%oc(:))
+    total_atom_rho_r=0.D0
     !
     ALLOCATE( wfcatomg(npwx, nwfc) )
     wfcatomg = 0.D0
@@ -248,8 +249,8 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
         CASE('delta_spin')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
             !
-            vtop(:,1) = vtop(:,1) + epcdft_guess(icon)*total_atom_rho_r( : ) 
-            vtop(:,2) = vtop(:,2) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,1) = vtop(:,1) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + epcdft_guess(icon)*total_atom_rho_r( : ) 
           ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
             ! 
             vtop(:,1) = vtop(:,1) + epcdft_guess(icon)*total_atom_rho_r( : ) 
@@ -530,6 +531,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
   DO icon=1,nconstr_epcdft
     DO na = 1, nat ! for each atom
+      total_atom_rho_r=0.D0
       nt = ityp (na) ! get atom type
       nwfc=sum(upf(nt)%oc(:))
       ALLOCATE( wfcatomg(npwx, nwfc) )
@@ -577,53 +579,71 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
         CASE('charge')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
             !
-            vtop(:,1) = vtop(:,1) - normfac*total_atom_rho_r( : ) 
-            vtop(:,2) = vtop(:,2) - normfac*total_atom_rho_r( : ) 
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
           ENDIF
         CASE('spin')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
             !
-            vtop(:,1) = vtop(:,1) - normfac*total_atom_rho_r( : ) 
-            vtop(:,2) = vtop(:,2) + normfac*total_atom_rho_r( : ) 
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + total_atom_rho_r( : ) 
           ENDIF
         CASE('delta_charge')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
             !
-            !write(*,*) na, epcdft_locs(1,icon),epcdft_locs(2,icon)
-            vtop(:,1) = vtop(:,1) - normfac*total_atom_rho_r( : ) 
-            vtop(:,2) = vtop(:,2) - normfac*total_atom_rho_r( : ) 
+!             write(*,*) na, epcdft_locs(1,icon),epcdft_locs(2,icon)
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
           ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
             ! 
-            !write(*,*) na, epcdft_locs(3,icon),epcdft_locs(4,icon)
-            vtop(:,1) = vtop(:,1) + normfac*total_atom_rho_r( : ) 
-            vtop(:,2) = vtop(:,2) + normfac*total_atom_rho_r( : ) 
+!             write(*,*) na, epcdft_locs(3,icon),epcdft_locs(4,icon)
+            vtop(:,1) = vtop(:,1) + total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + total_atom_rho_r( : ) 
             !
           ENDIF   
         CASE('delta_spin')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
             !
-            vtop(:,1) = vtop(:,1) - normfac*total_atom_rho_r( : ) 
-            vtop(:,2) = vtop(:,2) + normfac*total_atom_rho_r( : ) 
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) + total_atom_rho_r( : ) 
           ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
             ! 
-            vtop(:,1) = vtop(:,1) + normfac*total_atom_rho_r( : ) 
-            vtop(:,2) = vtop(:,2) - normfac*total_atom_rho_r( : ) 
+            vtop(:,1) = vtop(:,1) + total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
             !
           ENDIF
       END SELECT
+      DEALLOCATE( wfcatomg )
     END DO !atom
 
-    vtop(:,1) = vtop(:,1) / vbot
-    vtop(:,2) = vtop(:,2) / vbot
+    vtop = normfac * vtop
+!     CALL write_cube_r ( 84332, "vtop.cub",  REAL(vtop(:,1),KIND=DP))
+!     CALL write_cube_r ( 84332, "vbot.cub",  REAL(vbot(:),KIND=DP))
+    
+
+    v(:,1) = vtop(:,1) / vbot
+    v(:,2) = vtop(:,2) / vbot
     DO ir = 1, n
       if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
-        vtop(ir,1)=0.D0  
-        vtop(ir,2)=0.D0  
+        v(ir,1)=0.D0  
+        v(ir,2)=0.D0  
       ENDIF
-      if (vtop(ir,1) /= vtop(ir,1))  vtop(ir,1)=0.D0
-      if (vtop(ir,2) /= vtop(ir,2))  vtop(ir,2)=0.D0
+      if (v(ir,1) /= v(ir,1))  v(ir,1)=0.D0
+      if (v(ir,2) /= v(ir,2))  v(ir,2)=0.D0
     ENDDO
     v2(:)=v(:,1)*rho(:,1)+v(:,2)*rho(:,2)
+
+!     write(*,*) "rhoup", real(sum(rho(:,1)))*dv
+!     write(*,*) "rhodown", real(sum(rho(:,2)))*dv
+!     write(*,*) "vup", real(sum(v(:,1)))*dv
+!     write(*,*) "vdown", real(sum(v(:,2)))*dv
+!     write(*,*) "v2", real(sum(v2(:)))*dv
+
+!     CALL write_cube_r ( 84332, "rhoup.cub",  REAL(rho(:,1),KIND=DP))
+!     CALL write_cube_r ( 84332, "rhodown.cub",  REAL(rho(:,2),KIND=DP))
+!     CALL write_cube_r ( 84332, "vup.cub",  REAL(v(:,1),KIND=DP))
+!     CALL write_cube_r ( 84332, "vdown.cub",  REAL(v(:,2),KIND=DP))
+
 
     DO na = 1, nat ! for each atom
       total_atom_rho_r=0.d0
@@ -654,6 +674,8 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
       ENDDO ! nb
       total_atom_rho_r(:)=total_atom_rho_r(:)*normfac
 
+!       write(*,*) "atom ", na, "dens ",real(sum(total_atom_rho_r))*dv
+
       DO ipol=1,3
         ! reset everything
         svtop=vtop
@@ -683,6 +705,8 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
           ENDIF
         ENDDO ! l 
         shifted_atom(:)=shifted_atom(:)*normfac
+!         write(*,*) " shifted atom ", na, "dens ",real(sum(total_atom_rho_r))*dv
+
         SELECT CASE( epcdft_type(icon) )
         CASE('charge')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
@@ -743,7 +767,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
       DEALLOCATE( wfcatomg )
     ENDDO ! atom
   ENDDO ! icon
-!     CALL write_cube_r ( 84332, "v_hirsh.cub",  REAL(v,KIND=DP))
+!       CALL write_cube_r ( 84332, "v_hirsh.cub",  REAL(v,KIND=DP))
 !     CALL write_cube_r ( 84332, "rhoup.cub",  REAL(rho(:,1),KIND=DP))
 !     CALL write_cube_r ( 84332, "rhodown.cub",  REAL(rho(:,2),KIND=DP))
   DEALLOCATE( wfcatomr )

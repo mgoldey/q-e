@@ -1,6 +1,6 @@
 &CONTROL
   calculation  = "scf",
-  prefix       = "open_singlet",
+  prefix       = "left",
   outdir       = "./out",
   pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,

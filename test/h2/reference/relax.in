@@ -1,6 +1,6 @@
 &CONTROL
-  calculation  = "scf",
-  prefix       = "open_singlet",
+  calculation  = "relax",
+  prefix       = "relax",
   outdir       = "./out",
   pseudo_dir   = "../pseudo",
   do_epcdft    = .true.,
@@ -12,34 +12,32 @@
   ibrav     = 1,
   a         = 12,
   nat       = 2,
-  ntyp      = 2,
+  ntyp      = 1,
   ecutwfc   = 60,
+  nbnd= 4,
   nspin   = 2,
-  nbnd=4,
   tot_charge = 0
   tot_magnetization = 0
-  starting_magnetization(1)=1
-  starting_magnetization(2)=-1
 
 /
 &ELECTRONS
- ! startingpot = 'file'
- ! startingwfc = 'file'
+!  startingpot = 'file'
+!  startingwfc = 'file'
 !  conv_thr    = 1.D-8,
-  diagonalization='cg'
   mixing_beta = 0.30,
+/
+&IONS
 /
 
 EPCDFT 
-1 1e-2 1e-2 
-delta_spin  1 1 2 2 2.0 0.2
+1 2e-2 1e-3
+delta_charge 1 1 2 2 2.0 1.136
 
 ATOMIC_SPECIES
-H1 0.0 H.pbe-mt_fhi.UPF
-H2 0.0 H.pbe-mt_fhi.UPF
+H 0.0 H.pbe-mt_fhi.UPF
 
 ATOMIC_POSITIONS (angstrom)
-H1 0 0 0
-H2 5 0 0
+H 0 0 0
+H 5 0 0
 
 K_POINTS {Gamma}

@@ -1,5 +1,5 @@
 &CONTROL
-  calculation  = "scf",
+  calculation  = "relax",
   prefix       = "left",
   outdir       = "./out",
   pseudo_dir   = "../pseudo",
@@ -21,14 +21,16 @@
 
 /
 &ELECTRONS
- ! startingpot = 'file'
- ! startingwfc = 'file'
-  conv_thr    = 1.D-8,
+!  startingpot = 'file'
+!  startingwfc = 'file'
+!  conv_thr    = 1.D-8,
   mixing_beta = 0.30,
+/
+&IONS
 /
 
 EPCDFT 
-1 1e-2 1e-3
+1 2e-2 1e-3
 delta_charge 1 1 2 2 2.0 1.136
 
 ATOMIC_SPECIES

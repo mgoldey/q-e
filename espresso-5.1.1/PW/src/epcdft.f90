@@ -235,7 +235,7 @@ SUBROUTINE epcdft_controller()
 !     if (elocflag ) &
 !       write(*,*) "Converged potential ",iconstraint," with strength  ", epcdft_guess(iconstraint)
 
-    IF(.NOT. elocflag) THEN
+    IF(.NOT. elocflag .or. .not. conv_elec) THEN
       conv_epcdft=.FALSE.
       !
       ! update applied field and restart scf
@@ -280,7 +280,7 @@ SUBROUTINE epcdft_controller()
     ENDIF !update lambda
 
     IF(ionode) THEN
-      if (.not. elocflag .and. .not. conv_elec) THEN
+      if (.not. elocflag .or. .not. conv_elec) THEN
         write(*,'(5x,a3,a6,a2,a6,a9,a9,a9,a9)') "I","D",'  ','A','Val','Target','Old','New'
         write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3,f9.3)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint), &
@@ -293,8 +293,8 @@ SUBROUTINE epcdft_controller()
     ENDIF
 
     ! NOTE THIS PRINTS EVEN IF conv_elec not true
-    if (elocflag ) &
-      write(*,*) "Converged constraint ",iconstraint," with lagrange multiplier  ", epcdft_guess(iconstraint)
+    !if (elocflag ) &
+    !  write(*,*) "Converged constraint ",iconstraint," with lagrange multiplier  ", epcdft_guess(iconstraint)
   
   END DO ! iconstraint
 
