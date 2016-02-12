@@ -22,12 +22,12 @@ This README would normally document whatever steps are necessary to get your app
 
 * Example CARD INPUT
 * &EPCDFT
-*   1 1e-4 1e-2
+*   ! Number of constraints, tolerance, delta_fld
+*   1 1e-4 1e-2 
+*   !
+*   ! type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
 *   delta_charge 13 13 1 12 1.0 0.21
 * /
-
-Number of constraints, tolerance, delta_fld
-type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
 
 ### PP Flags ###
 * Using plot_num = 12 will plot the weight times the lagrange multiplier (read from successful run)
