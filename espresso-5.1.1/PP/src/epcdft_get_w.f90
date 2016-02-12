@@ -5,7 +5,7 @@ SUBROUTINE epcdft_get_w
   !
   !  Compute W matrix
   !
-  !    <A|W|A> = <A|Wa|A>  (divide by the amplitude)
+  !    <A|W|A> = <A|Wa|A> 
   !    <A|W|B> = <A|Wb|B> = N \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
   !                                                                     ^-----cofactor----------^
   !
