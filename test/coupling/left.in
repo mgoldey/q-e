@@ -9,23 +9,15 @@
 /
 &SYSTEM
   nosym = .true.
-  ibrav     = 1,
-  a         = 14,
-  nat       = 2,
-  ntyp      = 1,
-  ecutwfc   = 80,
+  nbnd = 14
+  ibrav = 1,
+  a = 14,
+  nat = 2,
+  ntyp = 1,
+  ecutwfc = 80,
   tot_charge = +1
-  nspin   = 2,
+  nspin = 2,
   tot_magnetization = 1
-  hirshfeld = .TRUE.
-  donor_start = 1
-  donor_end   = 1
-  acceptor_start = 2
-  acceptor_end   = 2
-  epcdft_amp        = 3.30E-01,
-  epcdft_charge  = 1.,
-  epcdft_thr = 1.0E-02
-  epcdft_delta_fld = 0.02D0
 /
 &ELECTRONS
  ! startingpot = 'file'
@@ -33,6 +25,10 @@
   conv_thr    = 1.D-8,
   mixing_beta = 0.30,
 /
+EPCDFT
+1 1.D-6 1.D-2
+delta_charge 1 1 2 2 1.0 0.31387
+
 K_POINTS {Gamma}
 
 ATOMIC_SPECIES
