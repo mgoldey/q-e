@@ -12,7 +12,7 @@ This README would normally document whatever steps are necessary to get your app
 * Clone the repo
 * cd espresso-5.1.1
 * ./configure -enable-openmp=yes -enable-parallel=yes
-* make pw
+* make pw pp
 
 ### INPUT Flags ###
 * assume_isolated = 'mt' - for isolated systems
@@ -20,10 +20,11 @@ This README would normally document whatever steps are necessary to get your app
 * examples in test - run all using make
 * NEW EPCDFT CARD for multiple constraints (all hirshfield for now)
 
-Example CARD INPUT
-EPCDFT
-1 1e-4 1e-2
-delta_charge 13 13 1 12 1.0 0.21
+* Example CARD INPUT
+* &EPCDFT
+*   1 1e-4 1e-2
+*   delta_charge 13 13 1 12 1.0 0.21
+* /
 
 Number of constraints, tolerance, delta_fld
 type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
