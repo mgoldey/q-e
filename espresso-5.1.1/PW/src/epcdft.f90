@@ -141,7 +141,8 @@ SUBROUTINE epcdft_controller()
       IF (nspin.eq.1) THEN
         epcdft_shiftp = epcdft_shiftp + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv
       ELSE
-        epcdft_shiftp = epcdft_shiftp + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv + epcdft_amp * vpotenp(i,2) * rho%of_r(i,2) * dv
+        epcdft_shiftp = epcdft_shiftp + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv &
+                                      + epcdft_amp * vpotenp(i,2) * rho%of_r(i,2) * dv
       ENDIF
       !
       ! count number of electrons in well - this must depend on the well

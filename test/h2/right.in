@@ -1,0 +1,47 @@
+&CONTROL
+  calculation  = "scf",
+  prefix       = "right",
+  outdir       = "./out",
+  pseudo_dir   = "../pseudo",
+  do_epcdft    = .true.,
+  verbosity = "high" 
+  wf_collect = .true.
+/
+&SYSTEM
+  nosym = .true.
+  ibrav     = 1,
+  a         = 12,
+  nat       = 2,
+  ntyp      = 1,
+  ecutwfc   = 60,
+  nspin   = 2,
+! tot_charge = +1
+! tot_magnetization = 1
+  hirshfeld = .TRUE.
+/
+&EPCDFT 
+1 1e-4 1e-2 delta_charge 1 1 2 2 -1.0 -0.11
+! inputs in order on same line:
+! Number of constraints
+! tolerance
+! delta_fld type of constraint
+! acceptor start
+! acceptor end
+! donor start
+! donor end
+! number of electrons
+! initial lagrange multiplier guess
+/
+&ELECTRONS
+ ! startingpot = 'file'
+ ! startingwfc = 'file'
+  conv_thr    = 1.D-8,
+  mixing_beta = 0.30,
+/
+K_POINTS {Gamma}
+
+ATOMIC_SPECIES
+H 0.0 H.pbe-mt_fhi.UPF
+ATOMIC_POSITIONS (angstrom)
+H 0 0 0
+H 3 0 0
