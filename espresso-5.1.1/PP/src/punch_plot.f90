@@ -208,7 +208,17 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
      ENDIF
      CALL v_h (rho%of_g, ehart, charge, raux)
      IF (tefield.and.dipfield) CALL add_efield(raux,dummy,rho%of_r,.true.)
-     IF (do_epcdft) CALL add_epcdft_efield(raux,dummy,rho%of_r,.true.)
+     IF (do_epcdft) THEN
+      allocate (raux2(dfftp%nnr,nspin))
+      raux2 = 0.d0
+      CALL add_epcdft_efield(raux2,.true.)
+      if (spin_component .eq. 0) THEN
+        raux(:)=0.5*(raux2(:,1)+raux2(:,2))
+      ELSE
+        raux(:)=raux2(:,spin_component)
+      ENDIF
+      DEALLOCATE (raux2)
+     ENDIF
 
   ELSEIF (plot_num == 12) THEN
 
@@ -216,8 +226,17 @@ SUBROUTINE punch_plot (filplot, plot_num, sample_bias, z, dz, &
          CALL add_efield(raux,dummy,rho%of_r,.true.)
      ELSE IF (do_epcdft) THEN
          CALL init_at_1
-         CALL add_epcdft_efield(raux,dummy,rho%of_r,.true.)
-         !write(*,*) "vpoten is ",sum(raux)
+         IF (do_epcdft) THEN
+          allocate (raux2(dfftp%nnr,nspin))
+          raux2 = 0.d0
+          CALL add_epcdft_efield(raux2,.true.)
+          if (spin_component .eq. 0) THEN
+            raux(:)=0.5*(raux2(:,1)+raux2(:,2))
+          ELSE
+            raux(:)=raux2(:,spin_component)
+          ENDIF
+          DEALLOCATE (raux2)
+         ENDIF
      ELSE
          CALL infomsg ('punch_plot','e_field is not calculated')
      ENDIF
