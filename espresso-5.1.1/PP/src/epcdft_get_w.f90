@@ -5,8 +5,8 @@ SUBROUTINE epcdft_get_w
   !
   !  Compute W matrix
   !
-  !    <A|W|A> = <A|Wa/Wampa|A>  (divide by the amplitude)
-  !    <A|W|B> = <A|Wb/Wampb|B> = N \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
+  !    <A|W|A> = <A|Wa|A>  (divide by the amplitude)
+  !    <A|W|B> = <A|Wb|B> = N \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
   !                                                                     ^-----cofactor----------^
   !
   USE kinds,                ONLY : DP
@@ -14,7 +14,7 @@ SUBROUTINE epcdft_get_w
   USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx
-  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat, wamp1, wamp2
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
   USE fft_base,             ONLY : dfftp
   USE mp,                   ONLY : mp_sum
   USE mp_images,            ONLY : intra_image_comm
@@ -52,10 +52,10 @@ SUBROUTINE epcdft_get_w
     !
     ! wevc = w*evc
     !
-    wtot(:) = w(:,1)/wamp1
+    wtot(:) = w(:,1,ik)
     CALL w_psi(evc1(:,:,ik), wtot, wevc) 
     !
-    wtot(:) = w(:,2)/wamp2
+    wtot(:) = w(:,2,ik)
     CALL w_psi(evc2(:,:,ik), wtot, wevc2) 
     !
     DO i = 1, occ(ik)
