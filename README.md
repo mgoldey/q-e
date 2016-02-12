@@ -48,6 +48,8 @@ type of constraint, acceptor start, acceptor end, donor start, donor end, number
 
 
 ### What to do if it doesn't work? ###
+* add unoccupied states
+* check spin density difference  rho_up(r) - rho_down(r) using pp.x
 * try starting from a smaller cdft field
 * Try fewer electrons - compare with the N-1 electron system?
 * increase epcdft_thr
