@@ -12,7 +12,7 @@ This README would normally document whatever steps are necessary to get your app
 * Clone the repo
 * cd espresso-5.1.1
 * ./configure -enable-openmp=yes -enable-parallel=yes
-* make pw
+* make pw pp
 
 ### INPUT Flags ###
 * assume_isolated = 'mt' - for isolated systems
