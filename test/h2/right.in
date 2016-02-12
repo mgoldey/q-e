@@ -3,7 +3,6 @@
   prefix       = "right",
   outdir       = "./out",
   pseudo_dir   = "../pseudo",
-  do_epcdft    = .true.,
   verbosity = "high" 
   wf_collect = .true.
 /
@@ -14,34 +13,30 @@
   nat       = 2,
   ntyp      = 1,
   ecutwfc   = 60,
+  nbnd= 4,
   nspin   = 2,
-! tot_charge = +1
-! tot_magnetization = 1
-  hirshfeld = .TRUE.
-/
-&EPCDFT 
-1 1e-4 1e-2 delta_charge 1 1 2 2 -1.0 -0.11
-! inputs in order on same line:
-! Number of constraints
-! tolerance
-! delta_fld type of constraint
-! acceptor start
-! acceptor end
-! donor start
-! donor end
-! number of electrons
-! initial lagrange multiplier guess
+  tot_charge = 0
+  tot_magnetization = 0
+
 /
 &ELECTRONS
- ! startingpot = 'file'
- ! startingwfc = 'file'
-  conv_thr    = 1.D-8,
+!  startingpot = 'file'
+!  startingwfc = 'file'
+!  conv_thr    = 1.D-8,
   mixing_beta = 0.30,
 /
-K_POINTS {Gamma}
+&IONS
+/
+
+EPCDFT 
+1 2e-2 1e-3
+delta_charge 2 2 1 1 2.0 1.136
 
 ATOMIC_SPECIES
 H 0.0 H.pbe-mt_fhi.UPF
+
 ATOMIC_POSITIONS (angstrom)
 H 0 0 0
-H 3 0 0
+H 5 0 0
+
+K_POINTS {Gamma}
