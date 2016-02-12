@@ -110,7 +110,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   IMPLICIT NONE
   !
   REAL(DP), INTENT(INOUT) :: v(dfftp%nnr,nspin) ! the hirshfeld potential
-  INTEGER, INTENT(INOUT) :: iconstraint
+  INTEGER, INTENT(IN) :: iconstraint
   ! 
   INTEGER :: na, nt, nb, l, m,n,ir, nwfcm ,nwfc,icon
   COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g

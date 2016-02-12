@@ -37,7 +37,7 @@ SUBROUTINE epcdft_setup
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
                        debug,  s_spin, free1, free2,&
-                       hirshfeld, cor1, cor2, eig_of_w
+                       cor1, cor2, eig_of_w
   !
   ! setup vars and consistency checks
   !
@@ -78,7 +78,6 @@ SUBROUTINE epcdft_setup
   CALL mp_bcast( s_spin, ionode_id, world_comm )
   CALL mp_bcast( free1, ionode_id, world_comm )
   CALL mp_bcast( free2, ionode_id, world_comm )
-  CALL mp_bcast( hirshfeLd, ionode_id, world_comm )
   CALL mp_bcast( cor1, ionode_id, world_comm )
   CALL mp_bcast( cor2, ionode_id, world_comm )
   !
@@ -110,8 +109,14 @@ SUBROUTINE epcdft_setup
   w = 0.D0
   !
   ! setup weight function for system 2
-  CALL add_epcdft_efield(w(:,2),dtmp,rho%of_r,.TRUE.)
-  wamp2 = epcdft_amp
+  CALL add_epcdft_efield(w(:,2),.TRUE.)
+  !
+  ! get fld str
+  !
+  wamp2 = 1.D0
+  DO ik = 1, nconstr_epcdft
+    wamp2 = wamp2 * epcdft_guess(ik)
+  ENDDO
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841274, fil, w(:,2) )
   !
@@ -139,8 +144,14 @@ SUBROUTINE epcdft_setup
   DEALLOCATE( evc )
   !
   ! setup weight function for system 1
-  CALL add_epcdft_efield(w(:,1),dtmp,rho%of_r,.TRUE.)
-  wamp1 = epcdft_amp
+  CALL add_epcdft_efield(w(:,1),.TRUE.)
+  !
+  ! get fld str
+  !
+  wamp1 = 1.D0
+  DO ik = 1, nconstr_epcdft
+    wamp1 = wamp1 * epcdft_guess(ik)
+  ENDDO
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841275, fil, w(:,1) )
   !
