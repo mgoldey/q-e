@@ -1,5 +1,5 @@
 include ../Makefile.inc
-all: left.out right.out coupling.in coupling.out
+all: left.out right.out coupling.in coupling.out left_pp.out right_pp.out
 clean: 
 	rm -rf *.out out 
 
@@ -14,3 +14,9 @@ coupling.in: left.out right.out
 
 coupling.out: coupling.in
 	$(CUP_CMD) < $^ > $@
+
+left_pp.out: left_pp.in
+	$(PP_CMD)  < $^ > $@
+
+right_pp.out: right_pp.in
+	$(PP_CMD)  < $^ > $@
