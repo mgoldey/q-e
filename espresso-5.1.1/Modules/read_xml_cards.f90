@@ -146,6 +146,7 @@ CONTAINS
     !
     USE mp,        ONLY : mp_bcast
     USE mp_images, ONLY : intra_image_comm
+    USE epcdft
     !
     IMPLICIT NONE
     !

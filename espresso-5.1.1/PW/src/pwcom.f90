@@ -335,29 +335,6 @@ END MODULE extfield
 !
 !
 !
-MODULE epcdft
-!
-! ... The quantities needed in calculations with epcdft
-!
-USE kinds, ONLY : DP
-!
-SAVE
-!
-
-LOGICAL :: &
-     do_epcdft,       &! if .TRUE. a finite electric field is added to the
-                       ! local potential
-     conv_epcdft       ! localization condition flag
-
-REAL(DP) :: epcdft_shift ! energy shift from all fields
-
-REAL(DP), ALLOCATABLE :: &
-     epcdft_forces(:,:)
-!
-END MODULE epcdft
-!
-!
-!
 MODULE fixed_occ
   !
   ! ... The quantities needed in calculations with fixed occupations

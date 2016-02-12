@@ -105,7 +105,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   USE cell_base,     ONLY : omega
 
   ! most important control variables are not in epcdft_mod
-  USE input_parameters, ONLY : epcdft_locs,epcdft_guess,nconstr_epcdft,epcdft_type
+  USE epcdft
   !
   IMPLICIT NONE
   !
@@ -248,8 +248,8 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
         CASE('delta_spin')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
             !
-            vtop(:,1) = vtop(:,1) - epcdft_guess(icon)*total_atom_rho_r( : ) 
-            vtop(:,2) = vtop(:,2) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,1) = vtop(:,1) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+            vtop(:,2) = vtop(:,2) - epcdft_guess(icon)*total_atom_rho_r( : ) 
           ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
             ! 
             vtop(:,1) = vtop(:,1) + epcdft_guess(icon)*total_atom_rho_r( : ) 
@@ -363,7 +363,6 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   USE constants,     ONLY : fpi, eps8, e2, au_debye
   USE ions_base,     ONLY : nat, ntyp => nsp, ityp, tau, zv
   USE cell_base,     ONLY : alat, at, omega, bg, saw, tpiba2
-  USE epcdft,        ONLY : do_epcdft
   USE force_mod,     ONLY : lforce
   USE control_flags, ONLY : mixing_beta
   USE lsda_mod,      ONLY : nspin
@@ -390,7 +389,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   USE cell_base,     ONLY : omega
 
   ! most important control variables are not in epcdft_mod
-  USE input_parameters, ONLY : epcdft_locs,epcdft_guess,nconstr_epcdft,epcdft_type
+  USE epcdft, ONLY : do_epcdft,epcdft_locs,epcdft_guess,nconstr_epcdft,epcdft_type
   !
   IMPLICIT NONE
   !

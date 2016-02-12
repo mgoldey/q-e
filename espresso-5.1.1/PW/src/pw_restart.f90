@@ -21,7 +21,7 @@ MODULE pw_restart
                           qexml_write_header, qexml_write_control ,   &
                           qexml_write_cell, qexml_write_moving_cell,  &
                           qexml_write_ions, qexml_write_symmetry,     &
-                          qexml_write_efield, &
+                          qexml_write_efield, qexml_write_epcdft, &
                           qexml_write_planewaves, &
                           qexml_write_spin, qexml_write_magnetization, &
                           qexml_write_xc, qexml_write_exx, qexml_write_occ, &
@@ -33,7 +33,7 @@ MODULE pw_restart
                           qexml_read_planewaves, qexml_read_ions, qexml_read_spin, &
                           qexml_read_magnetization, qexml_read_xc, qexml_read_occ, qexml_read_bz, &
                           qexml_read_bands_info, qexml_read_bands_pw, qexml_read_symmetry, &
-                          qexml_read_efield, qexml_read_para, qexml_read_exx
+                          qexml_read_efield, qexml_read_para, qexml_read_exx, qexml_read_epcdft
   !
   USE xml_io_base, ONLY :  rho_binary,read_wfc, write_wfc, create_directory
   !
@@ -72,6 +72,7 @@ MODULE pw_restart
              lbz_read     = .FALSE., &
              lbs_read     = .FALSE., &
              lefield_read = .FALSE., &
+             lepcdft_read = .FALSE., &
              lwfc_read    = .FALSE., &
              lsymm_read   = .FALSE.
   !
@@ -401,6 +402,12 @@ MODULE pw_restart
          !
          CALL qexml_write_efield( tefield, dipfield, edir, emaxpos, eopreg, eamp) 
          !
+!-------------------------------------------------------------------------------
+! ... EPCDFT
+!-------------------------------------------------------------------------------
+         !
+         CALL qexml_write_epcdft()
+         !         
 !
 !-------------------------------------------------------------------------------
 ! ... PLANE_WAVES
@@ -822,7 +829,7 @@ MODULE pw_restart
       LOGICAL            :: lcell, lpw, lions, lspin, linit_mag, &
                             lxc, locc, lbz, lbs, lwfc, lheader,          &
                             lsymm, lrho, lefield, ldim, &
-                            lef, lexx
+                            lef, lexx, lepcdft
       !
       LOGICAL            :: need_qexml
       INTEGER            :: tmp
@@ -857,6 +864,7 @@ MODULE pw_restart
       lsymm   = .FALSE.
       lrho    = .FALSE.
       lefield = .FALSE.
+      lepcdft = .FALSE.
       lef     = .FALSE.
       lexx    = .FALSE.
       !
@@ -906,6 +914,7 @@ MODULE pw_restart
          lbs     = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
+         lepcdft = .TRUE.
          need_qexml = .TRUE.
          !
       CASE( 'all' )
@@ -921,6 +930,7 @@ MODULE pw_restart
          lbs     = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
+         lepcdft = .TRUE.
          lwfc    = .TRUE.
          lrho    = .TRUE.
          need_qexml = .TRUE.
@@ -939,6 +949,7 @@ MODULE pw_restart
          lwfc_read    = .FALSE.
          lsymm_read   = .FALSE.
          lefield_read = .FALSE.
+         lepcdft_read = .FALSE.
          !
       CASE( 'ef' )
          !
@@ -1097,6 +1108,16 @@ MODULE pw_restart
          END IF
          !
       END IF
+      IF ( lepcdft ) THEN
+         !
+         CALL read_epcdft( ierr )
+         IF ( ierr > 0 ) THEN
+            errmsg='error reading epcdft in xml data file'
+            GOTO 100
+         END IF
+         !
+      END IF
+      
       IF ( lrho ) THEN
          !
          ! ... to read the charge-density we use the routine from io_rho_xml 
@@ -1670,6 +1691,39 @@ MODULE pw_restart
       !
     END SUBROUTINE read_efield
     !
+    !
+
+    SUBROUTINE read_epcdft( ierr )
+      !----------------------------------------------------------------------
+      !
+      USE epcdft
+      !
+      IMPLICIT NONE
+      !
+      INTEGER,          INTENT(OUT) :: ierr
+      LOGICAL                       :: found
+      !
+      ierr = 0
+      !
+      IF ( lepcdft_read ) RETURN
+      !
+      CALL qexml_read_epcdft(FOUND=found, IERR=ierr)
+      !
+      CALL mp_bcast( ierr, ionode_id, intra_image_comm )
+      !
+      IF ( ierr > 0 ) RETURN
+      !
+      IF ( (ionode).AND.(.NOT.found) ) THEN
+         !
+         do_epcdft  = .FALSE.
+         !
+      END IF
+      !
+      lepcdft_read = .TRUE.
+      !
+      RETURN
+      !
+    END SUBROUTINE read_epcdft
     !------------------------------------------------------------------------
     SUBROUTINE read_planewaves( ierr )
       !------------------------------------------------------------------------

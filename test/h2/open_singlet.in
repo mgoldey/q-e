@@ -12,12 +12,13 @@
   ibrav     = 1,
   a         = 12,
   nat       = 2,
-  ntyp      = 1,
+  ntyp      = 2,
   ecutwfc   = 60,
-  nbnd= 4,
   nspin   = 2,
   tot_charge = 0
   tot_magnetization = 0
+  starting_magnetization(1)=1
+  starting_magnetization(2)=-1
 
 /
 &ELECTRONS
@@ -28,14 +29,16 @@
 /
 
 EPCDFT 
-1 1e-2 1e-3
-delta_charge 1 1 2 2 2.0 1.136
+1 1e-2 1e-2 
+delta_spin  1 1 2 2 2.0 0.2
+!delta_charge 1 1 2 2 2.0 0.9
 
 ATOMIC_SPECIES
-H 0.0 H.pbe-mt_fhi.UPF
+H1 0.0 H.pbe-mt_fhi.UPF
+H2 0.0 H.pbe-mt_fhi.UPF
 
 ATOMIC_POSITIONS (angstrom)
-H 0 0 0
-H 5 0 0
+H1 0 0 0
+H2 5 0 0
 
 K_POINTS {Gamma}

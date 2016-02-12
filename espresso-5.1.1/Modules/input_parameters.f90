@@ -1395,21 +1395,6 @@ MODULE input_parameters
       REAL(DP),          ALLOCATABLE :: constr_target_inp(:)
       LOGICAL,           ALLOCATABLE :: constr_target_set(:)
 
-!
-!    EPCDFT
-!
-      INTEGER :: epcdft_fields = 4   ! max number of fields that is allowed to
-                                     ! define a constraint
-
-      INTEGER  :: nconstr_epcdft    = 0
-      REAL(DP) :: epcdft_delta_fld =1.E-1_DP
-      REAL(DP) :: epcdft_tol = 1.E-4_DP
-      !
-      CHARACTER(len=20), ALLOCATABLE :: epcdft_type(:)   ! type
-      INTEGER,           ALLOCATABLE :: epcdft_locs(:,:) ! atoms start end (start end) ()-if delta
-      REAL(DP),          ALLOCATABLE :: epcdft_guess(:)  !  guess values of constraints
-      REAL(DP),          ALLOCATABLE :: epcdft_target(:) ! target values of constraints
-
 
 !
 !    KOHN_SHAM
@@ -1524,29 +1509,7 @@ SUBROUTINE reset_input_checks()
   END SUBROUTINE allocate_input_constr
 
 
-  !-----------------------------------------------------------------------------
-  SUBROUTINE allocate_input_epcdft()
-  !-----------------------------------------------------------------------------
-  !
-  IF ( allocated( epcdft_type ) )   DEALLOCATE( epcdft_type )
-  IF ( allocated( epcdft_locs ) )   DEALLOCATE( epcdft_locs )
-  IF ( allocated( epcdft_guess ) )  DEALLOCATE( epcdft_guess )
-  IF ( allocated( epcdft_target ) ) DEALLOCATE( epcdft_target )
-  !
-  ALLOCATE( epcdft_type(   nconstr_epcdft ) )
-  ALLOCATE( epcdft_guess(  nconstr_epcdft ) )
-  ALLOCATE( epcdft_target( nconstr_epcdft ) )
-  !
-  ALLOCATE( epcdft_locs( epcdft_fields, nconstr_epcdft ) )
-  !
-  epcdft_type   = ' '
-  epcdft_locs   = 0
-  epcdft_target = 0.0_DP
-  epcdft_guess  = 0.0_DP
-  !
-  RETURN
-  !
-  END SUBROUTINE allocate_input_epcdft
+
 
 
 

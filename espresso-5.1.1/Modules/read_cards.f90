@@ -69,12 +69,6 @@ CONTAINS
       nconstr_inp    = 0
       constr_tol_inp = 1.E-6_DP
       !
-      ! ... EPCDFT
-      !
-      nconstr_epcdft    = 0
-      epcdft_tol = 1.E-4_DP
-      epcdft_delta_fld = 1.E-1_DP
-      !
       ! ... ionic mass initialization
       !
       atom_mass = 0.0_DP
@@ -1514,6 +1508,8 @@ CONTAINS
    !------------------------------------------------------------------------
    !
    SUBROUTINE card_epcdft( input_line )
+      !
+      USE epcdft
       !
       IMPLICIT NONE
       !

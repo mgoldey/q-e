@@ -30,7 +30,6 @@ SUBROUTINE epcdft_controller()
   USE cell_base,     ONLY : alat, at, omega, bg, saw
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
                             eopreg, forcefield, etotefield
-  USE epcdft,        ONLY : do_epcdft, conv_epcdft,epcdft_shift
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -47,8 +46,9 @@ SUBROUTINE epcdft_controller()
   USE io_files,  ONLY : tmp_dir, prefix
 
   ! here's the meat
-  USE input_parameters, ONLY : epcdft_locs,epcdft_guess,nconstr_epcdft, &
-                    & epcdft_tol, epcdft_type,epcdft_target, epcdft_delta_fld
+  USE epcdft, ONLY : do_epcdft, conv_epcdft,epcdft_shift, &
+                     epcdft_locs,epcdft_guess,nconstr_epcdft, &
+                     epcdft_tol, epcdft_type,epcdft_target, epcdft_delta_fld
 
   !
   IMPLICIT NONE
@@ -65,9 +65,8 @@ SUBROUTINE epcdft_controller()
   REAL(DP) :: einwellp                             ! number of electrons in well
   REAL(DP) :: epcdft_shiftp                        ! size of shift
   REAL(DP) :: enumerr                              ! epcdft_charge - einwell  (e number error)
-  LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
+  LOGICAL  :: elocflag  ! true if charge localization condition is satisfied
   LOGICAL  :: zero                                 ! used to run cdft with zero constraining potential
-  REAL(DP) :: safe_epcdft_amp                      ! used for zero constraining potential run 
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp ! ef is added to this potential
   REAL(DP) :: next_epcdft_amp,epcdft_amp           ! guess of amp for next iteration
   CHARACTER(LEN=256) :: filename                   ! cube file for final cdft potential
@@ -76,9 +75,7 @@ SUBROUTINE epcdft_controller()
   !
   REAL(DP), DIMENSION(:), allocatable,save :: last_epcdft_amp(:) ! used to determine next guess for potential
   REAL(DP), DIMENSION(:), allocatable,save :: last_einwell(:) ! used to determine next guess for potential
-  LOGICAL :: first = .TRUE.          ! used to determine next guess for potential
   SAVE ictr
-  SAVE first
   if (ictr.eq.0) THEN
     allocate(last_epcdft_amp(nconstr_epcdft))
     allocate(last_einwell(nconstr_epcdft))
@@ -98,30 +95,32 @@ SUBROUTINE epcdft_controller()
 
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   tmp      = 0.D0
-  elocflag = .TRUE.
   etotefield = 0.D0
   epcdft_shift = 0.D0
   epcdft_shiftp = 0.D0
-  zero =.false.
-  next_epcdft_amp = 0.D0
-  acharge = 0.D0
-  dcharge = 0.D0
-  achargep = 0.D0
-  dchargep = 0.D0
-  !
-  ! gather the grids for serial calculation
-  !
+
+  conv_epcdft=.true. ! set to false whenever anything is not satisfied
+
   DO iconstraint=1,nconstr_epcdft
+    acharge = 0.D0
+    dcharge = 0.D0
+    achargep = 0.D0
+    dchargep = 0.D0
+    elocflag=.true.
     zero=.false.
     einwell  = 0.D0
     einwellp  = 0.D0
     epcdft_shiftp=0.D0
+    next_epcdft_amp = 0.D0
+
     epcdft_amp=epcdft_guess(iconstraint)
+    
+
     IF (epcdft_amp .eq. 0.D0) THEN
       zero=.true.
       epcdft_amp=1.D0 
     ENDIF
-    safe_epcdft_amp = epcdft_amp
+    !write(*,*) "icon, amp", iconstraint,epcdft_amp
     !
     ! this call only calulates vpoten - hardcoded to hirshfeld right now
     !
@@ -157,31 +156,32 @@ SUBROUTINE epcdft_controller()
           dchargep = dchargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) +vpotenp(i,2) * rho%of_r(i,2)) * dv
         ENDIF
       CASE('spin','delta_spin')
-        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
+        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv - vpotenp(i,2) * rho%of_r(i,2) * dv
         !
         IF(vpotenp(i,1)<0.D0) THEN
-          achargep = achargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
+          achargep = achargep + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
         ELSE IF(vpotenp(i,1)>0.D0) THEN
-          dchargep = dchargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
+          dchargep = dchargep + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
         ENDIF
       END SELECT
-    END DO
+    END DO ! i over nnr
+
 #ifdef __MPI
-  CALL MP_SUM(epcdft_shiftp,intra_image_comm) 
-  CALL MP_SUM(einwellp,intra_image_comm) 
-  epcdft_shift=epcdft_shiftp
-  einwell=einwellp
-!
-  CALL MP_SUM(achargep,intra_image_comm) 
-  acharge=achargep
-  CALL MP_SUM(dchargep,intra_image_comm)
-  dcharge=dchargep
-#else
-  epcdft_shift=epcdft_shiftp
-  einwell=einwellp
+    CALL MP_SUM(epcdft_shiftp,intra_image_comm) 
+    CALL MP_SUM(einwellp,intra_image_comm) 
+    epcdft_shift=epcdft_shiftp
+    einwell=einwellp
   !
-  acharge=achargep
-  dcharge=dchargep
+    CALL MP_SUM(achargep,intra_image_comm) 
+    acharge=achargep
+    CALL MP_SUM(dchargep,intra_image_comm)
+    dcharge=dchargep
+#else
+    epcdft_shift=epcdft_shiftp
+    einwell=einwellp
+    !
+    acharge=achargep
+    dcharge=dchargep
 #endif
     !
     ! count nuc charge
@@ -201,61 +201,42 @@ SUBROUTINE epcdft_controller()
           ENDIF
           !
         ENDDO ! atoms
-      END SELECT
+    END SELECT
     !
+    ! is the localization condition satisfied?
     !
-    ! the correction is - of the energy
-    epcdft_shift = -1.D0 * epcdft_shift
-    !   
-
-
+    enumerr = epcdft_target(iconstraint) - einwell 
     !
-    ! is there a localization condition?
+    !write(*,*) "icon, amp", iconstraint,epcdft_amp,enumerr,einwell,epcdft_target(iconstraint)
+    !write(*,*) conv_epcdft, abs(enumerr),epcdfT_tol,elocflag
     !
-    IF(epcdft_amp .ne. 0.D0) THEN
-      !
-      ! is the localization condition satisfied?
-      !
-      enumerr = epcdft_target(iconstraint) - einwell 
-      !
-      ! conv_epcdft = false will restart scf
-      !
-      IF( ABS(enumerr) .GE. epcdft_tol .and. .not. zero .and. ionode) THEN
-        !
-        conv_epcdft = .FALSE.
-        !
-!         WRITE(*,*)""
-!         CALL pprint("epcdft_tol",epcdft_tol,'e','e')
-!         CALL pprint("Surplus(+)/deficit(-) charge",-enumerr,'e','e')
-        !
-      ELSE
-        conv_epcdft =.true.
-      ENDIF
-      !
-    ENDIF ! localization condition
-    !
-    IF (zero) THEN
-      conv_epcdft =.true.
+    IF(ABS(enumerr) .GE. epcdft_tol) THEN
+      elocflag=.false.
+    ELSE 
+      elocflag=.true.
     ENDIF
+
     !
-    CALL mp_bcast( conv_epcdft, ionode_id, intra_image_comm )
-    !
-    IF(conv_epcdft .and. conv_elec )THEN  ! cdft done write external pot to cube
-      !
-      filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'rho_up'
-      CALL write_cube_r ( 9519395, filename, rho%of_r(:,1) )
-      filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'rho_down'
-      CALL write_cube_r ( 9519395, filename, rho%of_r(:,2) )
-      filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft_up'
-      CALL write_cube_r ( 9519395, filename, vpotenp(:,1) )
-      filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft_down'
-      CALL write_cube_r ( 9519395, filename, vpotenp(:,2) )
-      !
-    ENDIF
+!     IF(conv_epcdft .and. conv_elec )THEN  ! cdft done write external pot to cube
+!       !
+!       filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'rho_up'
+!       CALL write_cube_r ( 9519395, filename, rho%of_r(:,1) )
+!       filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'rho_down'
+!       CALL write_cube_r ( 9519395, filename, rho%of_r(:,2) )
+!       filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft_up'
+!       CALL write_cube_r ( 9519395, filename, vpotenp(:,1) )
+!       filename =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft_down'
+!       CALL write_cube_r ( 9519395, filename, vpotenp(:,2) )
+!       !
+!     ENDIF
     !
     ! if the charge is not localized
     !
-    IF(.NOT.conv_epcdft .AND. epcdft_amp .NE. 0)THEN
+!     if (elocflag ) &
+!       write(*,*) "Converged potential ",iconstraint," with strength  ", epcdft_guess(iconstraint)
+
+    IF(.NOT. elocflag) THEN
+      conv_epcdft=.FALSE.
       !
       ! update applied field and restart scf
       !
@@ -263,9 +244,8 @@ SUBROUTINE epcdft_controller()
         !
         ! find next guess for epcdft_amp
         !
-        IF(first) THEN
+        IF(ictr.eq.1) THEN
            !
-           first = .FALSE.
            !
            next_epcdft_amp = epcdft_amp + SIGN(0.001D0, enumerr) 
            !
@@ -293,21 +273,32 @@ SUBROUTINE epcdft_controller()
         ! behold, the new iteration has come 
         epcdft_guess(iconstraint) = next_epcdft_amp
         !
-      ENDIF
+      ENDIF !ionode
       !
       CALL mp_bcast( epcdft_guess(iconstraint), ionode_id, intra_image_comm ) ! what is best bcast this or enumerr?
-      !
-    ENDIF
-    IF(ionode) THEN
-      write(*,'(5x,a6,a2,a6,a9,a9,a9)') "D",'  ','A','Diff','Old','New'
-      write(*,'(5x,f6.3,a2,f6.3,f9.3,f9.3,f9.3)') dcharge,'  ',acharge,einwell,last_epcdft_amp,next_epcdft_amp
-    ENDIF
-    if (conv_epcdft .and. conv_elec) &
-      write(*,*) "Converged potential ",iconstraint," with strength  ", epcdft_guess(iconstraint)
-  END DO
-  DEALLOCATE(vpotenp)
 
+    ENDIF !update lambda
+
+    IF(ionode) THEN
+      if (.not. elocflag .and. .not. conv_elec) THEN
+        write(*,'(5x,a3,a6,a2,a6,a9,a9,a9,a9)') "I","D",'  ','A','Val','Target','Old','New'
+        write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3,f9.3)') iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),last_epcdft_amp(iconstraint),epcdft_guess(iconstraint)
+      ELSE
+        write(*,'(5x,a3,a6,a2,a6,a9,a9,a9)') "I","D",'  ','A','Val','Target','Str'
+        write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3)') iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),epcdft_guess(iconstraint)
+      ENDIF
+    ENDIF
+
+    ! NOTE THIS PRINTS EVEN IF conv_elec not true
+    if (elocflag ) &
+      write(*,*) "Converged constraint ",iconstraint," with lagrange multiplier  ", epcdft_guess(iconstraint)
+  
+  END DO ! iconstraint
+
+  DEALLOCATE(vpotenp)
   !
+  ! the correction is - of the energy
+  epcdft_shift = -1.D0 * epcdft_shift
   !
 END SUBROUTINE epcdft_controller
 !----------------------------------------------------------------------------
