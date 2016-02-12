@@ -282,10 +282,13 @@ SUBROUTINE epcdft_controller()
     IF(ionode) THEN
       if (.not. elocflag .and. .not. conv_elec) THEN
         write(*,'(5x,a3,a6,a2,a6,a9,a9,a9,a9)') "I","D",'  ','A','Val','Target','Old','New'
-        write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3,f9.3)') iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),last_epcdft_amp(iconstraint),epcdft_guess(iconstraint)
+        write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3,f9.3)') &
+        iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint), &
+        last_epcdft_amp(iconstraint),epcdft_guess(iconstraint)
       ELSE
         write(*,'(5x,a3,a6,a2,a6,a9,a9,a9)') "I","D",'  ','A','Val','Target','Str'
-        write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3)') iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),epcdft_guess(iconstraint)
+        write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3)') &
+        iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),epcdft_guess(iconstraint)
       ENDIF
     ENDIF
 
