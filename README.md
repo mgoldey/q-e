@@ -21,9 +21,10 @@ This README would normally document whatever steps are necessary to get your app
 * NEW EPCDFT CARD for multiple constraints (all hirshfield for now)
 
 Example CARD INPUT
-EPCDFT
-1 1e-4 1e-2
-delta_charge 13 13 1 12 1.0 0.21
+* &EPCDFT
+*   1 1e-4 1e-2
+*   delta_charge 13 13 1 12 1.0 0.21
+* /
 
 Number of constraints, tolerance, delta_fld
 type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
