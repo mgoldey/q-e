@@ -33,6 +33,7 @@ SUBROUTINE epcdft_check_w
   occ(1) = occup1
   occ(2) = occdown1
   wmat = ( 0.D0, 0.D0 )
+  wmat2 = ( 0.D0, 0.D0 )
   !
   ! create S matrix
   !
