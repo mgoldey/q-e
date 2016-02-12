@@ -20,6 +20,7 @@ SUBROUTINE epcdft_setup
   USE wavefunctions_module, ONLY : evc
   USE cell_base,            ONLY : tpiba2
   USE scf,                  ONLY : rho
+  USE lsda_mod,             ONLY : nspin
   USE epcdft_mod  
   USE epcdft
   !
@@ -105,11 +106,11 @@ SUBROUTINE epcdft_setup
     CALL davcio( evc2(:,:,ik), 2*nwordwfc, iunwfc, ik, -1 )
   ENDDO
   !
-  ALLOCATE( w ( dfftp%nnr , 2 ) )
+  ALLOCATE( w ( dfftp%nnr , 2, nspin ) )
   w = 0.D0
   !
   ! setup weight function for system 2
-  CALL add_epcdft_efield(w(:,2),.TRUE.)
+  CALL add_epcdft_efield(w(:,2,:),.TRUE.)
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841274, fil, w(:,2) )
   !
@@ -137,7 +138,7 @@ SUBROUTINE epcdft_setup
   DEALLOCATE( evc )
   !
   ! setup weight function for system 1
-  CALL add_epcdft_efield(w(:,1),.TRUE.)
+  CALL add_epcdft_efield(w(:,1,:),.TRUE.)
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841275, fil, w(:,1) )
   !

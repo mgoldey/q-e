@@ -23,7 +23,7 @@ MODULE epcdft_mod
   ! weight function vars
   !
   INTEGER :: fragment1_atom1, fragment1_atom2, fragment2_atom1, fragment2_atom2 ! atoms in acceptor fragments for sys 1 and 2
-  REAL(DP), ALLOCATABLE :: w(:,:)         ! weight functions w( r , system, up down ) with amplitude
+  REAL(DP), ALLOCATABLE :: w(:,:,:)         ! weight functions w( r , system, up down ) with amplitude
   COMPLEX(DP), ALLOCATABLE :: wmat(:,:,:) !  weigth matrix ( aa ab, ba bb, up down) without amplitude.
   !
   ! energy vars

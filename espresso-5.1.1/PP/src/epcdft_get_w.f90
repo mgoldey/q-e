@@ -52,10 +52,10 @@ SUBROUTINE epcdft_get_w
     !
     ! wevc = w*evc
     !
-    wtot(:) = w(:,1)
+    wtot(:) = w(:,1,ik)
     CALL w_psi(evc1(:,:,ik), wtot, wevc) 
     !
-    wtot(:) = w(:,2)
+    wtot(:) = w(:,2,ik)
     CALL w_psi(evc2(:,:,ik), wtot, wevc2) 
     !
     DO i = 1, occ(ik)

@@ -14,7 +14,7 @@ SUBROUTINE epcdft_check_w
   USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx
-  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, w, smat
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, smat, w
   USE fft_base,             ONLY : dfftp
   USE mp,                   ONLY : mp_sum
   USE mp_images,            ONLY : intra_image_comm
@@ -55,10 +55,12 @@ SUBROUTINE epcdft_check_w
     !
     ! wevc = w*evc
     !
-    wtot(:) = -1.D0*w(:,1)
+    !wtot(:) = -1.D0*w(:,1)
+    wtot(:) = w(:,1,ik)
     CALL w_psi(evc1(:,:,ik), wtot, wevc) 
     !
-    wtot(:) = -1.D0*w(:,2)
+    !wtot(:) = -1.D0*w(:,2)
+    wtot(:) = w(:,2,ik)
     CALL w_psi(evc2(:,:,ik), wtot, wevc2) 
     !
     DO i = 1, occ(ik)
