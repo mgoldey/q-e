@@ -204,7 +204,7 @@ SUBROUTINE iosys()
                                pseudo_dir, disk_io, tefield, dipfield, lberry, &
                                gdir, nppstr, wf_collect,lelfield,lorbm,efield, &
                                nberrycyc, lkpoint_dir, efield_cart, lecrpa,    &
-                               vdw_table_name, memory, tqmmm, do_epcdft,       &
+                               vdw_table_name, memory, tqmmm, & !, do_epcdft,       &
                                lcalc_z2, z2_m_threshold, z2_z_threshold,       &
                                efield_phase
 
@@ -285,6 +285,7 @@ SUBROUTINE iosys()
   !
   USE input_parameters,      ONLY : deallocate_input_parameters
   USE wyckoff,               ONLY : nattot, sup_spacegroup
+  USE epcdft,                ONLY : do_epcdft
   !
   IMPLICIT NONE
   !
@@ -1095,7 +1096,7 @@ SUBROUTINE iosys()
   emaxpos_ = emaxpos
   eopreg_  = eopreg
   eamp_    = eamp
-  do_epcdft_       = do_epcdft        
+  !do_epcdft_       = do_epcdft        
   dfftp%nr1     = nr1
   dfftp%nr2     = nr2
   dfftp%nr3     = nr3

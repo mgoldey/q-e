@@ -201,7 +201,7 @@ MODULE input_parameters
           ! if .TRUE. a static homogeneous electric field is present
           ! via the modern theory of polarizability - differs from tefield!
 
-        LOGICAL :: do_epcdft =.FALSE.
+        !LOGICAL :: do_epcdft =.FALSE.
 
         LOGICAL :: lorbm = .false.
           ! if .TRUE. an orbital magnetization is computed (Kubo terms)
@@ -281,7 +281,7 @@ MODULE input_parameters
           gdir, nppstr, wf_collect, printwfc, lelfield, nberrycyc, refg,  &
           tefield2, saverho, tabps, lkpoint_dir, use_wannier, lecrpa,     &
           tqmmm, vdw_table_name, lorbm, memory, point_label_type,         &
-          lcalc_z2, z2_m_threshold, z2_z_threshold, do_epcdft
+          lcalc_z2, z2_m_threshold, z2_z_threshold !, do_epcdft
 
 !
 !=----------------------------------------------------------------------------=!

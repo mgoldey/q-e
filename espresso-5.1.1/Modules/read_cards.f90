@@ -1516,6 +1516,7 @@ CONTAINS
       CHARACTER(len=256) :: input_line
       INTEGER            :: i, nfield
       !
+      do_epcdft=.true.
       !
       IF ( tepcdft ) CALL errore( 'card_epcdft', 'two occurrences', 2 )
       !
