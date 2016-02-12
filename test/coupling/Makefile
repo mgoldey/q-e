@@ -9,6 +9,6 @@ left.out: left.in
 right.out: right.in
 	$(PW_CMD) < $^ > $@
 
-coupling.out: left.out right.out
+coupling.in coupling.out: left.out right.out
 	sh ../../scripts/setup_coupling_input.sh left.out right.out > coupling.in
 	$(CUP_CMD) < $^ > $@
