@@ -16,7 +16,6 @@ This README would normally document whatever steps are necessary to get your app
 
 ### INPUT Flags ###
 * assume_isolated = 'mt' - for isolated systems
-* do_epcdft - needs to be set to .true.
 * examples in test - run all using make
 * NEW EPCDFT CARD for multiple constraints (all hirshfield for now)
 
@@ -26,6 +25,7 @@ This README would normally document whatever steps are necessary to get your app
 * 1 1e-4 1e-2 20
 * delta_charge 13 13 1 12 1.0 0.21
 
+* The two lines under the EPCDFT card control the following inputs:
 * Number of constraints, tolerance, delta_fld, update the potential every this many steps and at self consistency (default=40)
 * type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
 
