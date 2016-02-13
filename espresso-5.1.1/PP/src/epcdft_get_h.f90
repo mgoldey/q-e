@@ -36,8 +36,9 @@ SUBROUTINE epcdft_get_h
     DO i = 1, 2
       DO j = 1, 2
         !
-        wtot(i,j) = ( wmat(i,j,1) + wmat(j,i,1) ) * smat(i,j,2) + &
-                    ( wmat(i,j,2) + wmat(j,i,2) ) * smat(i,j,1)
+        ! Wtot = Wab + Wba
+        wtot(i,j) =  wmat(i,j,1) * smat(i,j,2) + wmat(i,j,2) * smat(i,j,1) + &
+                     wmat(j,i,1) * smat(j,i,2) + wmat(j,i,2) * smat(j,i,1)
         !
         IF(i==j)THEN
           hc(i,j) = core(i)
