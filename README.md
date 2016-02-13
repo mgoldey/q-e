@@ -20,14 +20,14 @@ This README would normally document whatever steps are necessary to get your app
 * examples in test - run all using make
 * NEW EPCDFT CARD for multiple constraints (all hirshfield for now)
 
-* Example CARD INPUT
-* &EPCDFT
-*   ! Number of constraints, tolerance, delta_fld, update the potential every this many steps and at self consistency (default=40)
-*   1 1e-4 1e-2 20
-*   !
-*   ! type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
-*   delta_charge 13 13 1 12 1.0 0.21
-* /
+* Example CARD INPUT:
+
+* EPCDFT
+* 1 1e-4 1e-2 20
+* delta_charge 13 13 1 12 1.0 0.21
+*
+* Number of constraints, tolerance, delta_fld, update the potential every this many steps and at self consistency (default=40)
+* type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
 
 ### PP Flags ###
 * Using plot_num = 12 will plot the weight times the lagrange multiplier (read from successful run)
