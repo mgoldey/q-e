@@ -2997,6 +2997,12 @@ CONTAINS
         CALL iotk_scan_dat( iunit, "NCONSTR_EPCDFT", nconstr_epcdft , IERR=ierr)
       ENDIF 
 
+      CALL mp_bcast(do_epcdft, ionode_id, intra_image_comm )
+      CALL mp_bcast(epcdft_shift, ionode_id, intra_image_comm )
+      CALL mp_bcast(conv_epcdft, ionode_id, intra_image_comm )
+      CALL mp_bcast(epcdft_delta_fld, ionode_id, intra_image_comm )
+      CALL mp_bcast(nconstr_epcdft, ionode_id, intra_image_comm )
+
       CALl allocate_input_epcdft()
       
       IF (ionode) THEN
@@ -3015,13 +3021,9 @@ CONTAINS
 
         CALL iotk_scan_end(iunit,"EPCDFT")
       ENDIF
-      
-      CALL mp_bcast(do_epcdft, ionode_id, intra_image_comm )
-      CALL mp_bcast(epcdft_shift, ionode_id, intra_image_comm )
-      CALL mp_bcast(conv_epcdft, ionode_id, intra_image_comm )
-      CALL mp_bcast(epcdft_delta_fld, ionode_id, intra_image_comm )
-      CALL mp_bcast(nconstr_epcdft, ionode_id, intra_image_comm )
+
       DO iconstraint=1,nconstr_epcdft
+        IF (ionode)  epcdft_type(iconstraint)=TRIM(epcdft_type(iconstraint))
         CALL mp_bcast(epcdft_type(iconstraint), ionode_id, intra_image_comm )
         CALL mp_bcast(epcdft_locs(1,iconstraint), ionode_id, intra_image_comm )
         CALL mp_bcast(epcdft_locs(2,iconstraint), ionode_id, intra_image_comm )
