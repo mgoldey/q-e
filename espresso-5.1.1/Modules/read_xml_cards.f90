@@ -220,6 +220,7 @@ CONTAINS
     CASE ( 'EPCDFT' )
        CALL mp_bcast( nconstr_epcdft, ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_tol    , ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_update_intrvl, ionode_id, intra_image_comm )
        IF ( .not.ionode ) &
        &          CALL allocate_input_epcdft()
        CALL mp_bcast( epcdft_type   , ionode_id, intra_image_comm )

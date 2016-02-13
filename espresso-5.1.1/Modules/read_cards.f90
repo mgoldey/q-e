@@ -1536,6 +1536,11 @@ CONTAINS
          !
          READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld
          !
+         !
+      ELSEIF ( nfield == 4) THEN 
+         !
+         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, epcdft_update_intrvl
+         !
       ELSE
          !
          CALL errore( 'card_epcdft', 'too many fields in initial line', nfield )
@@ -1544,7 +1549,8 @@ CONTAINS
 
       write(stdout,*) "Reading EPCDFT CARD. Printing based upon belief that input should be reproducable from output."
       WRITE(stdout,'(5x,a,i4,a,f12.6,a,f4.2)') &
-         'Reading',nconstr_epcdft,' constraint(s); tolerance:', epcdft_tol, ' max change in field ',epcdft_delta_fld
+         'Reading',nconstr_epcdft,' constraint(s); tolerance:', epcdft_tol, ' max change in field ',epcdft_delta_fld 
+      WRITE(stdout,'(5x,a,i4)') 'epcdft_update_intrvl:', epcdft_update_intrvl
       !
       CALL allocate_input_epcdft()
       !

@@ -48,7 +48,8 @@ SUBROUTINE epcdft_controller()
   ! here's the meat
   USE epcdft, ONLY : do_epcdft, conv_epcdft,epcdft_shift, &
                      epcdft_locs,epcdft_guess,nconstr_epcdft, &
-                     epcdft_tol, epcdft_type,epcdft_target, epcdft_delta_fld
+                     epcdft_tol, epcdft_type,epcdft_target, epcdft_delta_fld, &
+                     epcdft_update_intrvl ! and a potatoe
 
   !
   IMPLICIT NONE
@@ -85,8 +86,8 @@ SUBROUTINE epcdft_controller()
   !
   ! Don't try to update too often or else the number of electrons will sometimes go the wrong way and mess up the solver
   ictr=ictr+1
-  if (conv_elec) ictr=8
-  if (mod(ictr,10) .ne. 8) RETURN
+  if (conv_elec) ictr = epcdft_update_intrvl
+  if (mod( ictr, epcdft_update_intrvl ) .ne. 0 ) RETURN
   !
   ! calc is converged lets compute and print the correction
   !
