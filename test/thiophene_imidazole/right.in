@@ -9,10 +9,10 @@
 &SYSTEM
   nosym = .true.
   ibrav     = 1,
-  a         = 12,
+  a         = 10,
   nat       = 18,
   ntyp      = 4,
-  ecutwfc   = 60,
+  ecutwfc   = 30,
 ! nbnd= 4,
   nspin   = 2,
   tot_charge = +1
@@ -22,14 +22,14 @@
 &ELECTRONS
 !  startingpot = 'file'
 !  startingwfc = 'file'
-!  conv_thr    = 1.D-8,
+! conv_thr    = 1.D-8,
   mixing_beta = 0.30,
 /
 &IONS
 /
 
 EPCDFT 
-1 2e-2 1e-3
+1 1e-3 1e-2
 delta_charge 1 9 10 18 -1.0 -0.200
 
 ATOMIC_SPECIES
