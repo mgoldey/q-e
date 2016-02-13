@@ -47,7 +47,7 @@ SUBROUTINE epcdft_get_w
     !
     ! C = ( S^-1 * det(S))^T   ab & ba 
     !
-    cofc(:,:,2,ik) = CONJG(cofc(:,:,1,ik))
+    cofc(:,:,2,ik) = DCONJG(cofc(:,:,1,ik))
     cofc(:,:,1,ik) = TRANSPOSE(cofc(:,:,1,ik))
     !
     ! wevc = w*evc
