@@ -22,8 +22,8 @@ This README would normally document whatever steps are necessary to get your app
 
 * Example CARD INPUT
 * &EPCDFT
-*   ! Number of constraints, tolerance, delta_fld
-*   1 1e-4 1e-2 
+*   ! Number of constraints, tolerance, delta_fld, update the potential every this many steps and at self consistency (default=40)
+*   1 1e-4 1e-2 20
 *   !
 *   ! type of constraint, acceptor start, acceptor end, donor start, donor end, number of electrons, initial lagrange multiplier guess
 *   delta_charge 13 13 1 12 1.0 0.21
