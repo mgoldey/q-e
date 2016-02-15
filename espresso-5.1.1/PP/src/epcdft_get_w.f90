@@ -68,16 +68,16 @@ SUBROUTINE epcdft_get_w
       !
       WRITE(unit=fname,fmt=*) ik
       fname="Caa"//TRIM(ADJUSTL(fname))
-      CALL realpart_dumpmat(fname, filunit, cofc(:,:,1,1,ik), occ(ik))
+      CALL realpart_dumpmat(fname, filunit, cofc(:,:,1,1,ik), nbnd, occ(ik))
       WRITE(unit=fname,fmt=*) ik
       fname="Cab"//TRIM(ADJUSTL(fname))
-      CALL realpart_dumpmat(fname, filunit, cofc(:,:,1,2,ik), occ(ik))
+      CALL realpart_dumpmat(fname, filunit, cofc(:,:,1,2,ik), nbnd, occ(ik))
       WRITE(unit=fname,fmt=*) ik
       fname="Cba"//TRIM(ADJUSTL(fname))
-      CALL realpart_dumpmat(fname, filunit, cofc(:,:,2,1,ik), occ(ik))
+      CALL realpart_dumpmat(fname, filunit, cofc(:,:,2,1,ik), nbnd, occ(ik))
       WRITE(unit=fname,fmt=*) ik
       fname="Cbb"//TRIM(ADJUSTL(fname))
-      CALL realpart_dumpmat(fname, filunit, cofc(:,:,2,2,ik), occ(ik))
+      CALL realpart_dumpmat(fname, filunit, cofc(:,:,2,2,ik), nbnd, occ(ik))
       !
     ENDIF
     !
@@ -100,7 +100,7 @@ SUBROUTINE epcdft_get_w
       !
       WRITE(unit=fname,fmt=*) ik
       fname="W"//TRIM(ADJUSTL(fname))
-      CALL realpart_dumpmat(fname, filunit, wmat(:,:,ik), 2)
+      CALL realpart_dumpmat(fname, filunit, wmat(:,:,ik), 2, 2)
       !
     ENDIF
     !
@@ -277,16 +277,16 @@ SUBROUTINE calc_w_real(ik, occ, wevc, wevc2, cofc)
     !
     WRITE(unit=fname,fmt=*) ik
     fname="Waa"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,1,ik), occ(ik))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,1,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wab"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,2,ik), occ(ik))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,2,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wba"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,1,ik), occ(ik))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,1,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wbb"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,2,ik), occ(ik))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,2,ik), nbnd, occ(ik))
     !
   ENDIF
   !
@@ -354,16 +354,16 @@ SUBROUTINE calc_w_img(ik, occ, wevc, wevc2, cofc)
     !
     WRITE(unit=fname,fmt=*) ik
     fname="Waa"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,1,ik), occ(ik))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,1,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wab"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,2,ik), occ(ik))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,2,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wba"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,1,ik), occ(ik))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,1,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wbb"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,2,ik), occ(ik))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,2,ik), nbnd, occ(ik))
     !
   ENDIF
   !
