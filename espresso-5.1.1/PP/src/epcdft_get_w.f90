@@ -6,81 +6,85 @@ SUBROUTINE epcdft_get_w
   !  Compute W matrix
   !
   !    <A|W|A> = <A|Wa|A> 
-  !    <A|W|B> = <A|Wb|B> = N \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
+  !    <A|W|B> = <A|Wb|B> = \sum_{i,j}   \langle i | W | j \rangle  (S^{-1} (det(S)I))^T_{i,j} 
   !                                                                     ^-----cofactor----------^
+  !
+  !  Below I sacrifice speed for assurance by avoiding simplifications
+  !
   !
   USE kinds,                ONLY : DP
   USE klist,                ONLY : nks
   USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
-  USE wvfct,                ONLY : nbnd, npwx
+  USE wvfct,                ONLY : nbnd, npwx, npw
   USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
   USE fft_base,             ONLY : dfftp
   USE mp,                   ONLY : mp_sum
   USE mp_images,            ONLY : intra_image_comm
+  USE epcdft_mod,           ONLY : debug
+  USE becmod,               ONLY : calbec
+  USE control_flags,        ONLY : gamma_only
   !
   IMPLICIT NONE
   !
   INTEGER :: ik, i, j
   INTEGER :: occ(2)                  ! number of occupied states for that spin
+  REAL(DP)    :: wtot(dfftp%nnr)     ! tot W  w(:,1) + w(:,2)
   COMPLEX(DP) :: wevc(npwx, nbnd)    ! wtot*evc
   COMPLEX(DP) :: wevc2(npwx, nbnd)   ! wtot*evc2
-  REAL(DP) :: wtot(dfftp%nnr)        ! tot W  w(:,1) + w(:,2)
-  COMPLEX(DP), EXTERNAL :: dot
-  COMPLEX(DP) :: cofc(nbnd,nbnd,2,2) ! cofactor ( i, j, ab ba, spin up down )
+  COMPLEX(DP) :: cofc(nbnd,nbnd,2,2,2) ! cofactor ( i, j, row a b, colm a b , spin up down )
   !
   occ(1) = occup1
   occ(2) = occdown1
   wmat = ( 0.D0, 0.D0 )
   !
-  ! create S matrix
+  ! first build cofactor matrix and apply w to psi then 
+  ! calculate wmat for each spin
   !
   DO ik = 1 , nks 
     !
-    ! S^-1  ab 
+    ! S^-1  
     !
-    CALL get_s_invs(evc1(:,:,ik), evc2(:,:,ik), cofc(:,:,1,ik), nbnd)
+    CALL get_s_invs(evc1(:,:,ik), evc1(:,:,ik), cofc(:,:,1,1,ik), nbnd)
+    CALL get_s_invs(evc1(:,:,ik), evc2(:,:,ik), cofc(:,:,1,2,ik), nbnd)
+    CALL get_s_invs(evc2(:,:,ik), evc1(:,:,ik), cofc(:,:,2,1,ik), nbnd)
+    CALL get_s_invs(evc2(:,:,ik), evc2(:,:,ik), cofc(:,:,2,2,ik), nbnd)
     !
-    ! S^-1 * det(S) ab 
+    ! C = (S^-1 * det(S))^T
     !
-    cofc(:,:,1,ik) = cofc(:,:,1,ik) * smat(1,2,ik)
-    !
-    ! C = ( S^-1 * det(S))^T   ab & ba 
-    !
-    cofc(:,:,2,ik) = DCONJG(cofc(:,:,1,ik))
-    cofc(:,:,1,ik) = TRANSPOSE(cofc(:,:,1,ik))
-    !
-    ! wevc = w*evc
-    !
-    wtot(:) = w(:,1,ik)
-    CALL w_psi(evc1(:,:,ik), wtot, wevc) 
-    !
-    wtot(:) = w(:,2,ik)
-    CALL w_psi(evc2(:,:,ik), wtot, wevc2) 
-    !
-    DO i = 1, occ(ik)
-      DO j = 1, occ(ik)
+    DO i = 1, 2
+      DO j = 1, 2
         !
-        ! <A|W|A>                                 
-        IF(i==j) wmat(1,1,ik) = wmat(1,1,ik) + dot(evc1(:,i,ik), wevc(:,j))
+        cofc(:,:,i,j,ik) = cofc(:,:,i,j,ik) * smat(i,j,ik)
         !
-        ! <B|Wa|A>                                 
-        wmat(1,2,ik) = wmat(1,2,ik) + dot(evc2(:,j,ik), wevc(:,i)) * cofc(i,j,1,ik)
+        cofc(:,:,i,j,ik) = TRANSPOSE(cofc(:,:,i,j,ik))
         !
-        ! <A|Wb|B>                                 
-        wmat(2,1,ik) = wmat(2,1,ik) + dot(evc1(:,j,ik), wevc2(:,i)) * cofc(i,j,2,ik)
-        !
-        ! <B|W|B>                                 
-        IF(i==j) wmat(2,2,ik) = wmat(2,2,ik) + dot(evc2(:,i,ik), wevc2(:,j))
-        !
-      ENDDO !j
-    ENDDO !i
+      ENDDO
+    ENDDO
     !
-  ENDDO !ik
+    ! wevc = FFT w_A,ik(r) * evc_A,ik(r)
+    !
+    CALL w_psi(evc1(:,:,ik), w(:,1,ik), wevc) 
+    CALL w_psi(evc2(:,:,ik), w(:,2,ik), wevc2) 
+    !
+    ! calculate wmat using cofc and w_psi from above
+    !
+    IF(gamma_only)THEN
+      CALL calc_w_real(ik, occ, wevc, wevc2, cofc)
+    ELSE
+      CALL calc_w_img(ik, occ, wevc, wevc2, cofc)
+    ENDIF
+    !
+  ENDDO ! ik
   !
-  CALL mp_sum(wmat,intra_image_comm)
+  IF( ionode ) WRITE( stdout,* )"    New2 W done"
   !
-  IF( ionode ) WRITE( stdout,* )"    W done"
+  IF( debug ) THEN
+    IF( ionode ) WRITE( stdout,* )"    Check W"
+    IF( ionode ) WRITE( stdout,* )"      W_AA,up + W_AA,down should be = C1 ", wmat(1,1,1) + wmat(1,1,2)
+    IF( ionode ) WRITE( stdout,* )"      W_BB,up + W_BB,down should be = C2 ", wmat(2,2,1) + wmat(2,2,2)
+    IF( ionode ) WRITE( stdout,* )"    END Check W"
+  ENDIF
   !
 END SUBROUTINE epcdft_get_w
 !
@@ -201,3 +205,118 @@ SUBROUTINE get_s_invs(evc, evc2, sinvs, occ)
   ENDIF
   !
 END SUBROUTINE get_s_invs
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE calc_w_real(ik, occ, wevc, wevc2, cofc)
+  !-----------------------------------------------------------------------------
+  !
+  !    <A_i|W|B_j> = \sum_{i,j}   \langle evc_A,i | wevc_B,j \rangle cofc_{i,j} 
+  !
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : nks
+  USE io_global,            ONLY : ionode, stdout
+  USE wavefunctions_module, ONLY : evc
+  USE wvfct,                ONLY : nbnd, npwx, npw
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
+  USE fft_base,             ONLY : dfftp
+  USE mp,                   ONLY : mp_sum
+  USE mp_images,            ONLY : intra_image_comm
+  USE epcdft_mod,           ONLY : debug
+  USE becmod,               ONLY : calbec
+  USE control_flags,        ONLY : gamma_only
+  !
+  IMPLICIT NONE
+  !
+  INTEGER :: i, j
+  INTEGER, INTENT(IN) :: ik
+  INTEGER, INTENT(IN) :: occ(2)                  ! number of occupied states for that spin
+  COMPLEX(DP), INTENT(IN) :: wevc(npwx, nbnd)    ! wtot*evc
+  COMPLEX(DP), INTENT(IN) :: wevc2(npwx, nbnd)   ! wtot*evc2
+  COMPLEX(DP), INTENT(IN) :: cofc(nbnd,nbnd,2,2,2) ! cofactor ( i, j, row a b, colm a b , spin up down )
+  REAL(DP) :: single_electron_w(nbnd,nbnd,2,2,2) ! <phi_i|w|phi_j> 
+  !                                              ! single electron orbitals (i,j,row a b, colm a b, spin up down)
+  single_electron_w = 0.D0
+  !
+  CALL calbec ( npw, evc1(:,:,ik), wevc,  single_electron_w(:,:,1,1,ik), nbnd )
+  CALL calbec ( npw, evc1(:,:,ik), wevc2, single_electron_w(:,:,1,2,ik), nbnd )
+  CALL calbec ( npw, evc2(:,:,ik), wevc,  single_electron_w(:,:,2,1,ik), nbnd )
+  CALL calbec ( npw, evc2(:,:,ik), wevc2, single_electron_w(:,:,2,2,ik), nbnd )
+  !
+  DO i = 1, occ(ik)
+    DO j = 1, occ(ik)
+      !
+      ! <A|W|A>                                 
+      wmat(1,1,ik) = wmat(1,1,ik) + single_electron_w(i,j,1,1,ik) * cofc(i,j,1,1,ik)
+      !
+      ! <B|Wa|A>                                 
+      wmat(1,2,ik) = wmat(1,2,ik) + single_electron_w(i,j,1,2,ik) * cofc(i,j,1,2,ik)
+      !
+      ! <A|Wb|B>                                 
+      wmat(2,1,ik) = wmat(2,1,ik) + single_electron_w(i,j,2,1,ik) * cofc(i,j,2,1,ik)
+      !
+      ! <B|W|B>                     
+      wmat(2,2,ik) = wmat(2,2,ik) + single_electron_w(i,j,2,2,ik) * cofc(i,j,2,2,ik)
+      !
+    ENDDO !j
+  ENDDO !i
+  !
+  !
+END SUBROUTINE calc_w_real
+!
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE calc_w_img(ik, occ, wevc, wevc2, cofc)
+  !-----------------------------------------------------------------------------
+  !
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : nks
+  USE io_global,            ONLY : ionode, stdout
+  USE wavefunctions_module, ONLY : evc
+  USE wvfct,                ONLY : nbnd, npwx, npw
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
+  USE fft_base,             ONLY : dfftp
+  USE mp,                   ONLY : mp_sum
+  USE mp_images,            ONLY : intra_image_comm
+  USE epcdft_mod,           ONLY : debug
+  USE becmod,               ONLY : calbec
+  USE control_flags,        ONLY : gamma_only
+  !
+  IMPLICIT NONE
+  !
+  INTEGER :: i, j
+  INTEGER, INTENT(IN) :: ik
+  INTEGER, INTENT(IN) :: occ(2)                  ! number of occupied states for that spin
+  COMPLEX(DP), INTENT(IN) :: wevc(npwx, nbnd)    ! wtot*evc
+  COMPLEX(DP), INTENT(IN) :: wevc2(npwx, nbnd)   ! wtot*evc2
+  COMPLEX(DP), INTENT(IN) :: cofc(nbnd,nbnd,2,2,2) ! cofactor ( i, j, row a b, colm a b , spin up down )
+  COMPLEX(DP) :: single_electron_w(nbnd,nbnd,2,2,2)  ! <phi_i|w|phi_j> 
+  !                                                  ! single electron orbitals (i,j,row a b, colm a b, spin up down)
+  !
+  single_electron_w = 0.D0
+  !
+  CALL calbec ( npw, evc1(:,:,ik), wevc,  single_electron_w(:,:,1,1,ik), nbnd )
+  CALL calbec ( npw, evc1(:,:,ik), wevc2, single_electron_w(:,:,1,2,ik), nbnd )
+  CALL calbec ( npw, evc2(:,:,ik), wevc,  single_electron_w(:,:,2,1,ik), nbnd )
+  CALL calbec ( npw, evc2(:,:,ik), wevc2, single_electron_w(:,:,2,2,ik), nbnd )
+  !
+  DO i = 1, occ(ik)
+    DO j = 1, occ(ik)
+      !
+      ! <A|W|A>                                 
+      wmat(1,1,ik) = wmat(1,1,ik) + single_electron_w(i,j,1,1,ik) * cofc(i,j,1,1,ik)
+      !
+      ! <B|Wa|A>                                 
+      wmat(1,2,ik) = wmat(1,2,ik) + single_electron_w(i,j,1,2,ik) * cofc(i,j,1,2,ik)
+      !
+      ! <A|Wb|B>                                 
+      wmat(2,1,ik) = wmat(2,1,ik) + single_electron_w(i,j,2,1,ik) * cofc(i,j,2,1,ik)
+      !
+      ! <B|W|B>                     
+      wmat(2,2,ik) = wmat(2,2,ik) + single_electron_w(i,j,2,2,ik) * cofc(i,j,2,2,ik)
+      !
+    ENDDO !j
+  ENDDO !i
+  !
+  !
+END SUBROUTINE calc_w_img
+!

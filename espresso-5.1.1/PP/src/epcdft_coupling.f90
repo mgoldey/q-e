@@ -17,7 +17,7 @@ PROGRAM epcdft_coupling
   !
   CALL epcdft_get_s ( ) ! create overlap matrix
   !
-  IF(debug) CALL epcdft_check_w ( ) ! check the <A/B|w|A/B> = c1/c2
+  !IF(debug) CALL epcdft_check_w ( ) ! check the <A/B|w|A/B> = c1/c2 this is done in get_w now
   CALL epcdft_get_w ( ) ! create weight matrix
   !
   CALL epcdft_get_h ( ) ! create hamiltonian
