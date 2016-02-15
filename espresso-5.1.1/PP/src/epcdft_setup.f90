@@ -38,7 +38,7 @@ SUBROUTINE epcdft_setup
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
                        debug,  s_spin, free1, free2,&
-                       cor1, cor2, eig_of_w
+                       cor1, cor2, eig_of_w, debug2
   !
   ! setup vars and consistency checks
   !
@@ -76,6 +76,7 @@ SUBROUTINE epcdft_setup
   CALL mp_bcast( occdown1, ionode_id, world_comm )
   CALL mp_bcast( occdown2, ionode_id, world_comm )
   CALL mp_bcast( debug, ionode_id, world_comm )
+  CALL mp_bcast( debug2, ionode_id, world_comm )
   CALL mp_bcast( s_spin, ionode_id, world_comm )
   CALL mp_bcast( free1, ionode_id, world_comm )
   CALL mp_bcast( free2, ionode_id, world_comm )
@@ -153,7 +154,7 @@ SUBROUTINE epcdft_setup
   wmat = ( 0.D0, 0.D0 )
   !
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
-                          occup1, occdown1, occup2, occdown2, debug,  s_spin )
+                          occup1, occdown1, occup2, occdown2, debug,  s_spin, debug2 )
   !
   IF( ionode ) WRITE( stdout,*)" "
   IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
@@ -164,7 +165,7 @@ END SUBROUTINE epcdft_setup
 !
 !-----------------------------------------------------------------------------
 SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occup1, &
-                              occdown1, occup2, occdown2, debug,  s_spin )
+                              occdown1, occup2, occdown2, debug,  s_spin, debug2 )
   !--------------------------------------------------------------------------
   !
   !     this routine prints warnings and some data from the input file 
@@ -182,7 +183,7 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
   CHARACTER(*), INTENT(IN)    :: tmp_dir
   CHARACTER(*), INTENT(IN)    :: tmp_dir2
   INTEGER,      INTENT(IN)    :: occup1, occdown1, occup2, occdown2
-  LOGICAL,      INTENT(IN)    :: debug, s_spin
+  LOGICAL,      INTENT(IN)    :: debug2, debug, s_spin
   !
   IF(ionode)THEN
      !
@@ -210,6 +211,7 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
      IF( ionode ) WRITE( stdout,*)"    prefix2      :", prefix2
      IF( ionode ) WRITE( stdout,*)"    outdir2      :", tmp_dir2
      IF( ionode ) WRITE( stdout,*)"    debug        :", debug
+     IF( ionode ) WRITE( stdout,*)"    debug2       :", debug2
      IF( ionode ) WRITE( stdout,*)"    s_spin       :", s_spin
      IF( ionode ) WRITE( stdout,*)" "
      IF( ionode ) WRITE( stdout,*)"    # of spins   :", nks

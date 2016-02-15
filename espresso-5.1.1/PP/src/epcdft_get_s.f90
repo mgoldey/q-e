@@ -7,7 +7,7 @@ SUBROUTINE epcdft_get_s
   USE klist,      ONLY : nks
   USE io_global,  ONLY : ionode, stdout
   USE wvfct,      ONLY : nbnd
-  USE epcdft_mod, ONLY : evc1, evc2, occup1, occdown1, smat
+  USE epcdft_mod, ONLY : evc1, evc2, occup1, occdown1, smat, debug2
   !
   IMPLICIT NONE
   !
@@ -46,6 +46,8 @@ SUBROUTINE epcdft_get_s
   !
   DEALLOCATE( r_s_aux )
   DEALLOCATE( c_s_aux )
+  !
+  IF(debug2) CALL epcdft_write_s ( ) ! create overlap matrix
   !
 END SUBROUTINE epcdft_get_s
 !
@@ -130,3 +132,96 @@ SUBROUTINE zgedi_wrap(a, n, outdet)
   RETURN
   !
 END SUBROUTINE zgedi_wrap
+!
+!-----------------------------------------------------------------------
+SUBROUTINE epcdft_write_s
+  !-----------------------------------------------------------------------
+  !
+  USE kinds,      ONLY : DP
+  USE klist,      ONLY : nks
+  USE wvfct,      ONLY : nbnd
+  USE epcdft_mod, ONLY : evc1, evc2, occup1, occdown1
+  !
+  IMPLICIT NONE
+  !
+  INTEGER :: ik, filunit, i, j
+  INTEGER :: occ(2)                        ! number of occupied states for that spin
+  COMPLEX(DP), ALLOCATABLE :: c_s_aux(:,:) ! complex overlap matrix S_ij = <system 1_i | system 2_j>
+  REAL(DP), ALLOCATABLE :: r_s_aux(:,:)    ! real overlap matrix S_ij = <system 1_i | system 2_j>
+  COMPLEX(DP) :: dummy(2,2,nks)
+  CHARACTER(LEN=256) :: fname
+  !
+  ALLOCATE( c_s_aux(nbnd,nbnd) )
+  ALLOCATE( r_s_aux(nbnd,nbnd) )
+  !
+  ! bounds for spin channels in S matrix
+  !
+  occ(1) = occup1
+  occ(2) = occdown1
+  filunit=234976
+  !fname = 's'
+  !
+  ! create S matrix
+  !
+  DO ik = 1 , nks 
+    !
+    ! <1|1>
+    CALL get_det( evc1(:,:,ik), evc1(:,:,ik), r_s_aux, c_s_aux, occ(ik), dummy(1,1,ik) )
+    WRITE(unit=fname,fmt=*) ik
+    fname="Saa"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname,filunit,c_s_aux,occ(ik))
+    ! 
+    ! <1|2>
+    CALL get_det( evc1(:,:,ik), evc2(:,:,ik), r_s_aux, c_s_aux, occ(ik), dummy(1,2,ik) )
+    WRITE(unit=fname,fmt=*) ik
+    fname="Sab"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname,filunit,c_s_aux,occ(ik))
+    !
+    ! <2|1>
+    CALL get_det( evc2(:,:,ik), evc1(:,:,ik), r_s_aux, c_s_aux, occ(ik), dummy(2,1,ik) )
+    WRITE(unit=fname,fmt=*) ik
+    fname="Sba"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname,filunit,c_s_aux,occ(ik))
+    !
+    ! <2|2>
+    CALL get_det( evc2(:,:,ik), evc2(:,:,ik), r_s_aux, c_s_aux, occ(ik), dummy(2,2,ik) )
+    WRITE(unit=fname,fmt=*) ik
+    fname="Sbb"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname,filunit,c_s_aux,occ(ik))
+    !
+    WRITE(unit=fname,fmt=*) ik
+    fname="detS"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname,filunit,dummy(:,:,ik),2)
+    !
+  ENDDO !ik
+  !
+  DEALLOCATE( r_s_aux )
+  DEALLOCATE( c_s_aux )
+  !
+END SUBROUTINE epcdft_write_s
+!
+!-----------------------------------------------------------------------
+SUBROUTINE realpart_dumpmat(fname,filunit,mat,n)
+  !-----------------------------------------------------------------------
+  !
+  ! will print real
+  !
+  USE kinds,      ONLY : DP
+  USE io_global,  ONLY : ionode
+  !
+  IMPLICIT NONE
+  !
+  INTEGER :: i, j
+  INTEGER,INTENT(IN) :: filunit, n
+  COMPLEX(DP),INTENT(IN) :: mat(n,n)
+  CHARACTER(LEN=256),INTENT(IN) :: fname
+  !
+  !OPEN(UNIT=filunit,FILE=TRIM(ADJUSTL(fname))//".cub")
+  IF( ionode ) THEN
+    OPEN(UNIT=filunit,FILE=fname)
+    DO i = 1, n
+      WRITE(filunit, *) ( REAL(mat(i,j),KIND=DP) , j = 1, n )
+    ENDDO
+  ENDIF
+  !-----------------------------------------------------------------------
+END SUBROUTINE realpart_dumpmat

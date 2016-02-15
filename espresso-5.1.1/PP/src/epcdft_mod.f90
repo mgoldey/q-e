@@ -7,6 +7,7 @@ MODULE epcdft_mod
   SAVE
   !
   LOGICAL :: debug = .true.     ! print extra info
+  LOGICAL :: debug2 = .false.   ! dump Smat, cofactor mat, W mat into files
   LOGICAL :: s_spin             ! calculate S matrix for each spin separately
   LOGICAL :: eig_of_w = .FALSE. ! use eigenstates of W to orthog H (default is false so use lowdin)
   INTEGER :: iunwfc2 = 3636     ! unit for 2nd set of wfcs

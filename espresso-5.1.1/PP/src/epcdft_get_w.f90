@@ -17,22 +17,22 @@ SUBROUTINE epcdft_get_w
   USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx, npw
-  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat, debug, debug2
   USE fft_base,             ONLY : dfftp
   USE mp,                   ONLY : mp_sum
   USE mp_images,            ONLY : intra_image_comm
-  USE epcdft_mod,           ONLY : debug
   USE becmod,               ONLY : calbec
   USE control_flags,        ONLY : gamma_only
   !
   IMPLICIT NONE
   !
-  INTEGER :: ik, i, j
+  INTEGER :: ik, i, j, filunit
   INTEGER :: occ(2)                  ! number of occupied states for that spin
   REAL(DP)    :: wtot(dfftp%nnr)     ! tot W  w(:,1) + w(:,2)
   COMPLEX(DP) :: wevc(npwx, nbnd)    ! wtot*evc
   COMPLEX(DP) :: wevc2(npwx, nbnd)   ! wtot*evc2
   COMPLEX(DP) :: cofc(nbnd,nbnd,2,2,2) ! cofactor ( i, j, row a b, colm a b , spin up down )
+  CHARACTER(LEN=256) :: fname
   !
   occ(1) = occup1
   occ(2) = occdown1
@@ -62,6 +62,25 @@ SUBROUTINE epcdft_get_w
       ENDDO
     ENDDO
     !
+    ! write cofac to file
+    !
+    IF(debug2)THEN
+      !
+      WRITE(unit=fname,fmt=*) ik
+      fname="Caa"//TRIM(ADJUSTL(fname))
+      CALL realpart_dumpmat(fname, filunit, cofc(:,:,1,1,ik), occ(ik))
+      WRITE(unit=fname,fmt=*) ik
+      fname="Cab"//TRIM(ADJUSTL(fname))
+      CALL realpart_dumpmat(fname, filunit, cofc(:,:,1,2,ik), occ(ik))
+      WRITE(unit=fname,fmt=*) ik
+      fname="Cba"//TRIM(ADJUSTL(fname))
+      CALL realpart_dumpmat(fname, filunit, cofc(:,:,2,1,ik), occ(ik))
+      WRITE(unit=fname,fmt=*) ik
+      fname="Cbb"//TRIM(ADJUSTL(fname))
+      CALL realpart_dumpmat(fname, filunit, cofc(:,:,2,2,ik), occ(ik))
+      !
+    ENDIF
+    !
     ! wevc = FFT w_A,ik(r) * evc_A,ik(r)
     !
     CALL w_psi(evc1(:,:,ik), w(:,1,ik), wevc) 
@@ -73,6 +92,16 @@ SUBROUTINE epcdft_get_w
       CALL calc_w_real(ik, occ, wevc, wevc2, cofc)
     ELSE
       CALL calc_w_img(ik, occ, wevc, wevc2, cofc)
+    ENDIF
+    !
+    ! write wmat to file
+    !
+    IF(debug2)THEN
+      !
+      WRITE(unit=fname,fmt=*) ik
+      fname="W"//TRIM(ADJUSTL(fname))
+      CALL realpart_dumpmat(fname, filunit, wmat(:,:,ik), 2)
+      !
     ENDIF
     !
   ENDDO ! ik
@@ -217,17 +246,16 @@ SUBROUTINE calc_w_real(ik, occ, wevc, wevc2, cofc)
   USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx, npw
-  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat, debug2
   USE fft_base,             ONLY : dfftp
   USE mp,                   ONLY : mp_sum
   USE mp_images,            ONLY : intra_image_comm
-  USE epcdft_mod,           ONLY : debug
   USE becmod,               ONLY : calbec
   USE control_flags,        ONLY : gamma_only
   !
   IMPLICIT NONE
   !
-  INTEGER :: i, j
+  INTEGER :: i, j, filunit
   INTEGER, INTENT(IN) :: ik
   INTEGER, INTENT(IN) :: occ(2)                  ! number of occupied states for that spin
   COMPLEX(DP), INTENT(IN) :: wevc(npwx, nbnd)    ! wtot*evc
@@ -235,12 +263,33 @@ SUBROUTINE calc_w_real(ik, occ, wevc, wevc2, cofc)
   COMPLEX(DP), INTENT(IN) :: cofc(nbnd,nbnd,2,2,2) ! cofactor ( i, j, row a b, colm a b , spin up down )
   REAL(DP) :: single_electron_w(nbnd,nbnd,2,2,2) ! <phi_i|w|phi_j> 
   !                                              ! single electron orbitals (i,j,row a b, colm a b, spin up down)
+  CHARACTER(LEN=256) :: fname
   single_electron_w = 0.D0
   !
   CALL calbec ( npw, evc1(:,:,ik), wevc,  single_electron_w(:,:,1,1,ik), nbnd )
   CALL calbec ( npw, evc1(:,:,ik), wevc2, single_electron_w(:,:,1,2,ik), nbnd )
   CALL calbec ( npw, evc2(:,:,ik), wevc,  single_electron_w(:,:,2,1,ik), nbnd )
   CALL calbec ( npw, evc2(:,:,ik), wevc2, single_electron_w(:,:,2,2,ik), nbnd )
+  !
+  ! write w single electron to file
+  !
+  IF(debug2)THEN
+    !
+    WRITE(unit=fname,fmt=*) ik
+    fname="Waa"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,1,ik), occ(ik))
+    WRITE(unit=fname,fmt=*) ik
+    fname="Wab"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,2,ik), occ(ik))
+    WRITE(unit=fname,fmt=*) ik
+    fname="Wba"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,1,ik), occ(ik))
+    WRITE(unit=fname,fmt=*) ik
+    fname="Wbb"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,2,ik), occ(ik))
+    !
+  ENDIF
+  !
   !
   DO i = 1, occ(ik)
     DO j = 1, occ(ik)
@@ -273,17 +322,16 @@ SUBROUTINE calc_w_img(ik, occ, wevc, wevc2, cofc)
   USE io_global,            ONLY : ionode, stdout
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npwx, npw
-  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat
+  USE epcdft_mod,           ONLY : evc1, evc2, occup1, occdown1, wmat, w, smat, debug2
   USE fft_base,             ONLY : dfftp
   USE mp,                   ONLY : mp_sum
   USE mp_images,            ONLY : intra_image_comm
-  USE epcdft_mod,           ONLY : debug
   USE becmod,               ONLY : calbec
   USE control_flags,        ONLY : gamma_only
   !
   IMPLICIT NONE
   !
-  INTEGER :: i, j
+  INTEGER :: i, j, filunit
   INTEGER, INTENT(IN) :: ik
   INTEGER, INTENT(IN) :: occ(2)                  ! number of occupied states for that spin
   COMPLEX(DP), INTENT(IN) :: wevc(npwx, nbnd)    ! wtot*evc
@@ -291,6 +339,7 @@ SUBROUTINE calc_w_img(ik, occ, wevc, wevc2, cofc)
   COMPLEX(DP), INTENT(IN) :: cofc(nbnd,nbnd,2,2,2) ! cofactor ( i, j, row a b, colm a b , spin up down )
   COMPLEX(DP) :: single_electron_w(nbnd,nbnd,2,2,2)  ! <phi_i|w|phi_j> 
   !                                                  ! single electron orbitals (i,j,row a b, colm a b, spin up down)
+  CHARACTER(LEN=256) :: fname
   !
   single_electron_w = 0.D0
   !
@@ -298,6 +347,26 @@ SUBROUTINE calc_w_img(ik, occ, wevc, wevc2, cofc)
   CALL calbec ( npw, evc1(:,:,ik), wevc2, single_electron_w(:,:,1,2,ik), nbnd )
   CALL calbec ( npw, evc2(:,:,ik), wevc,  single_electron_w(:,:,2,1,ik), nbnd )
   CALL calbec ( npw, evc2(:,:,ik), wevc2, single_electron_w(:,:,2,2,ik), nbnd )
+  !
+  ! write w single electron to file
+  !
+  IF(debug2)THEN
+    !
+    WRITE(unit=fname,fmt=*) ik
+    fname="Waa"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,1,ik), occ(ik))
+    WRITE(unit=fname,fmt=*) ik
+    fname="Wab"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,2,ik), occ(ik))
+    WRITE(unit=fname,fmt=*) ik
+    fname="Wba"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,1,ik), occ(ik))
+    WRITE(unit=fname,fmt=*) ik
+    fname="Wbb"//TRIM(ADJUSTL(fname))
+    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,2,ik), occ(ik))
+    !
+  ENDIF
+  !
   !
   DO i = 1, occ(ik)
     DO j = 1, occ(ik)
