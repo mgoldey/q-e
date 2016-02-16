@@ -45,10 +45,10 @@ SUBROUTINE epcdft_get_w
     !
     ! S^-1  
     !
-    CALL get_s_invs(evc1(:,:,ik), evc1(:,:,ik), cofc(:,:,1,1,ik), nbnd)
-    CALL get_s_invs(evc1(:,:,ik), evc2(:,:,ik), cofc(:,:,1,2,ik), nbnd)
-    CALL get_s_invs(evc2(:,:,ik), evc1(:,:,ik), cofc(:,:,2,1,ik), nbnd)
-    CALL get_s_invs(evc2(:,:,ik), evc2(:,:,ik), cofc(:,:,2,2,ik), nbnd)
+    CALL get_s_invs(evc1(:,1:occ(ik),ik), evc1(:,1:occ(ik),ik), cofc(1:occ(ik),1:occ(ik),1,1,ik), occ(ik) )
+    CALL get_s_invs(evc1(:,1:occ(ik),ik), evc2(:,1:occ(ik),ik), cofc(1:occ(ik),1:occ(ik),1,2,ik), occ(ik) )
+    CALL get_s_invs(evc2(:,1:occ(ik),ik), evc1(:,1:occ(ik),ik), cofc(1:occ(ik),1:occ(ik),2,1,ik), occ(ik) )
+    CALL get_s_invs(evc2(:,1:occ(ik),ik), evc2(:,1:occ(ik),ik), cofc(1:occ(ik),1:occ(ik),2,2,ik), occ(ik) )
     !
     ! C = (S^-1 * det(S))^T
     !
