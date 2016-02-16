@@ -277,16 +277,16 @@ SUBROUTINE calc_w_real(ik, occ, wevc, wevc2, cofc)
     !
     WRITE(unit=fname,fmt=*) ik
     fname="Waa"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,1,ik), nbnd, occ(ik))
+    CALL real_dumpmat(fname, filunit, single_electron_w(:,:,1,1,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wab"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,1,2,ik), nbnd, occ(ik))
+    CALL real_dumpmat(fname, filunit, single_electron_w(:,:,1,2,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wba"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,1,ik), nbnd, occ(ik))
+    CALL real_dumpmat(fname, filunit, single_electron_w(:,:,2,1,ik), nbnd, occ(ik))
     WRITE(unit=fname,fmt=*) ik
     fname="Wbb"//TRIM(ADJUSTL(fname))
-    CALL realpart_dumpmat(fname, filunit, single_electron_w(:,:,2,2,ik), nbnd, occ(ik))
+    CALL real_dumpmat(fname, filunit, single_electron_w(:,:,2,2,ik), nbnd, occ(ik))
     !
   ENDIF
   !
@@ -389,3 +389,29 @@ SUBROUTINE calc_w_img(ik, occ, wevc, wevc2, cofc)
   !
 END SUBROUTINE calc_w_img
 !
+!
+!-----------------------------------------------------------------------
+SUBROUTINE real_dumpmat(fname,filunit,mat,m,n)
+  !-----------------------------------------------------------------------
+  !
+  ! will print real
+  !
+  USE kinds,      ONLY : DP
+  USE io_global,  ONLY : ionode
+  !
+  IMPLICIT NONE
+  !
+  INTEGER :: i, j
+  INTEGER,INTENT(IN) :: filunit, n,m
+  REAL(DP),INTENT(IN) :: mat(m,m)
+  CHARACTER(LEN=256),INTENT(IN) :: fname
+  !
+  !OPEN(UNIT=filunit,FILE=TRIM(ADJUSTL(fname))//".cub")
+  IF( ionode ) THEN
+    OPEN(UNIT=filunit,FILE=fname)
+    DO i = 1, n
+      WRITE(filunit, *) ( REAL(mat(i,j),KIND=DP) , j = 1, n )
+    ENDDO
+  ENDIF
+  !-----------------------------------------------------------------------
+END SUBROUTINE real_dumpmat

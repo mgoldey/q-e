@@ -58,8 +58,8 @@ print """== S up python vs QE ==
 """.format(pysmat[0], detsup[0], pysmat[1], detsup[1])
 
 # down
-pysmat = [[round(np.linalg.det(saadown), 4), round(np.linalg.det(sabdown), 4)],
-          [round(np.linalg.det(sbadown), 4), round(np.linalg.det(sbbdown), 4)]]
+pysmat = [[round(np.linalg.det(saadown), 8), round(np.linalg.det(sabdown), 8)],
+          [round(np.linalg.det(sbadown), 8), round(np.linalg.det(sbbdown), 8)]]
 print """== S up python vs QE ==
 {}\t{}
 {}\t{}
