@@ -9,8 +9,8 @@
 e1=`awk '/! /{print $5}' $1 | tail -n 1`
 e2=`awk '/! /{print $5}' $2 | tail -n 1`
 #
-c1=`awk '/correction /{print $4}' $1 | tail -n 1`
-c2=`awk '/correction /{print $4}' $2 | tail -n 1`
+c1=`awk '/CDFT correction /{print $4}' $1 | tail -n 1`
+c2=`awk '/CDFT correction /{print $4}' $2 | tail -n 1`
 #
 f1=`echo "$e1 - $c1" | bc `
 f2=`echo "$e2 - $c2" | bc `
