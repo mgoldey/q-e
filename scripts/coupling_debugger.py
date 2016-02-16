@@ -158,11 +158,11 @@ print """== W down python vs QE ==
 #       (pywabup*pysmatdown[0][1] + pywabdown*pysmatup[0][1] +
 #        pywbaup*pysmatdown[1][0] + pywbadown*pysmatup[1][0]))
 # hab = 0.5*hab
-wtotab = pywabup*pysmatdown[0][1] + pywabdown*pysmatup[0][1]
-wtotba = pywbaup*pysmatdown[1][0] + pywbadown*pysmatup[1][0]
+wtotab = pywabup*detsdown[0][1] + pywabdown*detsup[0][1]
+wtotba = pywbaup*detsdown[1][0] + pywbadown*detsup[1][0]
 
-fba = fandc[0][0]*pysmatup[1][0]*pysmatdown[1][0]
-fab = fandc[1][0]*pysmatup[0][1]*pysmatdown[0][1]
+fba = fandc[0][0]*detsup[1][0]*detsdown[1][0]
+fab = fandc[1][0]*detsup[0][1]*detsdown[0][1]
 
 pyhmat = [[fandc[0][0]+fandc[0][1],
            fab - wtotab],
