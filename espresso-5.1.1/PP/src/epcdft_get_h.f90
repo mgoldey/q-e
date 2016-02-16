@@ -16,7 +16,7 @@ SUBROUTINE epcdft_get_h
   !
   USE kinds,      ONLY : DP
   USE io_global,  ONLY : ionode, stdout
-  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, cor1, cor2
+  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, cor1, cor2, debug2
   USE klist,      ONLY : nks
   !
   IMPLICIT NONE
@@ -50,6 +50,35 @@ SUBROUTINE epcdft_get_h
     ENDDO
 !  ENDDO
   !
+  IF( debug2 ) CALL epcdft_print_h(hc)
   IF( ionode ) WRITE( stdout, * )"    H done"
   !
 END SUBROUTINE epcdft_get_h
+!
+!
+!-----------------------------------------------------------------------
+SUBROUTINE epcdft_print_h(hc)
+  !-----------------------------------------------------------------------
+  !
+  USE kinds,      ONLY : DP
+  USE epcdft_mod, ONLY : free1, free2, cor1, cor2
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP) :: core(2,2)
+  COMPLEX(DP), INTENT(IN) :: hc(2,2)
+  CHARACTER(LEN=256) :: fname
+  INTEGER :: filunit = 3240903
+  !
+  core(1,1) = free1
+  core(1,2) = cor1 
+  core(2,1) = free2 
+  core(2,2) = cor2
+  !
+  fname="FandC"
+  CALL real_dumpmat(fname,filunit,core,2,2)
+  !
+  fname="H"
+  CALL real_dumpmat(fname,filunit,hc,2,2)
+  !
+END SUBROUTINE epcdft_print_h
