@@ -132,6 +132,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   nwfcm=0
   lmax=0
   DO na=1,nat
+    nt = ityp (na)
     DO nb = 1, upf(nt)%nwfc ! for each orbital
       if (upf(nt)%oc(nb) > 0.d0) then
         l = upf(nt)%lchi(nb) ! get l 
