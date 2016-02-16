@@ -596,6 +596,34 @@ SUBROUTINE electrons_scf ( no_printout )
            !
            CALL scf_type_COPY( rhoin, rho )
            !
+        ELSE IF (do_epcdft) THEN
+          CALL epcdft_controller()
+          IF (conv_epcdft.eq. .FALSE.) THEN
+            conv_elec=.false.
+           !
+           ! ... no convergence yet: calculate new potential from mixed
+           ! ... charge density (i.e. the new estimate)
+           !
+           CALL v_of_rho( rhoin, rho_core, rhog_core, &
+                          ehart, etxc, vtxc, eth, etotefield, charge, v)
+           IF (okpaw) THEN
+              CALL PAW_potential(rhoin%bec, ddd_paw, epaw)
+              CALL PAW_symmetrize_ddd(ddd_paw)
+           ENDIF
+           !
+           ! ... estimate correction needed to have variational energy:
+           ! ... T + E_ion (eband + deband) are calculated in sum_band
+           ! ... and delta_e using the output charge density rho;
+           ! ... E_H (ehart) and E_xc (etxc) are calculated in v_of_rho
+           ! ... above, using the mixed charge density rhoin%of_r.
+           ! ... delta_escf corrects for this difference at first order
+           !
+           descf = delta_escf()
+           !
+           ! ... now copy the mixed charge density in R- and G-space in rho
+           !
+           CALL scf_type_COPY( rhoin, rho )
+          ENDIF 
         ELSE 
            !
            ! ... convergence reached:
