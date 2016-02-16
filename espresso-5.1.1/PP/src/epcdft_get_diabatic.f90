@@ -29,7 +29,7 @@ SUBROUTINE epcdft_get_diabatic_w()
   !    The Journal of Chemical Physics 133, 244105 (2010); doi: 10.1063/1.3507878
   !
   USE kinds, ONLY : DP
-  USE epcdft_mod, ONLY : wmat, smat, ohc, hc, debug2
+  USE epcdft_mod, ONLY : wmat, smat, ohc, hc, debug2, lm
   !
   IMPLICIT NONE
   !
@@ -62,7 +62,9 @@ SUBROUTINE epcdft_get_diabatic_w()
   !
   ! Solve Wab = wabup*sabdown + wabdown*sabup
   !
-  wtot(:,:) = wmat(:,:,1) * smat(:,:,2) + wmat(:,:,2) * smat(:,:,1) 
+  wtot(:,:) = wmat(:,:,1) * smat(:,:,2) + wmat(:,:,2) * smat(:,:,1)
+  wtot(:,1) = wtot(:,1)/lm(1,1)
+  wtot(:,2) = wtot(:,2)/lm(1,2)
   !
   !
   IF(debug2)THEN

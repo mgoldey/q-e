@@ -30,7 +30,7 @@ SUBROUTINE epcdft_setup
   LOGICAL :: exst2 
   CHARACTER (len=256) :: tmp_dir2 ! temp variable to store system 2's dir info 
   CHARACTER (len=256) :: tmp_dir_pass   ! used to store tmp_dir during pass for reading two systems
-  INTEGER  :: iunwfc_pass, ik   ! same as above but diff var
+  INTEGER  :: iunwfc_pass, ik, nctmp   ! same as above but diff var
   CHARACTER (len=256) :: prefix_pass
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER :: ios
@@ -113,6 +113,9 @@ SUBROUTINE epcdft_setup
   !
   ! setup weight function for system 2
   CALL add_epcdft_efield(w(:,2,:),.TRUE.)
+  nctmp = nconstr_epcdft
+  ALLOCATE( lm( nconstr_epcdft, 2 ) )
+  lm(:,2) = epcdft_guess(:)
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841274, fil, w(:,2) )
   !
@@ -141,6 +144,11 @@ SUBROUTINE epcdft_setup
   !
   ! setup weight function for system 1
   CALL add_epcdft_efield(w(:,1,:),.TRUE.)
+  IF(nctmp .ne. nconstr_epcdft .and. ionode ) WRITE( stdout,*)&
+  "    !!!! number of constraints for A and B not the same !!!!"
+  IF( nconstr_epcdft .ne. 1 .and. eig_of_w .and. ionode ) WRITE( stdout,*)&
+  "    !!!! number of constraints need to be 1 for eig_of_w = .true. !!!!"
+  lm(:,1) = epcdft_guess(:)
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841275, fil, w(:,1) )
   !
