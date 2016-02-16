@@ -128,23 +128,6 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   character(len=1024) :: filename
   
   n=dfftp%nnr ! Just to be safe
-  ! get the max number of wfs any atom will have
-  nwfcm=0
-  lmax=0
-  DO na=1,nat
-    nt = ityp (na)
-    DO nb = 1, upf(nt)%nwfc ! for each orbital
-      if (upf(nt)%oc(nb) > 0.d0) then
-        l = upf(nt)%lchi(nb) ! get l 
-        if (l .gt. lmax) lmax=l
-      END IF
-    END DO
-    nfuncs=0
-    do l=0,lmax
-      nfuncs=nfuncs+(2*l+1)
-    end do
-    if (nfuncs .gt. nwfcm) nwfcm = nfuncs
-  END DO
   !
   ALLOCATE( wfcatomr(n) )
   ALLOCATE( total_atom_rho_r(n) )
@@ -447,24 +430,6 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
   ! set up to be in bohr via one_atom_shifted_wfc
   dx=0.001
-
-  ! get the max number of wfs any atom will have
-  nwfcm=0
-  lmax=0
-  DO na=1,nat
-    DO nb = 1, upf(nt)%nwfc ! for each orbital
-      if (upf(nt)%oc(nb) > 0.d0) then
-        l = upf(nt)%lchi(nb) ! get l 
-        if (l .gt. lmax) lmax=l
-      END IF
-    END DO
-    nfuncs=0
-    do l=0,lmax
-      nfuncs=nfuncs+(2*l+1)
-    end do
-    if (nfuncs .gt. nwfcm) nwfcm = nfuncs
-  END DO
-
   
   ALLOCATE( wfcatomr(dfftp%nnr) )
   ALLOCATE( total_atom_rho_r(dfftp%nnr) )
