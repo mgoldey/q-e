@@ -45,6 +45,10 @@ wbbdown = np.loadtxt('Wbb2')
 wmatup = np.loadtxt('W1')
 wmatdown = np.loadtxt('W2')
 
+# read h, f and corrections
+fandc = np.loadtxt('FandC')
+hmat = np.loadtxt('H')
+
 #
 # compute S mat
 #
@@ -79,8 +83,11 @@ pycdown = [[np.transpose(np.linalg.inv(saadown)*pysmatdown[0][0]),
            [np.transpose(np.linalg.inv(sbadown)*pysmatdown[1][0]),
             np.transpose(np.linalg.inv(sbbdown)*pysmatdown[1][1])]]
 #
-# compute Wmat
+# compute Wmat use w from QE and
+# the cofactor computed from python
 #
+
+# up
 pywaaup = 0.0
 pywabup = 0.0
 pywbaup = 0.0
@@ -103,7 +110,7 @@ print """== W up python vs QE ==
            round(wmatup[1][0], 8),
            round(wmatup[1][1], 8))
 #
-#
+# down
 pywaadown = 0.0
 pywabdown = 0.0
 pywbadown = 0.0
@@ -125,3 +132,41 @@ print """== W down python vs QE ==
            round(pywbbdown, 8),
            round(wmatdown[1][0], 8),
            round(wmatdown[1][1], 8))
+
+
+#
+# compute h
+#
+# <a|H|b>
+# <b|H|a>
+#hab = ((fandc[0][0]*pysmatup[1][0]*pysmatdown[1][0] +
+#        fandc[1][0]*pysmatup[0][1]*pysmatdown[0][1]) -
+#       (pywabup*pysmatdown[0][1] + pywabdown*pysmatup[0][1] +
+#        pywbaup*pysmatdown[1][0] + pywbadown*pysmatup[1][0]))
+#hab = 0.5*hab
+
+wtotab = pywabup*pysmatdown[0][1] + pywabdown*pysmatup[0][1]
+wtotba = pywbaup*pysmatdown[1][0] + pywbadown*pysmatup[1][0]
+
+fba = fandc[0][0]*pysmatup[1][0]*pysmatdown[1][0]
+fab = fandc[1][0]*pysmatup[0][1]*pysmatdown[0][1]
+
+pyhmat = [[fandc[0][0]+fandc[0][1],
+           fab - wtotab],
+          [fba - wtotba,
+           fandc[1][0]+fandc[1][1]]]
+
+pyhmat[1][0] = 0.5*(pyhmat[1][0] + pyhmat[0][1])
+pyhmat[0][1] = pyhmat[1][0]
+
+print """== H python vs QE ==
+[{}, {}]\t[{}, {}]
+[{}, {}]\t[{}, {}]
+""".format(round(pyhmat[0][0], 8),
+           round(pyhmat[0][1], 8),
+           round(hmat[0][0], 8),
+           round(hmat[0][1], 8),
+           round(pyhmat[1][0], 8),
+           round(pyhmat[1][1], 8),
+           round(hmat[1][0], 8),
+           round(hmat[1][1], 8))
