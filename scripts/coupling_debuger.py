@@ -80,15 +80,15 @@ print """== S down python vs QE ==
 #
 # compute cofac
 #
-pycup = [[np.transpose(np.linalg.inv(saaup)*pysmatup[0][0]),
-          np.transpose(np.linalg.inv(sabup)*pysmatup[0][1])],
-         [np.transpose(np.linalg.inv(sbaup)*pysmatup[1][0]),
-          np.transpose(np.linalg.inv(sbbup)*pysmatup[1][1])]]
+pycup = [[np.transpose(np.linalg.inv(saaup)*detsup[0][0]),
+          np.transpose(np.linalg.inv(sabup)*detsup[0][1])],
+         [np.transpose(np.linalg.inv(sbaup)*detsup[1][0]),
+          np.transpose(np.linalg.inv(sbbup)*detsup[1][1])]]
 
-pycdown = [[np.transpose(np.linalg.inv(saadown)*pysmatdown[0][0]),
-            np.transpose(np.linalg.inv(sabdown)*pysmatdown[0][1])],
-           [np.transpose(np.linalg.inv(sbadown)*pysmatdown[1][0]),
-            np.transpose(np.linalg.inv(sbbdown)*pysmatdown[1][1])]]
+pycdown = [[np.transpose(np.linalg.inv(saadown)*detsdown[0][0]),
+            np.transpose(np.linalg.inv(sabdown)*detsdown[0][1])],
+           [np.transpose(np.linalg.inv(sbadown)*detsdown[1][0]),
+            np.transpose(np.linalg.inv(sbbdown)*detsdown[1][1])]]
 #
 # compute Wmat use w from QE and
 # the cofactor computed from python
