@@ -30,7 +30,7 @@ SUBROUTINE epcdft_setup
   LOGICAL :: exst2 
   CHARACTER (len=256) :: tmp_dir2 ! temp variable to store system 2's dir info 
   CHARACTER (len=256) :: tmp_dir_pass   ! used to store tmp_dir during pass for reading two systems
-  INTEGER  :: iunwfc_pass, ik   ! same as above but diff var
+  INTEGER  :: iunwfc_pass, ik, nctmp   ! same as above but diff var
   CHARACTER (len=256) :: prefix_pass
   CHARACTER(LEN=256), external :: trimcheck
   INTEGER :: ios
@@ -38,7 +38,7 @@ SUBROUTINE epcdft_setup
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
                        debug,  s_spin, free1, free2,&
-                       cor1, cor2, eig_of_w
+                       cor1, cor2, eig_of_w, debug2
   !
   ! setup vars and consistency checks
   !
@@ -76,11 +76,13 @@ SUBROUTINE epcdft_setup
   CALL mp_bcast( occdown1, ionode_id, world_comm )
   CALL mp_bcast( occdown2, ionode_id, world_comm )
   CALL mp_bcast( debug, ionode_id, world_comm )
+  CALL mp_bcast( debug2, ionode_id, world_comm )
   CALL mp_bcast( s_spin, ionode_id, world_comm )
   CALL mp_bcast( free1, ionode_id, world_comm )
   CALL mp_bcast( free2, ionode_id, world_comm )
   CALL mp_bcast( cor1, ionode_id, world_comm )
   CALL mp_bcast( cor2, ionode_id, world_comm )
+  CALL mp_bcast( eig_of_w, ionode_id, world_comm )
   !
   ! first read system 2 and store in system 1's variables 
   ! then we will restore vars to right place and read sys 1's stuff
@@ -111,6 +113,9 @@ SUBROUTINE epcdft_setup
   !
   ! setup weight function for system 2
   CALL add_epcdft_efield(w(:,2,:),.TRUE.)
+  nctmp = nconstr_epcdft
+  ALLOCATE( lm( nconstr_epcdft, 2 ) )
+  lm(:,2) = epcdft_guess(:)
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841274, fil, w(:,2) )
   !
@@ -139,6 +144,11 @@ SUBROUTINE epcdft_setup
   !
   ! setup weight function for system 1
   CALL add_epcdft_efield(w(:,1,:),.TRUE.)
+  IF(nctmp .ne. nconstr_epcdft .and. ionode ) WRITE( stdout,*)&
+  "    !!!! number of constraints for A and B not the same !!!!"
+  IF( nconstr_epcdft .ne. 1 .and. eig_of_w .and. ionode ) WRITE( stdout,*)&
+  "    !!!! number of constraints need to be 1 for eig_of_w = .true. !!!!"
+  lm(:,1) = epcdft_guess(:)
   !fil =  TRIM( tmp_dir ) // TRIM( prefix ) // 'v_cdft.cub'
   !CALL read_cube(239841275, fil, w(:,1) )
   !
@@ -153,7 +163,7 @@ SUBROUTINE epcdft_setup
   wmat = ( 0.D0, 0.D0 )
   !
   CALL print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, &
-                          occup1, occdown1, occup2, occdown2, debug,  s_spin )
+                          occup1, occdown1, occup2, occdown2, debug,  s_spin, debug2 )
   !
   IF( ionode ) WRITE( stdout,*)" "
   IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
@@ -164,7 +174,7 @@ END SUBROUTINE epcdft_setup
 !
 !-----------------------------------------------------------------------------
 SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occup1, &
-                              occdown1, occup2, occdown2, debug,  s_spin )
+                              occdown1, occup2, occdown2, debug,  s_spin, debug2 )
   !--------------------------------------------------------------------------
   !
   !     this routine prints warnings and some data from the input file 
@@ -182,7 +192,7 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
   CHARACTER(*), INTENT(IN)    :: tmp_dir
   CHARACTER(*), INTENT(IN)    :: tmp_dir2
   INTEGER,      INTENT(IN)    :: occup1, occdown1, occup2, occdown2
-  LOGICAL,      INTENT(IN)    :: debug, s_spin
+  LOGICAL,      INTENT(IN)    :: debug2, debug, s_spin
   !
   IF(ionode)THEN
      !
@@ -210,6 +220,7 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
      IF( ionode ) WRITE( stdout,*)"    prefix2      :", prefix2
      IF( ionode ) WRITE( stdout,*)"    outdir2      :", tmp_dir2
      IF( ionode ) WRITE( stdout,*)"    debug        :", debug
+     IF( ionode ) WRITE( stdout,*)"    debug2       :", debug2
      IF( ionode ) WRITE( stdout,*)"    s_spin       :", s_spin
      IF( ionode ) WRITE( stdout,*)" "
      IF( ionode ) WRITE( stdout,*)"    # of spins   :", nks

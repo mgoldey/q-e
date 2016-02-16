@@ -16,7 +16,7 @@ SUBROUTINE epcdft_get_h
   !
   USE kinds,      ONLY : DP
   USE io_global,  ONLY : ionode, stdout
-  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, cor1, cor2
+  USE epcdft_mod, ONLY : free1, free2, wmat, smat, hc, cor1, cor2, debug2
   USE klist,      ONLY : nks
   !
   IMPLICIT NONE
@@ -29,27 +29,55 @@ SUBROUTINE epcdft_get_h
   hc = 0.D0
   core(1) = free1 + cor1 
   core(2) = free2 + cor2
-  ftot = free1 + free2
   stot(:,:) = smat(:,:,1) * smat(:,:,2)
   !
-!  DO s = 1, nks
-    DO i = 1, 2
-      DO j = 1, 2
-        !
-        ! Wtot = Wab + Wba
-        wtot(i,j) =  wmat(i,j,1) * smat(i,j,2) + wmat(i,j,2) * smat(i,j,1) + &
-                     wmat(j,i,1) * smat(j,i,2) + wmat(j,i,2) * smat(j,i,1)
-        !
-        IF(i==j)THEN
-          hc(i,j) = core(i)
-        ELSE
-          hc(i,j) = 0.5D0 * ( ftot * stot(i,j) - wtot(i,j) )
-        ENDIF
-        !
-      ENDDO
-    ENDDO
-!  ENDDO
+  ! Wtot = Wab + Wba
   !
+  DO i = 1, 2
+    DO j = 1, 2
+      wtot(i,j) =  wmat(i,j,1) * smat(i,j,2) + wmat(i,j,2) * smat(i,j,1)
+    ENDDO
+  ENDDO
+  !
+  hc(1,1) = core(1)
+  hc(1,2) = ( free2 * stot(1,2) - wtot(1,2) ) !<a|h|b>
+  hc(2,1) = ( free1 * stot(2,1) - wtot(2,1) ) !<b|h|a>
+  hc(2,2) = core(2)
+  !
+  ! take average of off diags
+  !
+  hc(1,2) = 0.5D0*( hc(1,2) + hc(2,1) )
+  hc(2,1) = hc(1,2) 
+  !
+  IF( debug2 ) CALL epcdft_print_h(hc)
   IF( ionode ) WRITE( stdout, * )"    H done"
   !
 END SUBROUTINE epcdft_get_h
+!
+!
+!-----------------------------------------------------------------------
+SUBROUTINE epcdft_print_h(hc)
+  !-----------------------------------------------------------------------
+  !
+  USE kinds,      ONLY : DP
+  USE epcdft_mod, ONLY : free1, free2, cor1, cor2
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP) :: core(2,2)
+  COMPLEX(DP), INTENT(IN) :: hc(2,2)
+  CHARACTER(LEN=256) :: fname
+  INTEGER :: filunit = 3240903
+  !
+  core(1,1) = free1
+  core(1,2) = cor1 
+  core(2,1) = free2 
+  core(2,2) = cor2
+  !
+  fname="FandC"
+  CALL real_dumpmat(fname,filunit,core,2,2)
+  !
+  fname="H"
+  CALL realpart_dumpmat(fname,filunit,hc,2,2)
+  !
+END SUBROUTINE epcdft_print_h

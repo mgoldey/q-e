@@ -7,6 +7,7 @@ MODULE epcdft_mod
   SAVE
   !
   LOGICAL :: debug = .true.     ! print extra info
+  LOGICAL :: debug2 = .false.   ! dump Smat, cofactor mat, W mat into files
   LOGICAL :: s_spin             ! calculate S matrix for each spin separately
   LOGICAL :: eig_of_w = .FALSE. ! use eigenstates of W to orthog H (default is false so use lowdin)
   INTEGER :: iunwfc2 = 3636     ! unit for 2nd set of wfcs
@@ -25,6 +26,7 @@ MODULE epcdft_mod
   INTEGER :: fragment1_atom1, fragment1_atom2, fragment2_atom1, fragment2_atom2 ! atoms in acceptor fragments for sys 1 and 2
   REAL(DP), ALLOCATABLE :: w(:,:,:)         ! weight functions w( r , system, up down ) with amplitude
   COMPLEX(DP), ALLOCATABLE :: wmat(:,:,:) !  weigth matrix ( aa ab, ba bb, up down) without amplitude.
+  REAL(DP), ALLOCATABLE :: lm(:,:) ! lagrange multipliers  ( constraint i,  system a or b)
   !
   ! energy vars
   !
