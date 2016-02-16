@@ -40,8 +40,8 @@ SUBROUTINE epcdft_get_h
   ENDDO
   !
   hc(1,1) = core(1)
-  hc(1,2) = ( free1 * stot(1,2) - wtot(1,2) ) !<a|h|b>
-  hc(2,1) = ( free2 * stot(2,1) - wtot(2,1) ) !<a|h|b>
+  hc(1,2) = ( free2 * stot(1,2) - wtot(1,2) ) !<a|h|b>
+  hc(2,1) = ( free1 * stot(2,1) - wtot(2,1) ) !<b|h|a>
   hc(2,2) = core(2)
   !
   ! take average of off diags
