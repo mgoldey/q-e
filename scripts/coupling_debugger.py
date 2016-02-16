@@ -61,7 +61,7 @@ if (sys.argv[1] == 'w'):
 if (sys.argv[1] == 'l'):
     # read W, vecs of W and horth
     sinvoh = np.loadtxt('sinvoh')
-    horthlow = np.loadtxt('HorthLow')
+    horth = np.loadtxt('HorthLow')
 
 #
 # compute S mat
@@ -237,6 +237,11 @@ if (sys.argv[1] == 'l'):
                     sdiag[1][1]**(-0.5)]]
     sdiagsinvoh = np.dot(sdiagsinvoh, np.linalg.inv(sv))
     pysinvoh = np.dot(sv, sdiagsinvoh)
+    #
+    # compute S^-1/2 H S^-1/2
+    #
+    pyhorth = np.dot(pysinvoh, hmat)
+    pyhorth = np.dot(pyhorth, pysinvoh)
     print """
 == S^-1/2 python vs QE ==
 [{}, {}]\t[{}, {}]
@@ -249,3 +254,16 @@ if (sys.argv[1] == 'l'):
            round(pysinvoh[1][1], 8),
            round(sinvoh[1][0], 8),
            round(sinvoh[1][1], 8))
+
+    print """
+== H orth by L python vs QE ==
+[{}, {}]\t[{}, {}]
+[{}, {}]\t[{}, {}]
+""".format(round(pyhorth[0][0], 8),
+           round(pyhorth[0][1], 8),
+           round(horth[0][0], 8),
+           round(horth[0][1], 8),
+           round(pyhorth[1][0], 8),
+           round(pyhorth[1][1], 8),
+           round(horth[1][0], 8),
+           round(horth[1][1], 8))
