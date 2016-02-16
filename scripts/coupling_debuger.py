@@ -1,4 +1,6 @@
 import numpy as np
+import scipy as sp
+from scipy import linalg
 
 # read S
 saaup = np.loadtxt('Saa1')
@@ -48,6 +50,11 @@ wmatdown = np.loadtxt('W2')
 # read h, f and corrections
 fandc = np.loadtxt('FandC')
 hmat = np.loadtxt('H')
+
+# read W, vecs of W and horth
+w = np.loadtxt('W')
+v = np.loadtxt('Weigvec')
+horth = np.loadtxt('Horth')
 
 #
 # compute S mat
@@ -139,12 +146,11 @@ print """== W down python vs QE ==
 #
 # <a|H|b>
 # <b|H|a>
-#hab = ((fandc[0][0]*pysmatup[1][0]*pysmatdown[1][0] +
+# hab = ((fandc[0][0]*pysmatup[1][0]*pysmatdown[1][0] +
 #        fandc[1][0]*pysmatup[0][1]*pysmatdown[0][1]) -
 #       (pywabup*pysmatdown[0][1] + pywabdown*pysmatup[0][1] +
 #        pywbaup*pysmatdown[1][0] + pywbadown*pysmatup[1][0]))
-#hab = 0.5*hab
-
+# hab = 0.5*hab
 wtotab = pywabup*pysmatdown[0][1] + pywabdown*pysmatup[0][1]
 wtotba = pywbaup*pysmatdown[1][0] + pywbadown*pysmatup[1][0]
 
@@ -170,3 +176,38 @@ print """== H python vs QE ==
            round(pyhmat[1][1], 8),
            round(hmat[1][0], 8),
            round(hmat[1][1], 8))
+#
+# compute H orth using W
+#
+stot = np.array([[detsup[0][0]*detsdown[0][0],
+                  detsup[0][1]*detsdown[0][1]],
+                 [detsup[1][0]*detsdown[1][0],
+                  detsup[1][1]*detsdown[1][1]]])
+stotinv = np.linalg.inv(stot)
+# W.V = S.V.L
+# S^-1.W.V = V.L
+sinvw = np.dot(stotinv, w)
+# w_eigval, w_eigenlvec, w_eigenvec = sp.linalg.eig(w, b=None,
+# left=False, right=True, overwrite_a=False, overwrite_b=False,
+# check_finite=True)
+# print sp.linalg.eig(w, b=stot, left=True, right=True,
+# overwrite_a=False, overwrite_b=False, check_finite=True)
+w_eigval, w_eigvec = np.linalg.eig(sinvw)
+#
+# V^dag.H.V
+#
+# w_eigvec = v
+w_eigvec_dag = np.transpose(w_eigvec)
+tmp = np.dot(w_eigvec_dag, hmat)
+pyhorth = np.dot(tmp, w_eigvec)
+print """== H orth by W python vs QE ==
+[{}, {}]\t[{}, {}]
+[{}, {}]\t[{}, {}]
+""".format(round(pyhorth[0][0], 8),
+           round(pyhorth[0][1], 8),
+           round(horth[0][0], 8),
+           round(horth[0][1], 8),
+           round(pyhorth[1][0], 8),
+           round(pyhorth[1][1], 8),
+           round(horth[1][0], 8),
+           round(horth[1][1], 8))
