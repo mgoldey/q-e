@@ -79,6 +79,6 @@ SUBROUTINE epcdft_print_h(hc)
   CALL real_dumpmat(fname,filunit,core,2,2)
   !
   fname="H"
-  CALL real_dumpmat(fname,filunit,hc,2,2)
+  CALL realpart_dumpmat(fname,filunit,hc,2,2)
   !
 END SUBROUTINE epcdft_print_h
