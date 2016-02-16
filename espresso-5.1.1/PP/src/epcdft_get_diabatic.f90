@@ -104,7 +104,7 @@ SUBROUTINE epcdft_get_diabatic_lowdin()
   !-----------------------------------------------------------------------
   !
   USE kinds, ONLY : DP
-  USE epcdft_mod, ONLY : smat, hc, ohc
+  USE epcdft_mod, ONLY : smat, hc, ohc, debug2
   USE klist, ONLY : nks
   !
   IMPLICIT NONE
@@ -115,6 +115,8 @@ SUBROUTINE epcdft_get_diabatic_lowdin()
   COMPLEX(DP) :: d(2,2)       ! SD^-1/2 is diagonal S^-1/2
   COMPLEX(DP) :: invssqr(2,2) ! S-1/2
   COMPLEX(DP) :: smattot(2,2)   ! Sup*Sdown
+  CHARACTER(LEN=256) :: fname
+  INTEGER :: filunit=3234873
   !
   ohc = 0.D0
   l = 0.D0
@@ -133,16 +135,27 @@ SUBROUTINE epcdft_get_diabatic_lowdin()
   ENDDO
   !
   !
-  ! get S^-1/2 = U^-1 . SD^-1/2 . U
+  ! get S^-1/2 = U . SD^-1/2 . U^-1
+  ! get S^-1/2 = U . SD^-1/2 . U^dagger
   invssqr(:,:) = MATMUL( u(:,:), d(:,:) )
-  invssqr(:,:) = MATMUL( invssqr(:,:), Transpose(u(:,:)) )
+  invssqr(:,:) = MATMUL( invssqr(:,:), TRANSPOSE(DCONJG(u(:,:))) )
   !
   ! CALL print_cmat("S**-.5",invssqr,2)
   !
+  IF(debug2)THEN
+    fname='sinvoh'
+    CALL realpart_dumpmat(fname,filunit,invssqr,2,2)
+  ENDIF
+  !
   ! get oHc = S^-1/2 . Hc . S^-1/2
+  !
   ohc(:,:) = MATMUL( invssqr(:,:), hc(:,:) )
   ohc(:,:) = MATMUL( ohc(:,:) , invssqr(:,:) )
   !
+  IF(debug2)THEN
+    fname='HorthLow'
+    CALL realpart_dumpmat(fname,filunit,ohc,2,2)
+  ENDIF
   !
 END SUBROUTINE epcdft_get_diabatic_lowdin
 !

@@ -1,6 +1,7 @@
 import numpy as np
 import scipy as sp
 from scipy import linalg
+from os import sys
 
 # read S
 saaup = np.loadtxt('Saa1')
@@ -51,10 +52,16 @@ wmatdown = np.loadtxt('W2')
 fandc = np.loadtxt('FandC')
 hmat = np.loadtxt('H')
 
-# read W, vecs of W and horth
-w = np.loadtxt('W')
-v = np.loadtxt('Weigvec')
-horth = np.loadtxt('Horth')
+if (sys.argv[1] == 'w'):
+    # read W, vecs of W and horth
+    w = np.loadtxt('W')
+    v = np.loadtxt('Weigvec')
+    horth = np.loadtxt('Horth')
+
+if (sys.argv[1] == 'l'):
+    # read W, vecs of W and horth
+    sinvoh = np.loadtxt('sinvoh')
+    horthlow = np.loadtxt('HorthLow')
 
 #
 # compute S mat
@@ -179,28 +186,30 @@ print """== H python vs QE ==
 #
 # compute H orth using W
 #
-stot = np.array([[detsup[0][0]*detsdown[0][0],
-                  detsup[0][1]*detsdown[0][1]],
-                 [detsup[1][0]*detsdown[1][0],
-                  detsup[1][1]*detsdown[1][1]]])
-stotinv = np.linalg.inv(stot)
-# W.V = S.V.L
-# S^-1.W.V = V.L
-sinvw = np.dot(stotinv, w)
-# w_eigval, w_eigenlvec, w_eigenvec = sp.linalg.eig(w, b=None,
-# left=False, right=True, overwrite_a=False, overwrite_b=False,
-# check_finite=True)
-# print sp.linalg.eig(w, b=stot, left=True, right=True,
-# overwrite_a=False, overwrite_b=False, check_finite=True)
-w_eigval, w_eigvec = np.linalg.eig(sinvw)
-#
-# V^dag.H.V
-#
-# w_eigvec = v
-w_eigvec_dag = np.transpose(w_eigvec)
-tmp = np.dot(w_eigvec_dag, hmat)
-pyhorth = np.dot(tmp, w_eigvec)
-print """== H orth by W python vs QE ==
+if (sys.argv[1] == 'w'):
+    stot = np.array([[detsup[0][0]*detsdown[0][0],
+                      detsup[0][1]*detsdown[0][1]],
+                     [detsup[1][0]*detsdown[1][0],
+                      detsup[1][1]*detsdown[1][1]]])
+    stotinv = np.linalg.inv(stot)
+    # W.V = S.V.L
+    # S^-1.W.V = V.L
+    sinvw = np.dot(stotinv, w)
+    # w_eigval, w_eigenlvec, w_eigenvec = sp.linalg.eig(w, b=None,
+    # left=False, right=True, overwrite_a=False, overwrite_b=False,
+    # check_finite=True)
+    # print sp.linalg.eig(w, b=stot, left=True, right=True,
+    # overwrite_a=False, overwrite_b=False, check_finite=True)
+    w_eigval, w_eigvec = np.linalg.eig(sinvw)
+    #
+    # V^dag.H.V
+    #
+    # w_eigvec = v
+    w_eigvec_dag = np.transpose(w_eigvec)
+    tmp = np.dot(w_eigvec_dag, hmat)
+    pyhorth = np.dot(tmp, w_eigvec)
+    print """
+== H orth by W python vs QE ==
 [{}, {}]\t[{}, {}]
 [{}, {}]\t[{}, {}]
 """.format(round(pyhorth[0][0], 8),
@@ -211,3 +220,32 @@ print """== H orth by W python vs QE ==
            round(pyhorth[1][1], 8),
            round(horth[1][0], 8),
            round(horth[1][1], 8))
+
+
+if (sys.argv[1] == 'l'):
+    # compute S^-1/2
+    stot = np.array([[detsup[0][0]*detsdown[0][0],
+                      detsup[0][1]*detsdown[0][1]],
+                     [detsup[1][0]*detsdown[1][0],
+                      detsup[1][1]*detsdown[1][1]]])
+    seig, sv = np.linalg.eig(stot)
+    sdiag = np.dot(np.linalg.inv(sv), stot)
+    sdiag = np.dot(sdiag, sv)
+    sdiagsinvoh = [[sdiag[0][0]**(-0.5),
+                    sdiag[0][1]],
+                   [sdiag[1][0],
+                    sdiag[1][1]**(-0.5)]]
+    sdiagsinvoh = np.dot(sdiagsinvoh, np.linalg.inv(sv))
+    pysinvoh = np.dot(sv, sdiagsinvoh)
+    print """
+== S^-1/2 python vs QE ==
+[{}, {}]\t[{}, {}]
+[{}, {}]\t[{}, {}]
+""".format(round(pysinvoh[0][0], 8),
+           round(pysinvoh[0][1], 8),
+           round(sinvoh[0][0], 8),
+           round(sinvoh[0][1], 8),
+           round(pysinvoh[1][0], 8),
+           round(pysinvoh[1][1], 8),
+           round(sinvoh[1][0], 8),
+           round(sinvoh[1][1], 8))
