@@ -598,7 +598,7 @@ SUBROUTINE electrons_scf ( no_printout )
            !
         ELSE IF (do_epcdft) THEN
           CALL epcdft_controller()
-          IF (conv_epcdft.eq. .FALSE.) THEN
+          IF (conv_epcdft .eqv. .FALSE.) THEN
             conv_elec=.false.
            !
            ! ... no convergence yet: calculate new potential from mixed
