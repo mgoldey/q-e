@@ -5,7 +5,6 @@
     prefix='left'
     wf_collect = .true.
     verbosity = "high" 
-  do_epcdft    = .true.,
 /
 &system
     ibrav=1, 
@@ -16,23 +15,20 @@
     nbnd=40,
     nosym=.true.
     nspin = 2,
-    tot_magnetization = 1
+    tot_charge = -1
+    tot_magnetization = 0
     assume_isolated = 'mt'
-  hirshfeld = .TRUE.
-  donor_start    = 1,
-  donor_end    = 12,
-  acceptor_start = 13
-  acceptor_end = 13
-  epcdft_amp        = 1.1821E-01,
-  epcdft_charge  = 1.D0,
-  epcdft_thr = 1.0E-04
-  epcdft_delta_fld = 0.005D0
 / 
 &electrons 
     diago_full_acc=.true.
-    conv_thr = 1.D-12
+    conv_thr = 1.D-8
     diagonalization = 'cg'
 / 
+
+EPCDFT 
+1 1e-5 5e-2 100
+delta_charge 1 12 13 13 2.0 0.436
+
 ATOMIC_SPECIES 
 C   12.0107  C.pbe-mt_fhi.UPF 
 H   1.00794  H.pbe-mt_fhi.UPF 
@@ -52,4 +48,3 @@ H       0.0000  -2.4810 0.0000
 H      -2.1486  -1.2405 0.0000 
 H      -2.1486   1.2405 0.0000 
 Cl      0.6049 1.04775  3.0000
-
