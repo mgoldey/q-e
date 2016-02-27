@@ -15,29 +15,27 @@
     ntyp=3,
     ecutwfc = 75.d0, 
     nbnd=44,
-!   nosym=.true.
+    nosym=.true.
     nspin = 2,
     tot_magnetization = 0
     tot_charge=-1
     assume_isolated = 'mt'
-    hirshfeld = .TRUE.
-    donor_start    = 1,
-    donor_end    = 12,
-    acceptor_start = 13
-    acceptor_end = 13
-    epcdft_amp        = 3.3610E-01,
-    epcdft_charge  = 1.D0,
     epcdft_thr = 1.0E-02
     epcdft_delta_fld = 0.005D0
 / 
 &electrons 
     diago_full_acc=.true.
-!    conv_thr = 1.D-12
+    conv_thr = 1.D-8
 !   diagonalization = 'cg'
 !   mixing_beta = 0.20
 !   electron_maxstep = 40
 !   startingpot = 'file'
 / 
+
+EPCDFT 
+1 1e-2 5e-3 40
+delta_charge 1 12 13 13 1.0 0.3361
+
 ATOMIC_SPECIES 
 C   12.0107  C.pbe-mt_fhi.UPF 
 H   1.00794  H.pbe-mt_fhi.UPF 
