@@ -8,10 +8,10 @@
 /
 &system
     ibrav=1, 
-    a = 17, 
+    a = 10, 
     nat=13, 
     ntyp=3,
-    ecutwfc = 90.d0, 
+    ecutwfc = 80.d0, 
     nbnd=40,
     nosym=.true.
     nspin = 2,
@@ -20,6 +20,7 @@
     assume_isolated = 'mt'
 / 
 &electrons 
+    startingwfc = 'random'
     diago_full_acc=.true.
     conv_thr = 1.D-8
     diagonalization = 'cg'
