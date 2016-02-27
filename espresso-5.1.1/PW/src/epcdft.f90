@@ -43,14 +43,10 @@ SUBROUTINE epcdft_controller()
   USE mp,            ONLY : mp_bcast, mp_sum
   USE control_flags, ONLY : iverbosity, conv_elec
   USE scf,           ONLY : rho
-  USE io_files,  ONLY : tmp_dir, prefix
-
-  ! here's the meat
-  USE epcdft, ONLY : do_epcdft, conv_epcdft,epcdft_shift, &
-                     epcdft_locs,epcdft_guess,nconstr_epcdft, &
-                     epcdft_tol, epcdft_type,epcdft_target, epcdft_delta_fld, &
-                     epcdft_update_intrvl ! and a potatoe
-
+  USE io_files,      ONLY : tmp_dir, prefix
+  USE epcdft,        ONLY : do_epcdft, conv_epcdft,epcdft_shift, epcdft_locs,&
+                            epcdft_guess,nconstr_epcdft,epcdft_tol,epcdft_type,&
+                            epcdft_target, epcdft_delta_fld,epcdft_update_intrvl 
   !
   IMPLICIT NONE
   !
@@ -86,8 +82,7 @@ SUBROUTINE epcdft_controller()
   !
   ! Don't try to update too often or else the number of electrons will sometimes go the wrong way and mess up the solver
   ictr=ictr+1
-  if (conv_elec) ictr = epcdft_update_intrvl
-  if (mod( ictr, epcdft_update_intrvl ) .ne. 0 ) RETURN
+  if (.not. conv_elec .and. mod( ictr, epcdft_update_intrvl ) .ne. 0 ) RETURN
   !
   ! calc is converged lets compute and print the correction
   !
