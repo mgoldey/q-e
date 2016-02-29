@@ -9,6 +9,10 @@
 e1=`awk '/! /{print $5}' $1 | tail -n 1`
 e2=`awk '/! /{print $5}' $2 | tail -n 1`
 #
+i1=`echo $1 | sed 's/\.out/\.in'`
+i2=`echo $2 | sed 's/\.out/\.in'`
+#
+#
 c1=`awk '/CDFT correction /{print $4}' $1 | tail -n 1`
 c2=`awk '/CDFT correction /{print $4}' $2 | tail -n 1`
 #
@@ -23,10 +27,12 @@ spindown=${spindown%%.*}
 #
 cat>txt<< EOF
 &INPUTPP
-  prefix       = "left",
-  outdir       = "./out",
-  prefix2      = "right",
-  outdir2      = "./out",
+EOF
+grep prefix $i1 >>txt
+grep outdir $i1 >>txt
+grep prefix $i2 | sed 's/prefix/prefix2/' >>txt
+grep outdir $i2 | sed 's/outdir/outdir2/' >>txt
+cat >>txt <<EOF
   occup1       = $spinup
   occup2       = $spinup
   occdown1     = $spindown
