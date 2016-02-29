@@ -9,8 +9,8 @@
 e1=`awk '/! /{print $5}' $1 | tail -n 1`
 e2=`awk '/! /{print $5}' $2 | tail -n 1`
 #
-i1=`echo $1 | sed 's/\.out/\.in'`
-i2=`echo $2 | sed 's/\.out/\.in'`
+i1=`echo $1 | sed 's/\.out/\.in/'`
+i2=`echo $2 | sed 's/\.out/\.in/'`
 #
 #
 c1=`awk '/CDFT correction /{print $4}' $1 | tail -n 1`
