@@ -5,13 +5,13 @@
   outdir2      = "./out",
   occup1       = 19
   occup2       = 19
-  occdown1     = 18
-  occdown2     = 18
+  occdown1     = 19
+  occdown2     = 19
   debug        = .true.
   eig_of_w     = .false.
   s_spin       = .true.
-  free1 = -102.77550902
-  free2 = -114.42630204
-  cor1 =  -2.58534305 
-  cor2 =  9.31756345
+  free1 = -98.69888683
+  free2 = -112.50502850
+  cor1 =  -6.84737420 
+  cor2 =  7.16146870
 /
