@@ -429,7 +429,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
 
   ! set up to be in bohr via one_atom_shifted_wfc
-  dx=0.001
+  dx=1e-8
   
   ALLOCATE( wfcatomr(dfftp%nnr) )
   ALLOCATE( total_atom_rho_r(dfftp%nnr) )
