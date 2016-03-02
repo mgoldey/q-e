@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$6" ];then
+if [ -z "$2" ];then
   echo ""
   echo "create a directory with CDFT run files given an xyz file"
   echo ""
@@ -8,6 +8,10 @@ if [ -z "$6" ];then
   echo ""
   echo "example : "
   echo "sh xyz_to_cdft.sh 1.xyz 1 5 6 10 ../../pseudos/"
+  echo ""
+  echo "or : "
+  echo "sh xyz_to_cdft.sh 1.xyz ../../pseudos/"
+  echo ""
   exit
 fi
 
@@ -17,10 +21,27 @@ name=${1%.xyz}
 dir=`pwd`
 
 # acc/donor string
+# if less than 6 args assume dimer
+if [ -z "$6" ];then
+
+get_addstring(){
+python - <<END
+print "1 ",int($1/2.0),int($1/2.0+1),$1
+END
+}
+adstring=$(get_addstring $nat)
+psdir=$2
+
+else
+
 adstring="$2 $3 $4 $5"
+psdir=$6
+
+fi
 
 # create directory
 mkdir -p $name
+
 
 # when called print the atomic spec card with all the pp data
 get_atom_spec_card(){
@@ -90,7 +111,7 @@ cat > tmp_ecount.sh <<EOF
 #vars
 xyzfil=\$1
 mydir=\$(cd \`dirname \$0\` && pwd)
-ppdir="${dir}/$6"
+ppdir="${dir}/$psdir"
 etot=0
 
 #functions
@@ -223,7 +244,7 @@ cat > left.in << EOF
   outdir = 'out'  
   prefix = 'left' 
   calculation  = "scf",
-  pseudo_dir   = "$6",
+  pseudo_dir   = "./",
   wf_collect   = .TRUE.
   verbosity    = "high"
 /
@@ -256,7 +277,7 @@ EPCDFT
 K_POINTS {Gamma}
 EOF
 
-get_atom_spec_card ${1##*/} $dir/$6 >> left.in
+get_atom_spec_card ${1##*/} $dir/$psdir >> left.in
 echo "ATOMIC_POSITIONS (angstrom)" >> left.in
 movetocent $1 $size >> left.in # move to center of cell
 #tail -n${nat} ${1##*/} >> left.in
@@ -267,7 +288,7 @@ cat > right.in << EOF
   outdir = 'out'  
   prefix = 'right' 
   calculation  = "scf",
-  pseudo_dir   = "$6",
+  pseudo_dir   = "./",
   wf_collect   = .TRUE.
   verbosity    = "high"
 /
@@ -300,7 +321,7 @@ EPCDFT
 K_POINTS {Gamma}
 EOF
 
-get_atom_spec_card ${1##*/} $dir/$6 >> right.in
+get_atom_spec_card ${1##*/} $dir/$psdir >> right.in
 echo "ATOMIC_POSITIONS (angstrom)" >> right.in
 movetocent $1 $size >> right.in # move to center of cell
 #tail -n${nat} ${1##*/} >> right.in # dont move to center
@@ -325,6 +346,17 @@ srun -n 192 \$pwrun < right.in >& right.out
 sh /global/homes/n/nbrawand/src/epcdft/scripts/setup_coupling_input.sh left.out right.out >& coupling.in
 srun -n 24 \$pprun < coupling.in >& coupling.out
 EOF
+
+# copy pseudos to dir
+get_atom_spec_card ${1##*/} $dir/$psdir > tmp_ps_list
+while read line
+do
+ pp=`echo $line | awk '{print $3}'`
+ if [ ! -z "$pp" ];then
+ cp $dir/$psdir/$pp ./
+ fi
+done<tmp_ps_list
+rm tmp_ps_list
 
 # go back to working directory
 cd $dir
