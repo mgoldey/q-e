@@ -19,8 +19,8 @@ c2=`awk '/CDFT correction /{print $4}' $2 | tail -n 1`
 f1=`echo "$e1 - $c1" | bc `
 f2=`echo "$e2 - $c2" | bc `
 #
-spinup=`awk '/\(up:  /{print $7}' $1`
-spindown=`awk '/\(up:  /{print $9}' $1`
+spinup=`awk '/\(up: /{print $7}' $1 | sed 's/\.00,//'`
+spindown=`awk '/\(up: /{print $9}' $1 | sed 's/\.00,//'`
 #
 spinup=${spinup%%.*}
 spindown=${spindown%%.*}
