@@ -21,6 +21,7 @@ SUBROUTINE epcdft_setup
   USE cell_base,            ONLY : tpiba2
   USE scf,                  ONLY : rho
   USE lsda_mod,             ONLY : nspin
+  USE esm,                  ONLY : mill_2d, imill_2d
   USE epcdft_mod  
   USE epcdft
   !
@@ -129,6 +130,12 @@ SUBROUTINE epcdft_setup
   tmp_dir = tmp_dir_pass
   iunwfc = iunwfc_pass
   prefix = prefix_pass
+  !
+  ! avoid double allocate esm arrays
+  !
+  IF( ALLOCATED( mill_2d ) ) DEALLOCATE( mill_2d )
+  IF( ALLOCATED( imill_2d ) ) DEALLOCATE( imill_2d )
+  !
   CALL read_file()  
   CALL openfil_pp() 
   !
