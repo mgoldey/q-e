@@ -41,7 +41,7 @@ fi
 
 if [ `grep -c outdir $i2` == 1 ] 
 then
-grep outdir $i2 >>txt
+grep outdir $i2 | sed 's:outdir:outdir2:g' >>txt
 else
 echo "outdir2='./'" >>txt
 fi
