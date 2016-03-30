@@ -63,7 +63,7 @@ for l in dat:
   if l[0] not in seen:
     # get PP file for that elm
     os.chdir("$2")
-    for file in glob.glob(l[0]+".*.UPF"):
+    for file in glob.glob(l[0]+"_*.UPF"):
       pp=file
       os.chdir(olddir)
 
@@ -134,7 +134,7 @@ do
   # if atom is there get pp file name
   if [ ! -z "\$atom" ]
   then
-    pp=\`ls \$ppdir/\${atom}.*UPF\`
+    pp=\`ls \$ppdir/\${atom}_*.UPF\`
   fi
 
   # if pp is there add z electrons to etot
