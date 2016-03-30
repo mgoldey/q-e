@@ -28,10 +28,24 @@ spindown=${spindown%%.*}
 cat>txt<< EOF
 &INPUTPP
 EOF
+
 grep prefix $i1 >>txt
-grep outdir $i1 >>txt
 grep prefix $i2 | sed 's/prefix/prefix2/' >>txt
-grep outdir $i2 | sed 's/outdir/outdir2/' >>txt
+
+if [ `grep -c outdir $i1` == 1 ] 
+then
+grep outdir $i1 >>txt
+else
+echo "outdir='./'" >>txt
+fi
+
+if [ `grep -c outdir $i2` == 1 ] 
+then
+grep outdir $i2 | sed 's:outdir:outdir2:g' >>txt
+else
+echo "outdir2='./'" >>txt
+fi
+
 cat >>txt <<EOF
   occup1       = $spinup
   occup2       = $spinup
