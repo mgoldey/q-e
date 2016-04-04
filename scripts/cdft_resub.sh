@@ -12,27 +12,27 @@ while getopts ":l:r:c:s:" o; do
     case "${o}" in
         l)
             lf=${OPTARG}
-            if [ ! -f $lf ] ; then 
-				echo "left out file does not exist"; exit 1 
-			fi
+            #if [ ! -f $lf ] ; then 
+			#	echo "left out file does not exist"; exit 1 
+			#fi
             ;;
         r)
             rf=${OPTARG}
-            if [ ! -f $rf ] ; then 
-				echo "right out file does not exist"; exit 1 
-			fi
+            #if [ ! -f $rf ] ; then 
+			#	echo "right out file does not exist"; exit 1 
+			#fi
             ;;
         c)
             cf=${OPTARG}
-            if [ ! -f $cf ] ; then 
-				echo "coupling out file does not exist"; exit 1 
-			fi
+            #if [ ! -f $cf ] ; then 
+			#	echo "coupling out file does not exist"; exit 1 
+			#fi
             ;;
         s)
             sf=${OPTARG}
-            if [ ! -f $sf ] ; then 
-				echo "run script does not exist"; exit 1 
-			fi
+            #if [ ! -f $sf ] ; then 
+			#	echo "run script does not exist"; exit 1 
+			#fi
             ;;
         *)
             usage
@@ -123,7 +123,7 @@ else # job NOT DONE create new run file
 				echo $runc >> $newsf
 		fi
 
-		echo "sh $0" >> $newsf
+		echo "sh $0 $@" >> $newsf
 		eval $resubjob
 
 fi
