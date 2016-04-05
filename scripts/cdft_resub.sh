@@ -73,6 +73,8 @@ ldone=false
 rdone=false
 cdone=false
 newsf="${sf}_current"
+resubrunfil="run_resub"
+
 
 #
 #===== RUN SCRIPT =====
@@ -80,6 +82,7 @@ newsf="${sf}_current"
 # run file info this section needs to be 
 # modded based on runscrpt
 resubjob="qsub $newsf"
+runresub="qsub $resubrunfil"
 
 nodes=`awk '/COBALT -n/{print $3}' $sf`
 time=`awk '/COBALT -t/{print $3}' $sf`
@@ -106,6 +109,15 @@ runc="runjob \$pwpream : \$pprun < coupling.in >& coupling.out"
 runright="runjob \$pwpream : \$pwrun < right.in >& right.out"
 runleft="runjob \$pwpream : \$pwrun < left.in >& left.out"
 
+resubhead="
+#!/bin/bash\n
+#COBALT -n 1\n
+#COBALT -t 00:05:00\n
+#COBALT -A $qoe\n
+#COBALT --jobname=r_$name\n
+#COBALT --dependencies=wjobid
+\n
+"
 #
 #===== END RUN SCRIPT =====
 #
@@ -175,11 +187,17 @@ else # job NOT DONE create new run file
 				echo $runc >> $newsf
 		fi
 
-		# call this script in new run file
-		sed -i "s/ #/#/g" $newsf # removing extra white space
-		echo "sh $0 $@" >> $newsf
-		chmod a+x $newsf
-
 		# submit job
-		eval $resubjob
+		sed -i "s/ #/#/g" $newsf # removing extra white space
+		chmod a+x $newsf
+		jobid=`eval $resubjob`
+		echo $jobid
+
+		# create resub script and submit
+		echo -e $resubhead > $resubrunfil
+		chmod a+x $resubrunfil
+		echo "sh $0 $@" >> $resubrunfil
+		sed -i "s/wjobid/$jobid/" $resubrunfil
+		sed -i "s/ #/#/g" $resubrunfil # removing extra white space
+		eval $runresub
 fi
