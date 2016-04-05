@@ -106,10 +106,10 @@ pprun='/global/homes/n/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'
 { \n
 "
 
-mkcin="sh /global/homes/n/nbrawand/src/epcdft/scripts/setup_coupling_input.sh left.out right.out >& coupling.in"
-runc="srun -n 24 \$pprun < coupling.in >& coupling.out"
-runright="srun -n 48 \$pwrun < right.in >& right.out"
-runleft="srun -n 48 \$pwrun < left.in >& left.out"
+mkcin="sh /global/homes/n/nbrawand/src/epcdft/scripts/setup_coupling_input.sh $lif $rif >& coupling.in"
+runc="srun -n 24 \$pprun < coupling.in >& $cf"
+runright="srun -n 48 \$pwrun < $rif >& $rf"
+runleft="srun -n 48 \$pwrun < $lif >& $lf"
 
 resubhead="
 #!/bin/bash -l\n
