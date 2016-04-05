@@ -100,7 +100,6 @@ root='/home/nbrawand/src/epcdft'\n
 pwrun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/pw.x' \n
 pprun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'\n
 "
-sed -i "s/ #/#/g" $newsf # removing extra white space
 
 mkcin="sh \${root}/epcdft/scripts/setup_coupling_input.sh left.out right.out >& coupling.in"
 runc="runjob \$pwpream : \$pprun < coupling.in >& coupling.out"
@@ -151,7 +150,7 @@ if $ldone && $rdone && $cdone ; then
 
 else # job NOT DONE create new run file
 
-		echo $head > $newsf
+		echo -e $head > $newsf
 
 		if ! $ldone ; then
 		# left not done
@@ -177,7 +176,9 @@ else # job NOT DONE create new run file
 		fi
 
 		# call this script in new run file
+		sed -i "s/ #/#/g" $newsf # removing extra white space
 		echo "sh $0 $@" >> $newsf
+		chmod a+x $newsf
 
 		# submit job
 		eval $resubjob
