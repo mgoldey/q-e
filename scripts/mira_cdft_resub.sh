@@ -19,49 +19,37 @@
 #
 usage() { 
 	echo ""
-	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-c <coupling.out>] [-s <run script>]" 1>&2
+	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-c <coupling.out>] [-n <jobname>]" 1>&2
 	echo "RUN SCRIPT section needs to be modded before use."
 	echo ""
 	exit 1
 }
 
-while getopts ":l:L:r:R:c:s:" o; do
+while getopts ":l:L:r:R:c:n:" o; do
     case "${o}" in
-        l)# left output file
+        l) # left output file
             lf=${OPTARG}
-            #if [ ! -f $lf ] ; then 
-			#	echo "left out file does not exist"; exit 1 
-			#fi
             ;;
-        L)# left input file
+        L) # left input file
             lif=${OPTARG}
             if [ ! -f $lif ] ; then 
-				echo "run script does not exist"; exit 1 
-			fi
+		echo "run script does not exist"; exit 1 
+	    fi
             ;;
-        r)# right output file
+        r) # right output file
             rf=${OPTARG}
-            #if [ ! -f $rf ] ; then 
-			#	echo "right out file does not exist"; exit 1 
-			#fi
             ;;
-        R)# right input file
+        R) # right input file
             rif=${OPTARG}
             if [ ! -f $rif ] ; then 
-				echo "run script does not exist"; exit 1 
-			fi
+		echo "run script does not exist"; exit 1 
+ 	    fi
             ;;
-        c)# coupling output file
+        c) # coupling output file
             cf=${OPTARG}
-            #if [ ! -f $cf ] ; then 
-			#	echo "coupling out file does not exist"; exit 1 
-			#fi
             ;;
-        s)# run script
-            sf=${OPTARG}
-            if [ ! -f $sf ] ; then 
-				echo "run script does not exist"; exit 1 
-			fi
+        n) # jobname
+            name=${OPTARG}
             ;;
         *)
             usage
@@ -70,18 +58,22 @@ while getopts ":l:L:r:R:c:s:" o; do
 done
 
 # if any required input is missing print usage and exit
-if [ -z "${lf}" ] || [ -z "${lif}" ] || [ -z "${rif}" ] || [ -z "${rf}" ] || [ -z "${cf}" ] || [ -z "${sf}" ]; then
-    usage
+if [ -z "${lf}" ] || [ -z "${lif}" ] || [ -z "${rif}" ] || [ -z "${rf}" ] || [ -z "${cf}" ] ; then
+	usage
 	exit 1
 fi
 
+# if name is blank
+if [ -z ${name// } ] ; then 
+    name="cdft_job"
+fi
 
 # if these are false then change intput and
 # rerun calc
 ldone=false
 rdone=false
 cdone=false
-newsf="${sf}_current"
+newrun="run_${name}"
 resubrunfil="run_resub"
 
 
@@ -90,19 +82,18 @@ resubrunfil="run_resub"
 #
 # run file info this section needs to be 
 # modded based on runscrpt
-resubjob="qsub $newsf"
+resubjob="qsub $newrun"
 runresub="qsub $resubrunfil"
+qoe="ECSInterface"
 
-nodes=`awk '/COBALT -n/{print $3}' $sf`
-time=`awk '/COBALT -t/{print $3}' $sf`
-qoe=`awk '/COBALT -A/{print $3}' $sf`
-name=`grep 'COBALT --jobname' $sf`
-name=${name##*=}
+# this time must be less than walltime\n
+resubtime=" sleep 4m ; exit 0 ; \n"
+
 
 head="
 #!/bin/bash\n
-#COBALT -n $nodes\n
-#COBALT -t $time\n
+#COBALT -n 128\n
+#COBALT -t 00:05:00\n
 #COBALT -A $qoe\n
 #COBALT --jobname=$name\n
 #\n
@@ -111,6 +102,8 @@ pwpream=\"--block \$COBALT_PARTNAME -p 16 --envs OMP_NUM_THREADS=1\"\n
 root='/home/nbrawand/src/epcdft'\n
 pwrun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/pw.x' \n
 pprun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'\n
+
+{ \n
 "
 
 mkcin="sh \${root}/scripts/setup_coupling_input.sh left.out right.out >& coupling.in"
@@ -171,11 +164,11 @@ if $ldone && $rdone && $cdone ; then
 
 else # job NOT DONE create new run file
 
-		echo -e $head > $newsf
+		echo -e $head > $newrun
 
 		if ! $ldone ; then
 		# left not done
-				echo $runleft >> $newsf
+				echo $runleft >> $newrun
 				if [ -e $lif ]; then
 						# replace EPCDFT input pot
 						cdft_rep $lif $lf
@@ -184,7 +177,7 @@ else # job NOT DONE create new run file
 		
 		if ! $rdone ; then
 		# right is done
-				echo $runright >> $newsf
+				echo $runright >> $newrun
 				if [ -e $rif ]; then
 						cdft_rep $rif $rf
 				fi
@@ -192,14 +185,16 @@ else # job NOT DONE create new run file
 		
 		if ! $cdone ; then
 		# coupling not done
-				echo $mkcin >> $newsf
-				echo $runc >> $newsf
+				echo $mkcin >> $newrun
+				echo $runc >> $newrun
 		fi
 
 		# submit job
-		sed -i "s/ #/#/g" $newsf # removing extra white space
-		chmod a+x $newsf
-		echo "exit 0" >> $newsf
+		sed -i "s/ #/#/g" $newrun # removing extra white space
+		chmod a+x $newrun
+		echo "exit 0" >> $newrun
+		echo "} &" >> $newrun
+		echo -e $resubtime >> $newrun
 		jobid=`eval $resubjob`
 		echo $jobid
 
