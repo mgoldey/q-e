@@ -17,8 +17,15 @@ configure.msg
 CRASH
 bin/
 *.wfc*
+*.wfc
+*.mix
+*.mix*
+*.igk
 *.igk* 
 *.dat
 *.save/*
 *.cube
+*.cub
 tmp.pp
+txt
+*.xml

@@ -15,9 +15,10 @@ SAVE
     update_intrvl
   !
   LOGICAL :: &
-       do_epcdft,       &! if .TRUE. a finite electric field is added to the
-                         ! local potential
-       conv_epcdft       ! localization condition flag
+       do_epcdft,       &  ! if .TRUE. a finite electric field is added to the
+                           ! local potential
+       conv_epcdft,     &  ! localization condition flag
+       reset_field=.false. ! reset field (so we don't do this every time)
   !
   INTEGER :: epcdft_fields = 4   ! max number of fields that is allowed to
                                  ! define a constraint
@@ -31,10 +32,11 @@ SAVE
   !
   REAL(DP) :: epcdft_shift    ! energy shift from all fields
   !
-  CHARACTER(len=20), ALLOCATABLE :: epcdft_type(:)   ! type
-  INTEGER,           ALLOCATABLE :: epcdft_locs(:,:) ! atoms start end (start end) ()-if delta
-  REAL(DP),          ALLOCATABLE :: epcdft_guess(:)  !  guess values of constraints
-  REAL(DP),          ALLOCATABLE :: epcdft_target(:) ! target values of constraints
+  CHARACTER(len=20), ALLOCATABLE :: epcdft_type(:)    ! type
+  INTEGER,           ALLOCATABLE :: epcdft_locs(:,:)  ! atoms start end (start end) ()-if delta
+  REAL(DP),          ALLOCATABLE :: epcdft_guess(:)   !  guess values of constraints
+  REAL(DP),          ALLOCATABLE :: epcdft_target(:)  ! target values of constraints
+  REAL(DP),          ALLOCATABLE :: epcdft_field(:,:) ! constraint field
   !
   REAL(DP), ALLOCATABLE :: epcdft_forces(:,:)
   !

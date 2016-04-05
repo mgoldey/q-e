@@ -29,7 +29,7 @@ SUBROUTINE epcdft_controller()
   USE ions_base,     ONLY : nat, ityp, zv
   USE cell_base,     ONLY : alat, at, omega, bg, saw
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
-                            eopreg, forcefield, etotefield
+                            eopreg, forcefield
   USE force_mod,     ONLY : lforce
   USE io_global,     ONLY : stdout,ionode, ionode_id
   USE control_flags, ONLY : mixing_beta
@@ -46,7 +46,8 @@ SUBROUTINE epcdft_controller()
   USE io_files,      ONLY : tmp_dir, prefix
   USE epcdft,        ONLY : do_epcdft, conv_epcdft,epcdft_shift, epcdft_locs,&
                             epcdft_guess,nconstr_epcdft,epcdft_tol,epcdft_type,&
-                            epcdft_target, epcdft_delta_fld,epcdft_update_intrvl 
+                            epcdft_target, epcdft_delta_fld,epcdft_update_intrvl,&
+                            reset_field
   !
   IMPLICIT NONE
   !
@@ -54,6 +55,7 @@ SUBROUTINE epcdft_controller()
   !
   INTEGER  :: i, is, iatom,iconstraint
   INTEGER  :: ictr=0
+  LOGICAL  :: first =.true.
   REAL(DP) :: tmp
   REAL(DP) :: dv
   REAL(DP) :: acharge, dcharge                     ! acceptor/donor charge 
@@ -72,13 +74,14 @@ SUBROUTINE epcdft_controller()
   !
   REAL(DP), DIMENSION(:), allocatable,save :: last_epcdft_amp(:) ! used to determine next guess for potential
   REAL(DP), DIMENSION(:), allocatable,save :: last_einwell(:) ! used to determine next guess for potential
-  SAVE ictr
+  SAVE ictr,first
   if (ictr.eq.0) THEN
     allocate(last_epcdft_amp(nconstr_epcdft))
     allocate(last_einwell(nconstr_epcdft))
     last_epcdft_amp=0.D0
     last_einwell=0.D0
   ENDIF
+  reset_field=.false.
   !
   ! Don't try to update too often or else the number of electrons will sometimes go the wrong way and mess up the solver
   ictr=ictr+1
@@ -91,7 +94,6 @@ SUBROUTINE epcdft_controller()
 
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   tmp      = 0.D0
-  etotefield = 0.D0
   epcdft_shift = 0.D0
   epcdft_shiftp = 0.D0
 
@@ -233,6 +235,7 @@ SUBROUTINE epcdft_controller()
 
     IF(.NOT. elocflag .or. .not. conv_elec) THEN
       conv_epcdft=.FALSE.
+      reset_field=.true.
       !
       ! update applied field and restart scf
       !
@@ -240,10 +243,11 @@ SUBROUTINE epcdft_controller()
         !
         ! find next guess for epcdft_amp
         !
-        IF(ictr.eq.1) THEN
+        IF(first) THEN
            !
            !
-           next_epcdft_amp = epcdft_amp + SIGN(0.001D0, enumerr) 
+           next_epcdft_amp = epcdft_amp + SIGN(MIN(0.001D0,epcdft_delta_fld), enumerr)*SIGN(1.0,einwell)
+           first=.false.
            !
         ELSE
            !
@@ -277,13 +281,13 @@ SUBROUTINE epcdft_controller()
 
     IF(ionode) THEN
       if (.not. elocflag .or. .not. conv_elec) THEN
-        write(*,'(5x,a3,a6,a2,a6,a9,a9,a9,a9)') "I","D",'  ','A','Val','Target','Old','New'
-        write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3,f9.3)') &
+        write(*,'(5x,a3,a10,a2,a10,a12,a12,a12,a12)') "I","D",'  ','A','Val','Target','Old','New'
+        write(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e12.3,e12.3)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint), &
         last_epcdft_amp(iconstraint),epcdft_guess(iconstraint)
       ELSE
-        write(*,'(5x,a3,a6,a2,a6,a9,a9,a9)') "I","D",'  ','A','Val','Target','Str'
-        write(*,'(5x,i3,f6.3,a2,f6.3,f9.3,f9.3,f9.3)') &
+        write(*,'(5x,a3,a10,a2,a10,a12,a12,a15)') "I","D",'  ','A','Val','Target','Str'
+        write(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e15.6)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),epcdft_guess(iconstraint)
       ENDIF
     ENDIF
@@ -300,7 +304,53 @@ SUBROUTINE epcdft_controller()
   epcdft_shift = -1.D0 * epcdft_shift
   !
 END SUBROUTINE epcdft_controller
-!----------------------------------------------------------------------------
+! !----------------------------------------------------------------------------
+! !
+! SUBROUTINE epcdft_shift_singleband(iband,ispin,shift)
+!   !
+!   USE kinds,                ONLY : DP
+!   USE gvect,                ONLY : nl,nlm
+!   USE gvecs,                ONLY : nls,nlsm
+!   USE fft_interfaces,       ONLY : fwfft,invfft
+!   USE fft_base,             ONLY : dffts,dfftp
+!   USE wavefunctions_module, ONLY : evc, psic
+!   USE wvfct,                ONLY : nbnd, npw, npwx
+!   USE cell_base,     ONLY : omega
+!   USE mp_bands,      ONLY : intra_bgrp_comm
+!   USE mp,            ONLY : mp_bcast, mp_sum
+!   USE io_global,     ONLY : stdout,ionode, ionode_id
+!   USE epcdft,        ONLY : epcdft_field
+!   USE io_files,      ONLY : tmp_dir, prefix
+!   ! nrxx = dfftp%nnr,
+!   IMPLICIT NONE
+!   CHARACTER(LEN=256) :: filename                   ! cube filename
+!   REAL(DP) :: shiftp, dv,denom
+!   REAL(DP),intent(INOUT) :: shift
+!   INTEGER,intent(in) :: iband,ispin
+!   INTEGER          :: ir
+!   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
+!   shift=0.D0
+!   shiftp=0.D0
+  
+!   CALL dense_invfft(npw,evc(iband,ispin),npwx,psic,dfftp%nnr)
+!   write(filename,*) (TRIM( tmp_dir ) // TRIM( prefix ) // 'wfc',iband) 
+!   CALL write_cube_r ( 9519395, filename, psic )
+
+!   DO ir=1,dfftp%nnr 
+!         shiftp =shiftp-REAL(psic(ir),KIND=DP) * REAL(psic(ir),KIND=DP)*epcdft_field(ir,ispin)*dv
+!         denom=denom+REAL(psic(ir),KIND=DP) * REAL(psic(ir),KIND=DP)*dv
+!   END DO
+! #ifdef __MPI
+!     CALL MP_SUM(shiftp,intra_bgrp_comm) 
+!     CALL MP_SUM(denom,intra_bgrp_comm) 
+!     shift=shiftp/denom
+! #else
+!     shift=shiftp/denom
+! #endif
+!   !write(*,*) "output from epcdft_shift_singleband ", iband, ispin, shift
+!   !
+! END SUBROUTINE epcdft_shift_singleband
+! !
 !
 !
 SUBROUTINE secant_method(vnext, v, vold, e, eold, egoal)

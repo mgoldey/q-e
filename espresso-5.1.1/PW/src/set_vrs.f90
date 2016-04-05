@@ -43,23 +43,36 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   ! accumulates local potential contributions in to vrs 
   !
   USE kinds
-  USE epcdft,    ONLY : do_epcdft
+  USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field
   !
   implicit none
 
+  logical :: first
   integer :: nspin, nrxx
   ! input: number of spin components: 1 if lda, 2 if lsd, 4 if noncolinear
   ! input: the fft grid dimension
-  real(DP) :: vrs (nrxx, nspin), vltot (nrxx), vr (nrxx, nspin)
+  real(DP) :: vrs(nrxx,nspin), vltot(nrxx), vr(nrxx,nspin)
   ! output: total local potential on the smooth grid
   !         vrs=vltot+vr
   ! input: the total local pseudopotential
   ! input: the scf(H+xc) part of the local potential
 
   integer:: is
+
+  SAVE first
   !write(*,*) "sum_vrs",sum(vr(:,1))
-  IF ( do_epcdft ) &
-    CALL add_epcdft_efield(vr,.TRUE.)
+  if (first .or. .not. allocated(epcdft_field)) then
+    allocate(epcdft_field(nrxx,nspin))
+    reset_field=.true.
+  END IF
+  first=.false.
+  IF ( do_epcdft .and. reset_field) THEN
+    epcdft_field=0.0D0
+    CALL add_epcdft_efield(epcdft_field,.TRUE.)
+    reset_field=.false.
+  ENDIF
+  
+  vr=vr+epcdft_field
   !write(*,*) "sum_vrs",sum(vr(:,1))
   ! confirmed the potential was changing here
 
