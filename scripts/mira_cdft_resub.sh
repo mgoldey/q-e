@@ -3,6 +3,15 @@
 # Check status of cdft run and resubmit if not done 
 # RUN SCRIPT section needs to be modded before use
 #
+# The RUN SCRIPT section is setup for mira/cetus
+#
+# To start job run this script in directory with
+# input files 
+#
+# this script will submit the cdft job and a 
+# resubmit script which will wait for the 
+# cdft job to exit and then resubmit this script
+#
 # Nicholas Brawand nicholasbrawand@gmail.com
 
 #
@@ -98,13 +107,13 @@ head="
 #COBALT --jobname=$name\n
 #\n
 \n
-pwpream='--block \$COBALT_PARTNAME -p 16 --envs OMP_NUM_THREADS=1'\n
+pwpream=\"--block \$COBALT_PARTNAME -p 16 --envs OMP_NUM_THREADS=1\"\n
 root='/home/nbrawand/src/epcdft'\n
 pwrun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/pw.x' \n
 pprun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'\n
 "
 
-mkcin="sh \${root}/epcdft/scripts/setup_coupling_input.sh left.out right.out >& coupling.in"
+mkcin="sh \${root}/scripts/setup_coupling_input.sh left.out right.out >& coupling.in"
 runc="runjob \$pwpream : \$pprun < coupling.in >& coupling.out"
 runright="runjob \$pwpream : \$pwrun < right.in >& right.out"
 runleft="runjob \$pwpream : \$pwrun < left.in >& left.out"
@@ -190,6 +199,7 @@ else # job NOT DONE create new run file
 		# submit job
 		sed -i "s/ #/#/g" $newsf # removing extra white space
 		chmod a+x $newsf
+		echo "exit 0" >> $newsf
 		jobid=`eval $resubjob`
 		echo $jobid
 
