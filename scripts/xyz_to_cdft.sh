@@ -39,6 +39,8 @@ psdir=$6
 
 fi
 
+adstring=`echo $adstring | sed 's/  / /g'`
+
 # create directory
 mkdir -p $name
 
