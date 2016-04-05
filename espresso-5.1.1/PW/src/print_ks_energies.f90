@@ -26,6 +26,7 @@ SUBROUTINE print_ks_energies()
   USE control_flags,        ONLY : conv_elec, lbands, iverbosity
   USE mp_bands,             ONLY : root_bgrp, intra_bgrp_comm, inter_bgrp_comm
   USE mp,                   ONLY : mp_sum, mp_bcast
+  USE epcdft,               ONLY : do_epcdft
   !
   IMPLICIT NONE
   !
@@ -35,13 +36,14 @@ SUBROUTINE print_ks_energies()
       ngk_g(:)       ! number of plane waves summed on all nodes
   REAL(DP) :: &
       ehomo, elumo   ! highest occupied and lowest unoccupied levels
+  REAL(DP) :: shift  ! shift to correct eigenvectors for constrained dft
   INTEGER :: &
       i,            &! counter on polarization
       ik,           &! counter on k points
       kbnd,         &! counter on bands
       ibnd_up,      &! counter on bands
       ibnd_dw,      &! counter on bands
-      ibnd         
+      ibnd, ispin       
   !
   IF (nkstot >= 100 .and. iverbosity <= 0 ) THEN
      WRITE( stdout, '(/,5x,a)') &
@@ -50,6 +52,7 @@ SUBROUTINE print_ks_energies()
   !
   ALLOCATE ( ngk_g (nkstot) ) 
   !
+  shift=0.D0
   ngk_g(1:nks) = ngk(:)
   !
   CALL mp_sum( ngk_g(1:nks), intra_bgrp_comm )
@@ -63,8 +66,14 @@ SUBROUTINE print_ks_energies()
   !
      IF ( lsda ) THEN
         !
-        IF ( ik == 1 ) WRITE( stdout, 9015)
-        IF ( ik == ( 1 + nkstot / 2 ) ) WRITE( stdout, 9016)
+        IF ( ik == 1 ) THEN
+         WRITE( stdout, 9015)
+         ispin=1
+        ENDIF
+        IF ( ik == ( 1 + nkstot / 2 ) )THEN 
+         WRITE( stdout, 9016)
+         ispin=2
+        ENDIF
         !
      END IF
      !
@@ -74,7 +83,16 @@ SUBROUTINE print_ks_energies()
         WRITE( stdout, 9020 ) ( xk(i,ik), i = 1, 3 )
      END IF
      !
-     WRITE( stdout, 9030 ) ( et(ibnd,ik) * rytoev, ibnd = 1, nbnd )
+     DO ibnd = 1,nbnd
+!       if (do_epcdft) THEN
+!         CALL epcdft_shift_singleband(ibnd,ispin,shift)
+!       ENDIF
+      if (ibnd .gt. 0 .and. MOD(ibnd,8).eq.0) THEN
+        WRITE( stdout, 9030) ( (et(ibnd,ik)+shift) * rytoev)
+      ELSE
+        WRITE( stdout, 9030, advance='no') ( (et(ibnd,ik)+shift) * rytoev)
+      ENDIF
+     END DO
      !
      IF( iverbosity > 0 .AND. .NOT. lbands ) THEN
         !

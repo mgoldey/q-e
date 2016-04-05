@@ -58,10 +58,10 @@ SUBROUTINE epcdft_print
   4 FORMAT(5x,'F1 = ',F12.5,3x,'F2 = ',F12.5)
   7 FORMAT(5x,'E1 = ',F12.5,3x,'E2 = ',F12.5)
   8 FORMAT(5x,'C1 = ',F12.5,3x,'C2 = ',F12.5)
-  5 FORMAT(5x,'|Hab| = ',F14.6,' Ry')
-  9 FORMAT(5x,'|Hab| = ',F14.6,' Ha')
-  10 FORMAT(5x,'|Hab| = ',F14.6,' eV')
-  6 FORMAT(5x,'|Sab| = ',F14.6)
+  5 FORMAT(5x,'|Hab| = ',E14.6,' Ry')
+  9 FORMAT(5x,'|Hab| = ',E14.6,' Ha')
+  10 FORMAT(5x,'|Hab| = ',E14.6,' eV')
+  6 FORMAT(5x,'|Sab| = ',E14.6)
   !
 END SUBROUTINE epcdft_print
 !
