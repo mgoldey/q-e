@@ -282,7 +282,7 @@ SUBROUTINE epcdft_controller()
     IF(ionode) THEN
       if (.not. elocflag .or. .not. conv_elec) THEN
         write(*,'(5x,a3,a10,a2,a10,a12,a12,a12,a12)') "I","D",'  ','A','Val','Target','Old','New'
-        write(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e12.3,e12.3)') &
+        write(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e12.3,e17.8)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint), &
         last_epcdft_amp(iconstraint),epcdft_guess(iconstraint)
       ELSE
