@@ -1,38 +1,58 @@
 #!/bin/bash
-# Check status of cdft run and resubmit if not done 
 #
-# bash script.sh -l left.out -r right.out -c coupling.out
+# Check status of cdft run and resubmit if not done 
+# RUN SCRIPT section needs to be modded before use
 #
 # Nicholas Brawand nicholasbrawand@gmail.com
 
+#
 # parse args
-usage() { echo "Usage: $0 [-l <left.out>] [-r <right.out>] [-c <coupling.out>] [-s <run script>]" 1>&2; exit 1; }
+#
+usage() { 
+	echo ""
+	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-c <coupling.out>] [-s <run script>]" 1>&2
+	echo "RUN SCRIPT section needs to be modded before use."
+	echo ""
+	exit 1
+}
 
-while getopts ":l:r:c:s:" o; do
+while getopts ":l:L:r:R:c:s:" o; do
     case "${o}" in
-        l)
+        l)# left output file
             lf=${OPTARG}
             #if [ ! -f $lf ] ; then 
 			#	echo "left out file does not exist"; exit 1 
 			#fi
             ;;
-        r)
+        L)# left input file
+            lif=${OPTARG}
+            if [ ! -f $lif ] ; then 
+				echo "run script does not exist"; exit 1 
+			fi
+            ;;
+        r)# right output file
             rf=${OPTARG}
             #if [ ! -f $rf ] ; then 
 			#	echo "right out file does not exist"; exit 1 
 			#fi
             ;;
-        c)
+        R)# right input file
+            rif=${OPTARG}
+            if [ ! -f $rif ] ; then 
+				echo "run script does not exist"; exit 1 
+			fi
+            ;;
+        c)# coupling output file
             cf=${OPTARG}
             #if [ ! -f $cf ] ; then 
 			#	echo "coupling out file does not exist"; exit 1 
 			#fi
             ;;
-        s)
+        s)# run script
             sf=${OPTARG}
-            #if [ ! -f $sf ] ; then 
-			#	echo "run script does not exist"; exit 1 
-			#fi
+            if [ ! -f $sf ] ; then 
+				echo "run script does not exist"; exit 1 
+			fi
             ;;
         *)
             usage
@@ -40,20 +60,25 @@ while getopts ":l:r:c:s:" o; do
     esac
 done
 
-if [ -z "${lf}" ] || [ -z "${rf}" ] || [ -z "${cf}" ] || [ -z "${sf}" ]; then
+# if any required input is missing print usage and exit
+if [ -z "${lf}" ] || [ -z "${lif}" ] || [ -z "${rif}" ] || [ -z "${rf}" ] || [ -z "${cf}" ] || [ -z "${sf}" ]; then
     usage
 	exit 1
 fi
 
 
-# check status of cdft calculation and set flags
-# done flags
+# if these are false then change intput and
+# rerun calc
 ldone=false
 rdone=false
 cdone=false
 newsf="${sf}_current"
 
-# run file info this section needs to be modded based on runscrpt
+#
+#===== RUN SCRIPT =====
+#
+# run file info this section needs to be 
+# modded based on runscrpt
 resubjob="qsub $newsf"
 
 nodes=`awk '/COBALT -n/{print $3}' $sf`
@@ -82,8 +107,11 @@ runc="runjob \$pwpream : \$pprun < coupling.in >& coupling.out"
 runright="runjob \$pwpream : \$pwrun < right.in >& right.out"
 runleft="runjob \$pwpream : \$pwrun < left.in >& left.out"
 
+#
+#===== END RUN SCRIPT =====
+#
 
-# commands to check if complete 
+# commands to check if calcs are complete 
 if [ ! -z "`grep 'convergence has' $lf`" ] && [ ! -z "`grep 'JOB DONE' $lf`" ]; then
 	ldone=true
 fi
@@ -96,34 +124,61 @@ if [ ! -z "`grep 'JOB DONE' $cf`" ]; then
 	cdone=true
 fi
 
+cdft_rep(){
+# this function replaces input V's
+# with new V's from output files
+# of incomplete CDFT runs
+# $1 input file
+# $2 output file
+
+	line=`grep -a2 EPCDFT $1 | tail -n1 | awk '{$NF=""; print $0}'` 
+	vold=`grep -a2 EPCDFT $1 | tail -n1 | awk '{print $NF}'`
+	vnew=`grep -a1 New $2 | tail -n1 | awk '{print $NF}'`
+
+	if [ ! -z "$line" ] && [ ! -z "$vold" ] && [ ! -z "$vnew" ]; then
+		sed -i "s/$line *$vold/$line $vnew/" $1
+	fi
+
+}
+
+#
 # resubmit or complete job
+#
 
-# if job is done
 if $ldone && $rdone && $cdone ; then
-
-		exit 1 # DONE
+	# if job is done
+	exit 1 # DONE
 
 else # job NOT DONE create new run file
 
 		echo $head > $newsf
 
-		# left not done
 		if ! $ldone ; then
+		# left not done
 				echo $runleft >> $newsf
+				if [ -e $lif ]; then
+						# replace EPCDFT input pot
+						cdft_rep $lif $lf
+				fi
 		fi
 		
-		# right is done
 		if ! $rdone ; then
+		# right is done
 				echo $runright >> $newsf
+				if [ -e $rif ]; then
+						cdft_rep $rif $rf
+				fi
 		fi
 		
-		# coupling not done
 		if ! $cdone ; then
+		# coupling not done
 				echo $mkcin >> $newsf
 				echo $runc >> $newsf
 		fi
 
+		# call this script in new run file
 		echo "sh $0 $@" >> $newsf
-		eval $resubjob
 
+		# submit job
+		eval $resubjob
 fi
