@@ -246,7 +246,7 @@ SUBROUTINE epcdft_controller()
         IF(first) THEN
            !
            !
-           next_epcdft_amp = epcdft_amp + SIGN(MIN(0.001D0,epcdft_delta_fld), enumerr)*SIGN(1.0,einwell)
+           next_epcdft_amp = epcdft_amp + SIGN(MIN(0.001D0,epcdft_delta_fld), enumerr)*SIGN(1.0D0,einwell)
            first=.false.
            !
         ELSE
