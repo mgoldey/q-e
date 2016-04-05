@@ -91,7 +91,7 @@ resubtime=" sleep 4m ; exit 0 ; \n"
 
 
 head="
-#!/bin/bash\n
+#!/bin/bash -x\n
 #COBALT -n 128\n
 #COBALT -t 00:05:00\n
 #COBALT -A $qoe\n
@@ -192,7 +192,7 @@ else # job NOT DONE create new run file
 		# submit job
 		sed -i "s/ #/#/g" $newrun # removing extra white space
 		chmod a+x $newrun
-		echo "exit 0" >> $newrun
+		echo "exit 0 ;" >> $newrun
 		echo "} &" >> $newrun
 		echo -e $resubtime >> $newrun
 		jobid=`eval $resubjob`
