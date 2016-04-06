@@ -19,13 +19,13 @@
 #
 usage() { 
 	echo ""
-	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-c <coupling.out>] [-n <jobname>]" 1>&2
+	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-C <coupling.in>] [-c <coupling.out>] [-n <jobname>]" 1>&2
 	echo "RUN SCRIPT section needs to be modded before use."
 	echo ""
 	exit 1
 }
 
-while getopts ":l:L:r:R:c:n:" o; do
+while getopts ":l:L:r:R:C:c:n:" o; do
     case "${o}" in
         l) # left output file
             lf=${OPTARG}
@@ -33,7 +33,7 @@ while getopts ":l:L:r:R:c:n:" o; do
         L) # left input file
             lif=${OPTARG}
             if [ ! -f $lif ] ; then 
-		echo "run script does not exist"; exit 1 
+		echo "left input file does not exist"; exit 1 
 	    fi
             ;;
         r) # right output file
@@ -42,8 +42,11 @@ while getopts ":l:L:r:R:c:n:" o; do
         R) # right input file
             rif=${OPTARG}
             if [ ! -f $rif ] ; then 
-		echo "run script does not exist"; exit 1 
+		echo "right input file does not exist"; exit 1 
  	    fi
+            ;;
+        C) # coupling input file
+            cif=${OPTARG}
             ;;
         c) # coupling output file
             cf=${OPTARG}
@@ -82,42 +85,45 @@ resubrunfil="run_resub"
 #
 # run file info this section needs to be 
 # modded based on runscrpt
-resubjob="qsub $newrun"
-runresub="qsub $resubrunfil"
-qoe="ECSInterface"
+resubjob="sbatch $newrun"
+runresub="sbatch $resubrunfil"
 
 # this time must be less than walltime\n
 resubtime=" sleep 4m ; exit 0 ; \n"
 
 
+export DIR=/global/homes/m/mgoldey/Programs/edison/epcdft/
 head="
-#!/bin/bash -x\n
-#COBALT -n 128\n
-#COBALT -t 00:05:00\n
-#COBALT -A $qoe\n
-#COBALT --jobname=$name\n
+#!/bin/bash -l\n
+#SBATCH -p debug\n
+#SBATCH --qos=premium\n
+#SBATCH -N 2\n
+#SBATCH -t 00:10:00\n
+#SBATCH -J $name \n
 #\n
+# sbatch myscript.slurm\n
+#---------------------------------\n
+#\n
+pwrun='$DIR/espresso-5.1.1/bin/pw.x' \n
+pprun='$DIR/espresso-5.1.1/bin/epcdft_coupling.x'\n
 \n
-pwpream=\"--block \$COBALT_PARTNAME -p 16 --envs OMP_NUM_THREADS=1\"\n
-root='/home/nbrawand/src/epcdft'\n
-pwrun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/pw.x' \n
-pprun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'\n
-
 { \n
 "
 
-mkcin="sh \${root}/scripts/setup_coupling_input.sh $lf $rf >& coupling.in"
-runc="runjob \$pwpream : \$pprun < coupling.in >& $cf"
-runright="runjob \$pwpream : \$pwrun < $rif >& $rf"
-runleft="runjob \$pwpream : \$pwrun < $lif >& $lf"
+mkcin="sh $DIR/scripts/setup_coupling_input.sh $lf $rf > $cif 2> /dev/null "
+runc="srun -n 24 \$pprun < $cif >& $cf"
+runright="srun -n 48 \$pwrun < $rif >& $rf"
+runleft="srun -n 48 \$pwrun < $lif >& $lf"
 
 resubhead="
-#!/bin/bash\n
-#COBALT -n 1\n
-#COBALT -t 00:05:00\n
-#COBALT -A $qoe\n
-#COBALT --jobname=r_$name\n
-#COBALT --dependencies=wjobid
+#!/bin/bash -l\n
+#SBATCH -p regular\n
+#SBATCH --qos=normal\n
+#SBATCH -N 1\n
+#SBATCH -t 00:02:00\n
+#SBATCH -J $name  \n
+#SBATCH -d afterany:wjobid \n
+#\n
 \n
 "
 #
@@ -196,6 +202,7 @@ else # job NOT DONE create new run file
 		echo "} &" >> $newrun
 		echo -e $resubtime >> $newrun
 		jobid=`eval $resubjob`
+		jobid=`echo $jobid | awk '{print $4}'`
 		echo $jobid
 
 		# create resub script and submit
