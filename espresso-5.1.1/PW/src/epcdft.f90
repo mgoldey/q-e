@@ -161,6 +161,22 @@ SUBROUTINE epcdft_controller()
         ELSE IF(vpotenp(i,1)>0.D0) THEN
           dchargep = dchargep + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
         ENDIF
+      CASE('delta_alpha')
+        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv  * dv
+        !
+        IF(vpotenp(i,1)<0.D0) THEN
+          achargep = achargep + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
+        ELSE IF(vpotenp(i,1)>0.D0) THEN
+          dchargep = dchargep + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
+        ENDIF
+      CASE('delta_beta')
+        einwellp = einwellp - vpotenp(i,2) * rho%of_r(i,2) * dv  * dv
+        !
+        IF(vpotenp(i,2)<0.D0) THEN
+          achargep = achargep + ABS( vpotenp(i,2)  * rho%of_r(i,2)) * dv
+        ELSE IF(vpotenp(i,2)>0.D0) THEN
+          dchargep = dchargep + ABS( vpotenp(i,2)  * rho%of_r(i,2)) * dv
+        ENDIF
       END SELECT
     END DO ! i over nnr
 

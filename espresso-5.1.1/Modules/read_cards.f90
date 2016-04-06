@@ -1571,7 +1571,7 @@ CONTAINS
          ENDIF
          !
          SELECT CASE( epcdft_type(i) )
-         CASE( 'charge', 'spin','delta_charge','delta_spin' )
+         CASE( 'charge', 'spin','delta_charge','delta_spin','delta_alpha','delta_beta')
             !
             IF ( nfield == 4 ) THEN
                !

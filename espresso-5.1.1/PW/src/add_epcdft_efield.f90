@@ -241,6 +241,24 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
             vtop(:,2) = vtop(:,2) - epcdft_guess(icon)*total_atom_rho_r( : ) 
             !
           ENDIF
+        CASE('delta_alpha')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,1) = vtop(:,1) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+            !
+          ENDIF
+        CASE('delta_beta')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,2) = vtop(:,2) - epcdft_guess(icon)*total_atom_rho_r( : ) 
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,2) = vtop(:,2) + epcdft_guess(icon)*total_atom_rho_r( : ) 
+            !
+          ENDIF
         END SELECT
       END DO
     ELSE 
@@ -281,6 +299,26 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
             ! 
             vtop(:,1) = vtop(:,1) + total_atom_rho_r( : ) 
             vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
+            !
+          ENDIF
+        CASE('delta_alpha')
+          IF( na >= epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+            !
+          ELSE IF( na >= epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,1) = vtop(:,1) + total_atom_rho_r( : ) 
+            !
+          ENDIF
+        CASE('delta_beta')
+          IF( na >= epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
+            !
+          ELSE IF( na >= epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,2) = vtop(:,2) + total_atom_rho_r( : ) 
             !
           ENDIF
       END SELECT
@@ -578,6 +616,24 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
             vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
             !
           ENDIF
+        CASE('delta_alpha')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,1) = vtop(:,1) - total_atom_rho_r( : ) 
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,1) = vtop(:,1) + total_atom_rho_r( : ) 
+            !
+          ENDIF
+        CASE('delta_beta')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            vtop(:,2) = vtop(:,2) - total_atom_rho_r( : ) 
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            vtop(:,2) = vtop(:,2) + total_atom_rho_r( : ) 
+            !
+          ENDIF
       END SELECT
       DEALLOCATE( wfcatomg )
     END DO !atom
@@ -708,6 +764,24 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
             ! 
             svtop(:,1) = svtop(:,1) + (shifted_atom(:) - total_atom_rho_r(:))
             svtop(:,2) = svtop(:,2) - (shifted_atom(:) - total_atom_rho_r(:))
+            !
+          ENDIF
+        CASE('delta_alpha')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            svtop(:,1) = svtop(:,1) - (shifted_atom(:) - total_atom_rho_r(:))
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            svtop(:,1) = svtop(:,1) + (shifted_atom(:) - total_atom_rho_r(:))
+            !
+          ENDIF
+        CASE('delta_beta')
+          IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
+            !
+            svtop(:,2) = svtop(:,2) - (shifted_atom(:) - total_atom_rho_r(:))
+          ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
+            ! 
+            svtop(:,2) = svtop(:,2) + (shifted_atom(:) - total_atom_rho_r(:))
             !
           ENDIF
         END SELECT
