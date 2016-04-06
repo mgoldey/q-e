@@ -19,13 +19,13 @@
 #
 usage() { 
 	echo ""
-	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-c <coupling.out>] [-n <jobname>]" 1>&2
+	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-C <coupling.in>] [-c <coupling.out>] [-n <jobname>]" 1>&2
 	echo "RUN SCRIPT section needs to be modded before use."
 	echo ""
 	exit 1
 }
 
-while getopts ":l:L:r:R:c:n:" o; do
+while getopts ":l:L:r:R:C:c:n:" o; do
     case "${o}" in
         l) # left output file
             lf=${OPTARG}
@@ -33,7 +33,7 @@ while getopts ":l:L:r:R:c:n:" o; do
         L) # left input file
             lif=${OPTARG}
             if [ ! -f $lif ] ; then 
-		echo "run script does not exist"; exit 1 
+		echo "left input file does not exist"; exit 1 
 	    fi
             ;;
         r) # right output file
@@ -42,8 +42,11 @@ while getopts ":l:L:r:R:c:n:" o; do
         R) # right input file
             rif=${OPTARG}
             if [ ! -f $rif ] ; then 
-		echo "run script does not exist"; exit 1 
+		echo "right input file does not exist"; exit 1 
  	    fi
+            ;;
+        C) # coupling input file
+            cif=${OPTARG}
             ;;
         c) # coupling output file
             cf=${OPTARG}
@@ -89,6 +92,7 @@ runresub="sbatch $resubrunfil"
 resubtime=" sleep 4m ; exit 0 ; \n"
 
 
+export DIR=/global/homes/m/mgoldey/Programs/edison/epcdft/
 head="
 #!/bin/bash -l\n
 #SBATCH -p debug\n
@@ -100,14 +104,14 @@ head="
 # sbatch myscript.slurm\n
 #---------------------------------\n
 #\n
-pwrun='/global/homes/n/nbrawand/src/epcdft/espresso-5.1.1/bin/pw.x' \n
-pprun='/global/homes/n/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'\n
+pwrun='$DIR/espresso-5.1.1/bin/pw.x' \n
+pprun='$DIR/espresso-5.1.1/bin/epcdft_coupling.x'\n
 \n
 { \n
 "
 
-mkcin="sh /global/homes/n/nbrawand/src/epcdft/scripts/setup_coupling_input.sh $lif $rif >& coupling.in"
-runc="srun -n 24 \$pprun < coupling.in >& $cf"
+mkcin="sh $DIR/scripts/setup_coupling_input.sh $lf $rf > $cif 2> /dev/null "
+runc="srun -n 24 \$pprun < $cif >& $cf"
 runright="srun -n 48 \$pwrun < $rif >& $rf"
 runleft="srun -n 48 \$pwrun < $lif >& $lf"
 
