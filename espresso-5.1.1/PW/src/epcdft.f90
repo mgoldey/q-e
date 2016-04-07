@@ -162,7 +162,7 @@ SUBROUTINE epcdft_controller()
           dchargep = dchargep + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
         ENDIF
       CASE('delta_alpha')
-        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv  * dv
+        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv  
         !
         IF(vpotenp(i,1)<0.D0) THEN
           achargep = achargep + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
@@ -170,7 +170,7 @@ SUBROUTINE epcdft_controller()
           dchargep = dchargep + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
         ENDIF
       CASE('delta_beta')
-        einwellp = einwellp - vpotenp(i,2) * rho%of_r(i,2) * dv  * dv
+        einwellp = einwellp - vpotenp(i,2) * rho%of_r(i,2) * dv  
         !
         IF(vpotenp(i,2)<0.D0) THEN
           achargep = achargep + ABS( vpotenp(i,2)  * rho%of_r(i,2)) * dv
