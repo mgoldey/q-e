@@ -87,13 +87,13 @@ runresub="qsub $resubrunfil"
 qoe="ECSInterface"
 
 # this time must be less than walltime\n
-resubtime=" sleep 4m ; exit 0 ; \n"
+resubtime=" sleep 57m ; exit 0 ; \n"
 
 
 head="
 #!/bin/bash -x\n
 #COBALT -n 128\n
-#COBALT -t 00:05:00\n
+#COBALT -t 01:00:00\n
 #COBALT -A $qoe\n
 #COBALT --jobname=$name\n
 #\n
