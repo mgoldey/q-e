@@ -748,7 +748,7 @@ SUBROUTINE electrons_scf ( no_printout )
      etot = etot + plugin_etot 
 
      !IF(conv_elec .and. do_epcdft) CALL epcdft_controller()
-     IF(do_epcdft) CALL epcdft_controller()
+     IF(conv_elec .and. do_epcdft) CALL epcdft_controller()
 
      !IF(do_epcdft) etot=etot+epcdft_shift ! appears to now be taken into account
 
