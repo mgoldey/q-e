@@ -15,7 +15,7 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !
   !   This routine adds constraining potential for cdft to the local potential. 
   !
-  !   Voronoi cells
+  !   hirshfeld potential and field due to neutral metalic slab
   !
   !   User defined well around single atom
   !
@@ -42,6 +42,7 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !
   LOGICAL :: first=.TRUE.
   LOGICAL :: hirshfeld=.TRUE.
+  LOGICAL :: epcdft_surface=.FALSE.
 
   SAVE first
 
@@ -63,14 +64,246 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   ! calculate hirshfeld potential array
   !
   IF (hirshfeld) THEN 
-    vconstr =0.D0
+    !
+    vconstr = 0.D0
     CALL calc_hirshfeld_v(vconstr,0)
     vpoten= vpoten + vconstr 
-    RETURN
+    !
+  ENDIF
+  !
+  IF(epcdft_surface)THEN
+    !
+    vconstr = 0.D0
+    CALL calc_epcdft_surface_feld(vconstr)
+    vpoten = vpoten + vconstr 
+    !
   ENDIF
   !
 END SUBROUTINE add_epcdft_efield
 !
+!
+!--------------------------------------------------------------------------
+SUBROUTINE calc_epcdft_surface_feld( vin )
+  !--------------------------------------------------------------------------
+  ! 
+  ! Calculate the monopole and dipole potential due to an image charge
+  ! created by neutral charge slab in the xy plane at z = 0. 
+  !
+  ! The potential is saved in vin.
+  !
+  !
+  !                  metal@z=0
+  !                    |
+  !                    |
+  !  (image)-----z-----|-----z-----(charge_center)
+  !                    |
+  !                    |
+  ! 
+  !
+  USE kinds,     ONLY : DP
+  USE scf,       ONLY : rho
+  USE lsda_mod,  ONLY : nspin
+  USE fft_base,  ONLY : dfftp
+  USE cell_base, ONLY : alat, at
+  USE constants, ONLY : au_debye
+  USE ions_base, ONLY : nat, ityp, tau, zv
+  USE io_global, ONLY : stdout,ionode
+  USE mp_bands,  ONLY : me_bgrp
+  !USE epcdft, ONLY :
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP), INTENT(INOUT) :: vin(dfftp%nnr,nspin) ! the field due to slab
+  !
+  ! local variables
+  !
+  INTEGER :: index0, i, j, k, ip, ia, ir
+  REAL( DP )   :: inv_nr1, inv_nr2, inv_nr3
+  REAL(DP) :: zvia
+  REAL( DP )   :: r( 3 ), rmag ! position in cell and |r|
+  REAL(DP) :: qq ! total charge
+  REAL(DP) :: zvtot ! tot ion charge
+  REAL(DP) :: x0(3) ! center of charge of system
+  REAL(DP) :: e_dipole(0:3), e_quadrupole(3) ! electronic monopole dipole and quadrupole
+  REAL(DP) :: dipole_ion(3), quadrupole_ion(3) ! ion dips
+  REAL(DP) :: dipole(3), quadrupole(3) ! total dips
+  REAL(DP), EXTERNAL :: ddot
+  !
+  !---------------------
+  !  Variable initialization
+  !---------------------
+  !
+  vin = 0.D0
+  r = 0.D0
+  qq = 0.D0
+  zvtot = 0.D0
+  x0 = 0.D0
+  e_dipole = 0.D0
+  e_quadrupole = 0.D0
+  dipole_ion = 0.D0
+  quadrupole_ion = 0.D0
+  dipole = 0.D0
+  quadrupole = 0.D0
+  zvia = 0.D0
+  rmag = 0.D0
+  !
+  inv_nr1 = 1.D0 / DBLE( dfftp%nr1 )
+  inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
+  inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
+  !
+  IF (ionode) THEN
+    !
+    WRITE( stdout,'(5x,"":)')
+    WRITE( stdout,'(5x,"Adding image charge field due to neutral metal slab at origin in XY plane.":)')
+    WRITE( stdout,'(5x,"Including monopole and dipole terms.":)')
+    WRITE( stdout,'(5x,"Quadrupole not implemented yet.":)')
+    WRITE( stdout,'(5x,"System should not overlap with cell edges.":)')
+    WRITE( stdout,'(5x,"":)')
+    !WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') eamp 
+    !WRITE( stdout,'(8x,"Postion on atom # : ", I11.1)') edir
+    !WRITE( stdout,'(8x,"Well radius [bohr] : ", es11.4)') emaxpos * alat
+    !
+  ENDIF
+  !
+  ! get center of charge
+  !
+  DO ia = 1, nat
+     !
+     zvtot = zvtot + zv(ityp(ia))
+     !
+     x0(:) = x0(:) + tau(:,ia)*zv(ityp(ia))
+     !
+  END DO
+  !
+  x0(:) = x0(:) / zvtot
+  !
+  ! get electronic dipole
+  !
+  CALL compute_dipole( dfftp%nnr, nspin, rho%of_r, x0, e_dipole, e_quadrupole )
+  !
+  ! compute ion dipole moments
+  !
+  DO ia = 1, nat
+     !
+     zvia = zv(ityp(ia))
+     !
+     zvtot = zvtot + zvia
+     !
+     DO ip = 1, 3
+        !
+        dipole_ion(ip) = dipole_ion(ip) + &
+                         zvia*( tau(ip,ia) - x0(ip) )*alat
+        quadrupole_ion(ip) = quadrupole_ion(ip) + &
+                         zvia*( ( tau(ip,ia) - x0(ip) )*alat )**2
+        !
+     END DO
+  END DO
+  !
+  ! compute ionic+electronic total charge, dipole and quadrupole moments
+  !
+  qq = -e_dipole(0) + zvtot
+  !
+  dipole(:)  = -e_dipole(1:3) + dipole_ion(:)
+  !
+  quadrupole = -e_quadrupole  + quadrupole_ion
+  !
+  ! convert center of charge to bohr
+  !
+  x0(:) = x0(:)*alat
+  !
+  IF(ionode)THEN
+    !
+    WRITE( stdout, &
+           '(/5X,"reference position (x0):",5X,3F14.8," bohr")' ) x0(:)
+    !
+    ! A positive dipole goes from the - charge to the + charge.
+    !
+    !WRITE( stdout, '(/5X,"Dipole moments (with respect to x0):")' )
+    !WRITE( stdout, '( 5X,"Elect",3F9.4," au (Ha),",3F9.4," Debye")' ) &
+    !    (-dipole_el(ip), ip = 1, 3), (-dipole_el(ip)*au_debye, ip = 1, 3 )
+    !WRITE( stdout, '( 5X,"Ionic",3F9.4," au (Ha),", 3F9.4," Debye")' ) &
+    !    ( dipole_ion(ip),ip = 1, 3), ( dipole_ion(ip)*au_debye,ip = 1, 3 )
+    WRITE( stdout, '( 5X,"Total dipole moment",3F9.4," au (Ha),", 3F9.4," Debye")' ) &
+        ( dipole(ip),    ip = 1, 3), ( dipole(ip)*au_debye,    ip = 1, 3 )
+    !
+    ! ... print the electronic, ionic and total quadrupole moments
+    !
+    !WRITE( stdout, '(/5X,"Electrons quadrupole moment",F20.8," a.u. (Ha)")' )  &
+    !    -SUM(quadrupole_el(:))
+    !WRITE( stdout, '( 5X,"     Ions quadrupole moment",F20.8," a.u. (Ha)")' ) &
+    !    SUM(quadrupole_ion(:))
+    !WRITE( stdout, '( 5X,"    Total quadrupole moment",F20.8," a.u. (Ha)")' ) &
+    !    SUM(quadrupole(:))
+    !
+  ENDIF
+  !
+  !---------------------
+  !  Add potential
+  !---------------------
+  !
+  ! Index for parallel summation
+  !
+  index0 = 0
+#if defined (__MPI)
+  !
+  DO i = 1, me_bgrp
+     index0 = index0 + dfftp%nr1x*dfftp%nr2x*dfftp%npp(i)
+  END DO
+  !
+#endif
+  !
+  ! ... Loop over position grid
+  !
+  DO ir = 1, dfftp%nnr
+    !
+    ! ... three dimensional indexes
+    !
+    i = index0 + ir - 1
+    k = i / (dfftp%nr1x*dfftp%nr2x)
+    i = i - (dfftp%nr1x*dfftp%nr2x)*k
+    j = i / dfftp%nr1x
+    i = i - dfftp%nr1x*j
+    !
+    ! calculate position
+    !
+    DO ip = 1, 3
+      !
+      r(ip) = DBLE( i )*inv_nr1*at(ip,1) + &
+              DBLE( j )*inv_nr2*at(ip,2) + &
+              DBLE( k )*inv_nr3*at(ip,3)
+      !
+    END DO
+    !
+    ! the electron potential energy 
+    ! due to the image is
+    ! given by a flip in total charge
+    ! and dipole moment. An additional
+    ! negative comes from definition q_e = -1
+    !
+    ! vin(r,spin) = mono_v(r) + dip_v(r)
+    !
+    ! mono_v(r) = q_e*(-q) / |r|
+    !
+    ! dip_v(r) = q_e*(-p.r) / r^3
+    !
+    ! where r is the center of charge translated
+    ! past the xy mirror plane at z=0
+    !
+    r(3) = r(3) + 2.D0*x0(3)
+    !
+    rmag = DSQRT( r(1)**2 + r(2)**2 + r(3)**2 )
+    !
+    ! monopole
+    !
+    vin(ir,:) = vin(ir,:) + qq / rmag
+    !
+    ! dipole
+    !
+    vin(ir,:) = vin(ir,:) + DDOT(3, dipole, 1, r, 1) / rmag**3
+    !
+  END DO 
+  !
+END SUBROUTINE calc_epcdft_surface_feld
 !
 !
 !--------------------------------------------------------------------------
