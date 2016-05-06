@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# NB you must run as bash not sh
+#
 
 if [ -z "$2" ];then
   echo ""
@@ -7,10 +10,10 @@ if [ -z "$2" ];then
   echo "\tsh scprt.sh system.xyz acc_start acc_end donor_start donor_end pseudo_dir"
   echo ""
   echo "example : "
-  echo "sh xyz_to_cdft.sh 1.xyz 1 5 6 10 ../../pseudos/"
+  echo "bash xyz_to_cdft.sh 1.xyz 1 5 6 10 ../../pseudos/"
   echo ""
   echo "or : "
-  echo "sh xyz_to_cdft.sh 1.xyz ../../pseudos/"
+  echo "bash xyz_to_cdft.sh 1.xyz ../../pseudos/"
   echo ""
   exit
 fi
@@ -175,6 +178,12 @@ nat=float(f.readline())
 f.readline()
 lines=f.readlines()
 
+# minimum space to edge
+ste = 17
+
+# little xtra space
+xtra = 1
+
 cm = [0,0,0]
 for line in lines:
   at,x,y,z = line.split()
@@ -187,21 +196,56 @@ for line in lines:
 
 cm = [ c / nat for c in cm ]
 
-rmax = 0.0
-for line in lines:
-  at,x,y,z = line.split()
-  fx=float(x)-cm[0]
-  fy=float(y)-cm[1]
-  fz=float(z)-cm[2]
-  r = (fx**2+fy**2+fz**2)**0.5
-  if r > rmax :
-    rmax = r
+xmax = 0.0
+ymax = 0.0
+zmax = 0.0
+for l1 in lines:
+  for l2 in lines:
+    at1,x1,y1,z1 = l1.split()
+    at2,x2,y2,z2 = l2.split()
+    x1 = float(x1)
+    x2 = float(x2)
+    y1 = float(y1)
+    y2 = float(y2)
+    z1 = float(z1)
+    z2 = float(z2)
+    if abs(x1-x2) > xmax:
+      xmax = abs(x1-x2) 
+    if abs(y1-y2) > ymax:
+      ymax = abs(y1-y2) 
+    if abs(z1-z2) > zmax:
+      zmax = abs(z1-z2) 
 
-diam=rmax*2.0
-print int(diam*2+7)
+xmax = 2.0*xmax+xtra
+ymax = 2.0*ymax+xtra
+zmax = 2.0*zmax+xtra
+
+# increase values if too small
+if xmax < ste:
+  xmax = ste
+if ymax < ste:
+  ymax = ste
+if zmax < ste:
+  zmax = ste
+
+print xmax, ymax, zmax
+
+# rmax = 0.0
+# for line in lines:
+#   at,x,y,z = line.split()
+#   fx=float(x)-cm[0]
+#   fy=float(y)-cm[1]
+#   fz=float(z)-cm[2]
+#   r = (fx**2+fy**2+fz**2)**0.5
+#   if r > rmax :
+#     rmax = r
+# 
+# diam=rmax*2.0
+# print int(diam*2+7)
 END
 }
 size=$(getsize $1)
+sizearr=( $size )
 
 #move sys to center of cell
 movetocent(){
@@ -223,15 +267,17 @@ for line in lines:
 
 cm = [ c / nat for c in cm ]
 
-cc = $2/2.0
+ccx = $2/2.0
+ccy = $3/2.0
+ccz = $4/2.0
 
 #move coords to center of cell
 rmax = 0.0
 for line in lines:
   at,x,y,z = line.split()
-  fx=float(x)+(cc-cm[0]) 
-  fy=float(y)+(cc-cm[1])
-  fz=float(z)+(cc-cm[2])
+  fx=float(x)+(ccx-cm[0]) 
+  fy=float(y)+(ccy-cm[1])
+  fz=float(z)+(ccz-cm[2])
   print at,fx,fy,fz
 END
 }
@@ -251,12 +297,14 @@ cat > left.in << EOF
   verbosity    = "high"
 /
 &SYSTEM
-  ibrav     = 1,
-  a         = $size,
+  ibrav     = 8,
+  a         = ${sizearr[0]},
+  b         = ${sizearr[1]},
+  c         = ${sizearr[2]},
   nat       = $nat,
   ntyp      = $ntyp,
   nbnd      = $nbnd,
-  ecutwfc   = 90,
+  ecutwfc   = 70,
   assume_isolated = 'mt',
   tot_charge = +1,
   nspin     = 2,
@@ -281,7 +329,7 @@ EOF
 
 get_atom_spec_card ${1##*/} $dir/$psdir >> left.in
 echo "ATOMIC_POSITIONS (angstrom)" >> left.in
-movetocent $1 $size >> left.in # move to center of cell
+movetocent $1 ${sizearr[0]} ${sizearr[1]} ${sizearr[2]} >> left.in # move to center of cell
 #tail -n${nat} ${1##*/} >> left.in
 
 # create right input
@@ -295,12 +343,14 @@ cat > right.in << EOF
   verbosity    = "high"
 /
 &SYSTEM
-  ibrav     = 1,
-  a         = $size,
+  ibrav     = 8,
+  a         = ${sizearr[0]},
+  b         = ${sizearr[1]},
+  c         = ${sizearr[2]},
   nat       = $nat,
   ntyp      = $ntyp,
   nbnd      = $nbnd,
-  ecutwfc   = 90,
+  ecutwfc   = 70,
   assume_isolated = 'mt',
   tot_charge = +1,
   nspin     = 2,
@@ -325,7 +375,7 @@ EOF
 
 get_atom_spec_card ${1##*/} $dir/$psdir >> right.in
 echo "ATOMIC_POSITIONS (angstrom)" >> right.in
-movetocent $1 $size >> right.in # move to center of cell
+movetocent $1 ${sizearr[0]} ${sizearr[1]} ${sizearr[2]} >> right.in # move to center of cell
 #tail -n${nat} ${1##*/} >> right.in # dont move to center
 
 # create edison run file
