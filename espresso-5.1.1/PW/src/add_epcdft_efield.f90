@@ -129,6 +129,10 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
   REAL(DP) :: dipole(3), quadrupole(3) ! total dips
   REAL(DP), EXTERNAL :: ddot
   !
+  ! debug
+  !
+  LOGICAL :: debug = .TRUE.
+  !
   !---------------------
   !  Variable initialization
   !---------------------
@@ -181,6 +185,11 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
   !
   CALL compute_dipole( dfftp%nnr, nspin, rho%of_r, x0, e_dipole, e_quadrupole )
   !
+  ! compute ionic+electronic total charge here
+  ! before zvtot is changed
+  !
+  qq = -e_dipole(0) + zvtot
+  !
   ! compute ion dipole moments
   !
   DO ia = 1, nat
@@ -199,9 +208,7 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
      END DO
   END DO
   !
-  ! compute ionic+electronic total charge, dipole and quadrupole moments
-  !
-  qq = -e_dipole(0) + zvtot
+  ! compute ionic+electronic dipole and quadrupole moments
   !
   dipole(:)  = -e_dipole(1:3) + dipole_ion(:)
   !
@@ -223,6 +230,8 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
     !    (-dipole_el(ip), ip = 1, 3), (-dipole_el(ip)*au_debye, ip = 1, 3 )
     !WRITE( stdout, '( 5X,"Ionic",3F9.4," au (Ha),", 3F9.4," Debye")' ) &
     !    ( dipole_ion(ip),ip = 1, 3), ( dipole_ion(ip)*au_debye,ip = 1, 3 )
+    WRITE( stdout, '( 5X,"Total charge",3F9.4," au (Ha)")' )  qq 
+    !
     WRITE( stdout, '( 5X,"Total dipole moment",3F9.4," au (Ha),", 3F9.4," Debye")' ) &
         ( dipole(ip),    ip = 1, 3), ( dipole(ip)*au_debye,    ip = 1, 3 )
     !
@@ -289,7 +298,17 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
     ! where r is the center of charge translated
     ! past the xy mirror plane at z=0
     !
-    r(3) = r(3) + 2.D0*x0(3)
+    ! convert from units of 1/alat to bohr
+    !
+    r = r * alat
+    !
+    ! shift image to center of charge
+    !
+    r = r - x0
+    !
+    ! shift to other side of xy plane
+    !
+    r(3) = r(3) + 2.D0*x0(3) 
     !
     rmag = DSQRT( r(1)**2 + r(2)**2 + r(3)**2 )
     !
@@ -302,6 +321,12 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
     vin(ir,:) = vin(ir,:) + DDOT(3, dipole, 1, r, 1) / rmag**3
     !
   END DO 
+  !
+  ! debug
+  !
+  IF(debug)THEN
+    CALL write_cube_r ( 9519395, 'surface_field.cub', vin(:,1) )
+  ENDIF
   !
 END SUBROUTINE calc_epcdft_surface_feld
 !
