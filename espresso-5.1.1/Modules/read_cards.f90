@@ -1542,9 +1542,10 @@ CONTAINS
          !
          READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, epcdft_update_intrvl
          !
-      ELSEIF ( nfield == 5) THEN 
+      ELSEIF ( nfield == 6) THEN 
          !
-         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, epcdft_update_intrvl, epcdft_surface
+         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, &
+                               epcdft_update_intrvl, epcdft_surface, epcdft_surface_tol
          !
       ELSE
          !

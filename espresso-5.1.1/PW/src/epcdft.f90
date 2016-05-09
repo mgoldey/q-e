@@ -47,7 +47,8 @@ SUBROUTINE epcdft_controller()
   USE epcdft,        ONLY : do_epcdft, conv_epcdft,epcdft_shift, epcdft_locs,&
                             epcdft_guess,nconstr_epcdft,epcdft_tol,epcdft_type,&
                             epcdft_target, epcdft_delta_fld,epcdft_update_intrvl,&
-                            reset_field, epcdft_surface_shift, epcdft_surface
+                            reset_field, epcdft_surface_shift, epcdft_surface,&
+                            epcdft_surface_tol
   !
   IMPLICIT NONE
   !
@@ -113,7 +114,7 @@ SUBROUTINE epcdft_controller()
     !
     surface_echange = tmp - epcdft_surface_shift
     !
-    IF( abs(surface_echange) > epcdft_tol)THEN
+    IF( abs(surface_echange) > epcdft_surface_tol)THEN
       epcdft_surface_shift = tmp
       conv_epcdft = .false.
     ENDIF

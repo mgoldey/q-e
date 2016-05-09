@@ -30,6 +30,7 @@ SAVE
   INTEGER  :: nconstr_epcdft    = 0
   REAL(DP) :: epcdft_delta_fld =1.E-1_DP
   REAL(DP) :: epcdft_tol = 1.E-4_DP
+  REAL(DP) :: epcdft_surface_tol = 1.E-4_DP
   !
   REAL(DP) :: epcdft_shift            ! energy shift from all fields
   REAL(DP) :: epcdft_surface_shift    ! energy shift from surface field
