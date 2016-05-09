@@ -25,7 +25,7 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !     eqs. 6 & 7
   !
   USE kinds,         ONLY : DP
-  USE epcdft,        ONLY : do_epcdft
+  USE epcdft,        ONLY : do_epcdft, epcdft_surface
   USE io_global,     ONLY : stdout,ionode
   USE lsda_mod,      ONLY : nspin
   USE fft_base,      ONLY : dfftp !, grid_scatter, grid_gather
@@ -42,7 +42,6 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !
   LOGICAL :: first=.TRUE.
   LOGICAL :: hirshfeld=.TRUE.
-  LOGICAL :: epcdft_surface=.FALSE.
 
   SAVE first
 

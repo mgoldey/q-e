@@ -1517,6 +1517,7 @@ CONTAINS
       INTEGER            :: i, nfield
       !
       do_epcdft=.true.
+      epcdft_surface=.false. ! false unless nfield>4 and set to true in input
       !
       IF ( tepcdft ) CALL errore( 'card_epcdft', 'two occurrences', 2 )
       !
@@ -1541,6 +1542,10 @@ CONTAINS
          !
          READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, epcdft_update_intrvl
          !
+      ELSEIF ( nfield == 5) THEN 
+         !
+         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, epcdft_update_intrvl, epcdft_surface
+         !
       ELSE
          !
          CALL errore( 'card_epcdft', 'too many fields in initial line', nfield )
@@ -1551,6 +1556,7 @@ CONTAINS
       WRITE(stdout,'(5x,a,i4,a,f12.6,a,f4.2)') &
          'Reading',nconstr_epcdft,' constraint(s); tolerance:', epcdft_tol, ' max change in field ',epcdft_delta_fld 
       WRITE(stdout,'(5x,a,i4)') 'epcdft_update_intrvl:', epcdft_update_intrvl
+      WRITE(stdout,'(5x,a,L2)') 'epcdft with surface:', epcdft_surface
       !
       CALL allocate_input_epcdft()
       !

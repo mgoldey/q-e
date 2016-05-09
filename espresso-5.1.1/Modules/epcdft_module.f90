@@ -15,10 +15,11 @@ SAVE
     update_intrvl
   !
   LOGICAL :: &
-       do_epcdft,       &  ! if .TRUE. a finite electric field is added to the
-                           ! local potential
-       conv_epcdft,     &  ! localization condition flag
-       reset_field=.false. ! reset field (so we don't do this every time)
+       do_epcdft,       &      ! if .TRUE. a finite electric field is added to the
+                               ! local potential
+       conv_epcdft,     &      ! localization condition flag
+       reset_field=.false., &  ! reset field (so we don't do this every time)
+       epcdft_surface          ! simulate metal surface in xy plane
   !
   INTEGER :: epcdft_fields = 4   ! max number of fields that is allowed to
                                  ! define a constraint
