@@ -47,7 +47,7 @@ SUBROUTINE epcdft_controller()
   USE epcdft,        ONLY : do_epcdft, conv_epcdft,epcdft_shift, epcdft_locs,&
                             epcdft_guess,nconstr_epcdft,epcdft_tol,epcdft_type,&
                             epcdft_target, epcdft_delta_fld,epcdft_update_intrvl,&
-                            reset_field
+                            reset_field, epcdft_surface_shift, epcdft_surface
   !
   IMPLICIT NONE
   !
@@ -69,6 +69,7 @@ SUBROUTINE epcdft_controller()
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp ! ef is added to this potential
   REAL(DP) :: next_epcdft_amp,epcdft_amp           ! guess of amp for next iteration
   CHARACTER(LEN=256) :: filename                   ! cube file for final cdft potential
+  REAL(DP) :: surface_echange !change in image interaction energy for surface
   !
   ! SAVED VARS
   !
@@ -96,9 +97,31 @@ SUBROUTINE epcdft_controller()
   tmp      = 0.D0
   epcdft_shift = 0.D0
   epcdft_shiftp = 0.D0
-
+  !
   conv_epcdft=.true. ! set to false whenever anything is not satisfied
-
+  !
+  ! calculate energy due to image charges
+  ! if energy is not converged within epcdft_tol  
+  ! set conv_epcdft = false
+  !
+  IF(epcdft_surface)THEN
+    !
+    vpotenp = 0.D0
+    tmp = 0.D0
+    !
+    CALL epcdft_surface_energy(vpotenp, tmp)
+    !
+    surface_echange = tmp - epcdft_surface_shift
+    !
+    IF( abs(surface_echange) > epcdft_tol)THEN
+      epcdft_surface_shift = tmp
+      conv_epcdft = .false.
+    ENDIF
+    !
+  ENDIF
+  !
+  ! moving onto epcdft constraint fields
+  !
   DO iconstraint=1,nconstr_epcdft
     acharge = 0.D0
     dcharge = 0.D0
@@ -110,10 +133,9 @@ SUBROUTINE epcdft_controller()
     einwellp  = 0.D0
     epcdft_shiftp=0.D0
     next_epcdft_amp = 0.D0
-
+    !
     epcdft_amp=epcdft_guess(iconstraint)
-    
-
+    !
     IF (epcdft_amp .eq. 0.D0) THEN
       zero=.true.
       epcdft_amp=1.D0 
@@ -297,14 +319,36 @@ SUBROUTINE epcdft_controller()
 
     IF(ionode) THEN
       if (.not. elocflag .or. .not. conv_elec) THEN
+        !
+        ! CDFT
+        !
         write(*,'(5x,a3,a10,a2,a10,a12,a12,a12,a12)') "I","D",'  ','A','Val','Target','Old','New'
         write(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e12.3,e17.8)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint), &
         last_epcdft_amp(iconstraint),epcdft_guess(iconstraint)
+        !
+        ! surface
+        !
+        IF(epcdft_surface)THEN
+          WRITE(*,'(5x,"Image interaction energy:",e10.3," Change",e10.3," Tolerance",e10.3)')&
+          epcdft_surface_shift, surface_echange, epcdft_tol
+        ENDIF
+        !
       ELSE
+        !
+        ! CDFT
+        !
         write(*,'(5x,a3,a10,a2,a10,a12,a12,a15)') "I","D",'  ','A','Val','Target','Str'
         write(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e15.6)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),epcdft_guess(iconstraint)
+        !
+        ! surface
+        !
+        IF(epcdft_surface)THEN
+          WRITE(*,'(5x,"Image interaction energy:",e10.3," Change",e10.3," Tolerance",e10.3)')&
+          epcdft_surface_shift, surface_echange, epcdft_tol
+        ENDIF
+        !
       ENDIF
     ENDIF
 
@@ -533,3 +577,105 @@ SUBROUTINE pprint( strg, num, ustrg, a)
   2 FORMAT(5x,A32,':',1x,e23.16,1x,A6)
   !
 END SUBROUTINE
+!
+!----------------------------------------------------------------------------
+SUBROUTINE epcdft_surface_energy(vin, eout)
+  !----------------------------------------------------------------------------
+  !
+  ! Calculate energy due to image charges
+  !
+  USE kinds,         ONLY : DP
+  USE lsda_mod,      ONLY : nspin
+  USE scf,           ONLY : rho
+  USE fft_base,      ONLY : dfftp, grid_gather
+  USE mp_images,     ONLY : intra_image_comm
+  USE mp,            ONLY : mp_sum
+  USE ions_base,     ONLY : nat, ityp, zv, tau
+  USE cell_base,     ONLY : omega, alat
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP), INTENT(INOUT) :: vin(dfftp%nnr, nspin) ! surface field
+  REAL(DP), INTENT(INOUT) :: eout ! energy due to image charges
+  !
+  REAL(DP) :: eoutp
+  INTEGER :: i, is, ia
+  REAL(DP) :: dv
+  REAL(DP) :: x0(3) ! center of charge of system
+  REAL(DP) :: qq ! total charge
+  REAL(DP) :: dipole(3)!, quadrupole(3) ! total dips
+  REAL(DP) :: r(3), rmag, mono_e, dip_e, pdotr
+  !
+  vin = 0.D0
+  eout = 0.D0
+  eoutp = 0.D0
+  dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
+  x0 = 0.D0
+  qq = 0.D0
+  dipole = 0.D0
+  !
+  ! calc field due to images
+  !
+  CALL calc_epcdft_surface_field(vin, x0, qq, dipole)
+  !
+  ! calculate electronic energy correction
+  !
+  DO is=1, nspin
+    DO i=1, dfftp%nnr
+      eoutp = eoutp + vin(i,is) * rho%of_r(i,is)
+    ENDDO!grid
+  ENDDO!spin
+  !
+  eoutp = eoutp*dv
+  !
+#ifdef __MPI
+    CALL mp_sum(eoutp, intra_image_comm) 
+    eout=eoutp
+#else
+    eout=eoutp
+#endif
+  !
+  !
+  ! ionic part of energy
+  !
+  ! r = x0-R
+  !
+  ! mono_e = Z*qq / |r|
+  !
+  ! dip_e = Z*(p.r) / |r|^3
+  !
+  ! convert to image charge
+  !
+  x0(3) = x0(3) - 2.D0*x0(3)
+  qq = -1.D0*qq
+  dipole(:) = -1.D0*dipole(:)
+  !
+  DO ia=1, nat
+    !
+    r(:) = tau(:,ia)*alat - x0(:)
+    !
+    rmag = DSQRT( r(1)**2 + r(2)**2 + r(3)**2 )
+    !print *, 'rmag',rmag
+    !print *, 'qq',qq
+    !print *, 'dipole',dipole
+    !print *, 'zv',zv(ityp(ia))
+    !print *, 'tau',tau(:,ia)
+    !print *, 'x0',x0
+    !
+    ! mono part
+    !
+    mono_e = zv(ityp(ia)) * qq / rmag
+    !
+    ! dip part
+    !
+    pdotr = dipole(1)*r(1) + dipole(2)*r(2) + dipole(3)*r(3)
+    !
+    dip_e = zv(ityp(ia)) * pdotr / rmag**3
+    !
+    ! total
+    !
+    eout = eout + mono_e + dip_e
+    !
+  ENDDO ! atoms
+  !
+END SUBROUTINE epcdft_surface_energy

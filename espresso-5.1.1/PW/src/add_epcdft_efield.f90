@@ -39,6 +39,9 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   ! local variables
   !
   REAL(DP) :: vconstr (dfftp%nnr,nspin) ! constraining potential shape*weight
+  REAL(DP) :: x0(3) ! center of charge of system
+  REAL(DP) :: qq ! total charge
+  REAL(DP) :: dipole(3)!, quadrupole(3) ! total dips
   !
   LOGICAL :: first=.TRUE.
   LOGICAL :: hirshfeld=.TRUE.
@@ -73,7 +76,7 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   IF(epcdft_surface)THEN
     !
     vconstr = 0.D0
-    CALL calc_epcdft_surface_field(vconstr)
+    CALL calc_epcdft_surface_field(vconstr, x0, qq, dipole)
     vpoten = vpoten + vconstr 
     !
   ENDIF
@@ -82,7 +85,7 @@ END SUBROUTINE add_epcdft_efield
 !
 !
 !--------------------------------------------------------------------------
-SUBROUTINE calc_epcdft_surface_field( vin )
+SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   !--------------------------------------------------------------------------
   ! 
   ! Calculate the monopole and dipole potential due to an image charge
@@ -114,6 +117,9 @@ SUBROUTINE calc_epcdft_surface_field( vin )
   IMPLICIT NONE
   !
   REAL(DP), INTENT(INOUT) :: vin(dfftp%nnr,nspin) ! the field due to slab
+  REAL(DP), INTENT(INOUT) :: x0(3) ! center of charge of system
+  REAL(DP), INTENT(INOUT) :: dipole(3)!, quadrupole(3) ! total dips
+  REAL(DP), INTENT(INOUT) :: qq ! total charge
   !
   ! local variables
   !
@@ -121,12 +127,10 @@ SUBROUTINE calc_epcdft_surface_field( vin )
   REAL( DP )   :: inv_nr1, inv_nr2, inv_nr3
   REAL(DP) :: zvia
   REAL( DP )   :: r( 3 ), rmag ! position in cell and |r|
-  REAL(DP) :: qq ! total charge
   REAL(DP) :: zvtot ! tot ion charge
-  REAL(DP) :: x0(3) ! center of charge of system
   REAL(DP) :: e_dipole(0:3), e_quadrupole(3) ! electronic monopole dipole and quadrupole
+  REAL(DP) :: quadrupole(3) 
   REAL(DP) :: dipole_ion(3), quadrupole_ion(3) ! ion dips
-  REAL(DP) :: dipole(3), quadrupole(3) ! total dips
   REAL(DP), EXTERNAL :: ddot
   !
   ! debug

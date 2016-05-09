@@ -43,11 +43,13 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   ! accumulates local potential contributions in to vrs 
   !
   USE kinds
-  USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field
+  USE io_global,     ONLY : ionode
+  USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field, epcdft_surface_shift,&
+                        epcdft_surface
   !
   implicit none
 
-  logical :: first
+  logical :: first=.true.
   integer :: nspin, nrxx
   ! input: number of spin components: 1 if lda, 2 if lsd, 4 if noncolinear
   ! input: the fft grid dimension
@@ -56,22 +58,53 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   !         vrs=vltot+vr
   ! input: the total local pseudopotential
   ! input: the scf(H+xc) part of the local potential
-
+  !
   integer:: is
-
+  REAL(DP) :: tmp
   SAVE first
   !write(*,*) "sum_vrs",sum(vr(:,1))
-  if (first .or. .not. allocated(epcdft_field)) then
+  !
+  IF (first .or. .not. allocated(epcdft_field)) THEN
+    !
     allocate(epcdft_field(nrxx,nspin))
     reset_field=.true.
+    !
   END IF
+  !
+  IF(first)THEN
+    !
+    ! set image interaction energy
+    !
+    IF(epcdft_surface)THEN
+      !
+      epcdft_field = 0.D0
+      tmp = 0.D0
+      !
+      CALL epcdft_surface_energy(epcdft_field, tmp)
+      !
+      epcdft_surface_shift = tmp
+      !
+      IF(ionode)THEN
+        WRITE(*,*)
+        WRITE(*,'(5x,"First surface image interaction energy:",e10.3)') epcdft_surface_shift
+        WRITE(*,*)
+      ENDIF
+      !
+    ENDIF
+      !
+  ENDIF
+  !
   first=.false.
+  !
   IF ( do_epcdft .and. reset_field) THEN
+    !
     epcdft_field=0.0D0
+    !
     CALL add_epcdft_efield(epcdft_field,.TRUE.)
     reset_field=.false.
+    !
   ENDIF
-  
+  !
   vr=vr+epcdft_field
   !write(*,*) "sum_vrs",sum(vr(:,1))
   ! confirmed the potential was changing here
