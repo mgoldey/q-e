@@ -74,7 +74,7 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   IF(epcdft_surface)THEN
     !
     vconstr = 0.D0
-    CALL calc_epcdft_surface_feld(vconstr)
+    CALL calc_epcdft_surface_field(vconstr)
     vpoten = vpoten + vconstr 
     !
   ENDIF
@@ -83,7 +83,7 @@ END SUBROUTINE add_epcdft_efield
 !
 !
 !--------------------------------------------------------------------------
-SUBROUTINE calc_epcdft_surface_feld( vin )
+SUBROUTINE calc_epcdft_surface_field( vin )
   !--------------------------------------------------------------------------
   ! 
   ! Calculate the monopole and dipole potential due to an image charge
@@ -336,7 +336,7 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
     !
   ENDIF
   !
-END SUBROUTINE calc_epcdft_surface_feld
+END SUBROUTINE calc_epcdft_surface_field
 !
 !
 !--------------------------------------------------------------------------
