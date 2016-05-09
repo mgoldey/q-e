@@ -330,7 +330,7 @@ SUBROUTINE epcdft_controller()
         ! surface
         !
         IF(epcdft_surface)THEN
-          WRITE(*,'(5x,"Image interaction energy:",e10.3," Change",e10.3," Tolerance",e10.3)')&
+          WRITE(*,'(5x,"image interaction energy:",e10.3," Change",e10.3," Tolerance",e10.3)')&
           epcdft_surface_shift, surface_echange, epcdft_tol
         ENDIF
         !
