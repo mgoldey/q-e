@@ -109,6 +109,7 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
   USE ions_base, ONLY : nat, ityp, tau, zv
   USE io_global, ONLY : stdout,ionode
   USE mp_bands,  ONLY : me_bgrp
+  USE io_global, ONLY : ionode
   !USE epcdft, ONLY :
   !
   IMPLICIT NONE
@@ -244,6 +245,8 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
     !WRITE( stdout, '( 5X,"    Total quadrupole moment",F20.8," a.u. (Ha)")' ) &
     !    SUM(quadrupole(:))
     !
+    WRITE( stdout, * ) 
+    !
   ENDIF
   !
   !---------------------
@@ -325,7 +328,12 @@ SUBROUTINE calc_epcdft_surface_feld( vin )
   ! debug
   !
   IF(debug)THEN
+    !
+    IF(ionode)THEN
+      WRITE(*,*)"    Debug on write surface field to cube file."
+    ENDIF
     CALL write_cube_r ( 9519395, 'surface_field.cub', vin(:,1) )
+    !
   ENDIF
   !
 END SUBROUTINE calc_epcdft_surface_feld
