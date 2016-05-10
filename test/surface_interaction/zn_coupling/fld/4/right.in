@@ -33,7 +33,7 @@
 /
 EPCDFT 
  1 1.0E-06 0.05D0 50 .true. 1.0E-4
- delta_charge 1 1 2 2 -1.0 -0.10 
+ delta_charge 1 1 2 2 -1.0 -0.38 
 K_POINTS {Gamma}
 ATOMIC_SPECIES
 Zn 1.0 Zn_ONCV_PBE-1.0.UPF
