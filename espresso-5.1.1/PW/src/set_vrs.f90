@@ -44,6 +44,7 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   !
   USE kinds
   USE io_global,     ONLY : ionode
+  USE io_global,     ONLY : stdout, ionode
   USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field, epcdft_surface_shift,&
                         epcdft_surface
   !
@@ -77,6 +78,21 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
     !
     IF(epcdft_surface)THEN
       !
+      !
+      IF (ionode) THEN
+        !
+        WRITE( stdout,'(5x,"":)')
+        WRITE( stdout,'(5x,"Adding image charge field due to neutral metal slab at origin in XY plane.":)')
+        WRITE( stdout,'(5x,"Including monopole and dipole terms.":)')
+        WRITE( stdout,'(5x,"Quadrupole not implemented yet.":)')
+        WRITE( stdout,'(5x,"System should not overlap with cell edges.":)')
+        WRITE( stdout,'(5x,"":)')
+        !WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') eamp 
+        !WRITE( stdout,'(8x,"Postion on atom # : ", I11.1)') edir
+        !WRITE( stdout,'(8x,"Well radius [bohr] : ", es11.4)') emaxpos * alat
+        !
+      ENDIF
+      !
       epcdft_field = 0.D0
       tmp = 0.D0
       !
@@ -86,7 +102,7 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
       !
       IF(ionode)THEN
         WRITE(*,*)
-        WRITE(*,'(5x,"First surface image interaction energy:",e10.3)') epcdft_surface_shift
+        WRITE(*,'(5x,"First surface image interaction energy:",e10.3,"[Ry]")') epcdft_surface_shift
         WRITE(*,*)
       ENDIF
       !
@@ -99,6 +115,8 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   IF ( do_epcdft .and. reset_field) THEN
     !
     epcdft_field=0.0D0
+    !
+    ! epcdft surface also added in call below only if epcdft_surface=T
     !
     CALL add_epcdft_efield(epcdft_field,.TRUE.)
     reset_field=.false.

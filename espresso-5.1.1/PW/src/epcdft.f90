@@ -331,7 +331,7 @@ SUBROUTINE epcdft_controller()
         ! surface
         !
         IF(epcdft_surface)THEN
-          WRITE(*,'(5x,"image interaction energy: ",e10.3," change: ",e10.3," tolerance: ",e10.3)')&
+          WRITE(*,'(5x,"Image interaction energy: ",e10.3,"[Ry] Change: ",e10.3,"[Ha] Tolerance: ",e10.3,"[Ry]")')&
           epcdft_surface_shift, surface_echange, epcdft_surface_tol
         ENDIF
         !
@@ -346,7 +346,7 @@ SUBROUTINE epcdft_controller()
         ! surface
         !
         IF(epcdft_surface)THEN
-          WRITE(*,'(5x,"Image interaction energy: ",e10.3," Change: ",e10.3," Tolerance: ",e10.3)')&
+          WRITE(*,'(5x,"Image interaction energy: ",e10.3,"[Ry] Change: ",e10.3,"[Ha] Tolerance: ",e10.3,"[Ry]")')&
           epcdft_surface_shift, surface_echange, epcdft_surface_tol
         ENDIF
         !
@@ -593,6 +593,7 @@ SUBROUTINE epcdft_surface_energy(vin, eout)
   USE mp,            ONLY : mp_sum
   USE ions_base,     ONLY : nat, ityp, zv, tau
   USE cell_base,     ONLY : omega, alat
+  USE constants,     ONLY : e2
   !
   IMPLICIT NONE
   !
@@ -663,15 +664,15 @@ SUBROUTINE epcdft_surface_energy(vin, eout)
     !print *, 'tau',tau(:,ia)
     !print *, 'x0',x0
     !
-    ! mono part
+    ! mono part [ry]
     !
-    mono_e = zv(ityp(ia)) * qq / rmag
+    mono_e = zv(ityp(ia)) * e2*qq / rmag
     !
-    ! dip part
+    ! dip part [ry]
     !
     pdotr = dipole(1)*r(1) + dipole(2)*r(2) + dipole(3)*r(3)
     !
-    dip_e = zv(ityp(ia)) * pdotr / rmag**3
+    dip_e = zv(ityp(ia)) * e2*pdotr / rmag**3
     !
     ! total
     !

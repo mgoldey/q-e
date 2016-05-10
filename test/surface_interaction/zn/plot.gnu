@@ -54,5 +54,7 @@ set ylabel 'Energy [Ry]'
 #fit f1(x) 'bc3' using 1:2 via a1, b1, c1
 # fit f2(x) 'bc1' using 1:2 via a2, b2, c2
 
+e2 = 2.0 #Ry units
+
 #plot 'bc3' u 1:2 w p ls 1 t 'bc3', a1*exp(-b1*x/2.0)+c1 notitle, 'bc1' u 1:2 w p ls 2 t 'bc1', a2*exp(-b2*x/2.0)+c2 notitle,
-plot 'data' u 1:2 w p ls 1 notitle , -1/(2*x) ls 1 t '-1/(2d)'
+plot 'data' u 1:2 w p ls 1 notitle , -e2/(2*x) ls 1 t '-e^2/(2d)'

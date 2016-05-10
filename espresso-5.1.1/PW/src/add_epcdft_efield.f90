@@ -112,6 +112,7 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   USE io_global, ONLY : stdout,ionode
   USE mp_bands,  ONLY : me_bgrp
   USE io_global, ONLY : ionode
+  USE constants, ONLY : e2
   !USE epcdft, ONLY :
   !
   IMPLICIT NONE
@@ -158,20 +159,6 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   inv_nr1 = 1.D0 / DBLE( dfftp%nr1 )
   inv_nr2 = 1.D0 / DBLE( dfftp%nr2 )
   inv_nr3 = 1.D0 / DBLE( dfftp%nr3 )
-  !
-  IF (ionode) THEN
-    !
-    WRITE( stdout,'(5x,"":)')
-    WRITE( stdout,'(5x,"Adding image charge field due to neutral metal slab at origin in XY plane.":)')
-    WRITE( stdout,'(5x,"Including monopole and dipole terms.":)')
-    WRITE( stdout,'(5x,"Quadrupole not implemented yet.":)')
-    WRITE( stdout,'(5x,"System should not overlap with cell edges.":)')
-    WRITE( stdout,'(5x,"":)')
-    !WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') eamp 
-    !WRITE( stdout,'(8x,"Postion on atom # : ", I11.1)') edir
-    !WRITE( stdout,'(8x,"Well radius [bohr] : ", es11.4)') emaxpos * alat
-    !
-  ENDIF
   !
   ! get center of charge
   !
@@ -301,6 +288,8 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
     !
     ! dip_v(r) = q_e*(-p.r) / r^3
     !
+    ! in Ry k = 1, q^2 = 2
+    !
     ! where r is the center of charge translated
     ! past the xy mirror plane at z=0
     !
@@ -318,13 +307,13 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
     !
     rmag = DSQRT( r(1)**2 + r(2)**2 + r(3)**2 )
     !
-    ! monopole
+    ! monopole [ry]
     !
-    vin(ir,:) = vin(ir,:) + qq / rmag
+    vin(ir,:) = vin(ir,:) + e2*qq / rmag
     !
-    ! dipole
+    ! dipole [ry]
     !
-    vin(ir,:) = vin(ir,:) + DDOT(3, dipole, 1, r, 1) / rmag**3
+    vin(ir,:) = vin(ir,:) + e2*DDOT(3, dipole, 1, r, 1) / rmag**3
     !
   END DO 
   !
