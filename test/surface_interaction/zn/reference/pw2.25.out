@@ -1,5 +1,5 @@
 
-     Program PWSCF v.5.1.1 starts on 10May2016 at  8:51:23 
+     Program PWSCF v.5.1.1 starts on 10May2016 at 14:22:41 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -169,27 +169,19 @@ A      1.00
      Total charge   1.0000
      Total dipole moment   0.0004   0.0004  -0.0001 au (Ha),   0.0010   0.0010  -0.0003 Debye
 
-     Debug on write surface field to cube file.
 
-     First surface image interaction energy:-0.849E-01
+     First surface image interaction energy:-0.170E+00[Ry]
 
-     
-     Adding image charge field due to neutral metal slab at origin in XY plane.
-     Including monopole and dipole terms.
-     Quadrupole not implemented yet.
-     System should not overlap with cell edges.
-     
 
      reference position (x0):         9.44863066    9.44863066    6.14160993 bohr
      Total charge   1.0000
      Total dipole moment   0.0004   0.0004  -0.0001 au (Ha),   0.0010   0.0010  -0.0003 Debye
 
-     Debug on write surface field to cube file.
      Starting wfc are   32 randomized atomic wfcs
 
-     total cpu time spent up to now is        6.2 secs
+     total cpu time spent up to now is        3.5 secs
 
-     per-process dynamical memory:    78.3 Mb
+     per-process dynamical memory:    78.4 Mb
 
      Self-consistent Calculation
 
@@ -197,233 +189,229 @@ A      1.00
      Davidson diagonalization with overlap
      ethr =  1.00E-02,  avg # of iterations =  4.0
 
-     negative rho (up, down):  2.722E-02 2.748E-02
+     negative rho (up, down):  2.720E-02 2.748E-02
 
      Magnetic moment per site:
-     atom:    1    charge:    9.3427    magn:    0.0390    constr:    0.0000
-     atom:    2    charge:    9.3333    magn:    0.0373    constr:    0.0000
+     atom:    1    charge:    9.3467    magn:    0.0396    constr:    0.0000
+     atom:    2    charge:    9.3284    magn:    0.0364    constr:    0.0000
 
-     total cpu time spent up to now is        9.8 secs
+     total cpu time spent up to now is        6.8 secs
 
-     total energy              =    -217.97460017 Ry
-     Harris-Foulkes estimate   =    -218.17266064 Ry
-     estimated scf accuracy    <       0.54032448 Ry
+     total energy              =    -217.96561851 Ry
+     Harris-Foulkes estimate   =    -218.17917185 Ry
+     estimated scf accuracy    <       0.55164607 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.00 Bohr mag/cell
 
      iteration #  2     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  2.35E-03,  avg # of iterations =  1.5
+     ethr =  2.40E-03,  avg # of iterations =  1.5
 
-     negative rho (up, down):  1.238E-02 1.276E-02
+     negative rho (up, down):  1.242E-02 1.282E-02
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4649    magn:    0.0774    constr:    0.0000
-     atom:    2    charge:    9.4562    magn:    0.0761    constr:    0.0000
+     atom:    1    charge:    9.4675    magn:    0.0777    constr:    0.0000
+     atom:    2    charge:    9.4502    magn:    0.0751    constr:    0.0000
 
-     total cpu time spent up to now is       12.5 secs
+     total cpu time spent up to now is        9.5 secs
 
-     total energy              =    -217.96571821 Ry
-     Harris-Foulkes estimate   =    -218.01244464 Ry
-     estimated scf accuracy    <       0.11809880 Ry
+     total energy              =    -217.96173426 Ry
+     Harris-Foulkes estimate   =    -218.01222521 Ry
+     estimated scf accuracy    <       0.11892136 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.01 Bohr mag/cell
 
      iteration #  3     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  5.13E-04,  avg # of iterations =  2.0
+     ethr =  5.17E-04,  avg # of iterations =  2.0
 
-     negative rho (up, down):  6.614E-03 6.965E-03
+     negative rho (up, down):  6.453E-03 6.822E-03
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4587    magn:    0.0855    constr:    0.0000
-     atom:    2    charge:    9.4549    magn:    0.0851    constr:    0.0000
+     atom:    1    charge:    9.4594    magn:    0.0858    constr:    0.0000
+     atom:    2    charge:    9.4525    magn:    0.0850    constr:    0.0000
 
-     total cpu time spent up to now is       15.8 secs
+     total cpu time spent up to now is       12.5 secs
 
-     total energy              =    -217.99265790 Ry
-     Harris-Foulkes estimate   =    -217.99109819 Ry
-     estimated scf accuracy    <       0.00963987 Ry
+     total energy              =    -217.99065616 Ry
+     Harris-Foulkes estimate   =    -217.98872464 Ry
+     estimated scf accuracy    <       0.00980968 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.04 Bohr mag/cell
 
      iteration #  4     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  4.19E-05,  avg # of iterations =  2.0
+     ethr =  4.27E-05,  avg # of iterations =  2.0
 
-     negative rho (up, down):  2.578E-05 2.669E-05
+     negative rho (up, down):  3.889E-05 4.065E-05
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4777    magn:    0.0977    constr:    0.0000
-     atom:    2    charge:    9.4747    magn:    0.0984    constr:    0.0000
+     atom:    1    charge:    9.4791    magn:    0.0975    constr:    0.0000
+     atom:    2    charge:    9.4733    magn:    0.0986    constr:    0.0000
 
-     total cpu time spent up to now is       18.8 secs
+     total cpu time spent up to now is       15.3 secs
 
-     total energy              =    -217.99407703 Ry
-     Harris-Foulkes estimate   =    -217.99342357 Ry
-     estimated scf accuracy    <       0.00276206 Ry
+     total energy              =    -217.99097500 Ry
+     Harris-Foulkes estimate   =    -217.99137915 Ry
+     estimated scf accuracy    <       0.00279132 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.05 Bohr mag/cell
 
      iteration #  5     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  1.20E-05,  avg # of iterations =  2.5
+     ethr =  1.21E-05,  avg # of iterations =  2.5
 
-     negative rho (up, down):  2.132E-05 2.202E-05
+     negative rho (up, down):  1.978E-05 2.052E-05
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4713    magn:    0.0954    constr:    0.0000
-     atom:    2    charge:    9.4683    magn:    0.0962    constr:    0.0000
+     atom:    1    charge:    9.4719    magn:    0.0951    constr:    0.0000
+     atom:    2    charge:    9.4661    magn:    0.0963    constr:    0.0000
 
-     total cpu time spent up to now is       21.8 secs
+     total cpu time spent up to now is       18.4 secs
 
-     total energy              =    -217.99465621 Ry
-     Harris-Foulkes estimate   =    -217.99467521 Ry
-     estimated scf accuracy    <       0.00036151 Ry
+     total energy              =    -217.99221325 Ry
+     Harris-Foulkes estimate   =    -217.99193352 Ry
+     estimated scf accuracy    <       0.00050395 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.08 Bohr mag/cell
 
      iteration #  6     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  1.57E-06,  avg # of iterations =  6.0
+     ethr =  2.19E-06,  avg # of iterations =  6.0
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4675    magn:    0.0930    constr:    0.0000
-     atom:    2    charge:    9.4643    magn:    0.0938    constr:    0.0000
+     atom:    1    charge:    9.4691    magn:    0.0930    constr:    0.0000
+     atom:    2    charge:    9.4631    magn:    0.0944    constr:    0.0000
 
-     total cpu time spent up to now is       25.6 secs
+     total cpu time spent up to now is       21.6 secs
 
-     total energy              =    -217.99467200 Ry
-     Harris-Foulkes estimate   =    -217.99460401 Ry
-     estimated scf accuracy    <       0.00003532 Ry
+     total energy              =    -217.99209395 Ry
+     Harris-Foulkes estimate   =    -217.99192179 Ry
+     estimated scf accuracy    <       0.00003509 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.08 Bohr mag/cell
 
      iteration #  7     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  1.54E-07,  avg # of iterations =  3.0
+     ethr =  1.53E-07,  avg # of iterations =  3.0
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4678    magn:    0.0925    constr:    0.0000
-     atom:    2    charge:    9.4646    magn:    0.0933    constr:    0.0000
+     atom:    1    charge:    9.4682    magn:    0.0922    constr:    0.0000
+     atom:    2    charge:    9.4623    magn:    0.0936    constr:    0.0000
 
-     total cpu time spent up to now is       30.0 secs
+     total cpu time spent up to now is       24.8 secs
 
-     total energy              =    -217.99467726 Ry
-     Harris-Foulkes estimate   =    -217.99466915 Ry
-     estimated scf accuracy    <       0.00000878 Ry
+     total energy              =    -217.99203727 Ry
+     Harris-Foulkes estimate   =    -217.99202064 Ry
+     estimated scf accuracy    <       0.00000422 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.09 Bohr mag/cell
 
      iteration #  8     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  3.82E-08,  avg # of iterations =  2.0
+     ethr =  1.83E-08,  avg # of iterations =  2.5
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4679    magn:    0.0923    constr:    0.0000
-     atom:    2    charge:    9.4647    magn:    0.0931    constr:    0.0000
+     atom:    1    charge:    9.4688    magn:    0.0920    constr:    0.0000
+     atom:    2    charge:    9.4628    magn:    0.0934    constr:    0.0000
 
-     total cpu time spent up to now is       33.3 secs
+     total cpu time spent up to now is       27.9 secs
 
-     total energy              =    -217.99466823 Ry
-     Harris-Foulkes estimate   =    -217.99467664 Ry
-     estimated scf accuracy    <       0.00000145 Ry
+     total energy              =    -217.99199765 Ry
+     Harris-Foulkes estimate   =    -217.99205530 Ry
+     estimated scf accuracy    <       0.00000402 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.09 Bohr mag/cell
 
      iteration #  9     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  6.30E-09,  avg # of iterations =  2.5
+     ethr =  1.75E-08,  avg # of iterations =  2.0
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4680    magn:    0.0922    constr:    0.0000
-     atom:    2    charge:    9.4649    magn:    0.0930    constr:    0.0000
+     atom:    1    charge:    9.4686    magn:    0.0918    constr:    0.0000
+     atom:    2    charge:    9.4627    magn:    0.0932    constr:    0.0000
 
-     total cpu time spent up to now is       36.5 secs
+     total cpu time spent up to now is       31.2 secs
 
-     total energy              =    -217.99467492 Ry
-     Harris-Foulkes estimate   =    -217.99467566 Ry
-     estimated scf accuracy    <       0.00000024 Ry
+     total energy              =    -217.99203567 Ry
+     Harris-Foulkes estimate   =    -217.99203662 Ry
+     estimated scf accuracy    <       0.00000015 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.09 Bohr mag/cell
 
      iteration # 10     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  1.06E-09,  avg # of iterations =  2.5
-     
-     Adding image charge field due to neutral metal slab at origin in XY plane.
-     Including monopole and dipole terms.
-     Quadrupole not implemented yet.
-     System should not overlap with cell edges.
-     
-
-     reference position (x0):         9.44863066    9.44863066    6.14160993 bohr
-     Total charge   1.0000
-     Total dipole moment  -0.0004  -0.0004  -0.2534 au (Ha),  -0.0010  -0.0009  -0.6442 Debye
-
-     Debug on write surface field to cube file.
-       I         D           A         Val      Target            Str
-       1 0.109E+01   0.103E+01   0.621E-01   0.000E+00   0.000000E+00
-     Image interaction energy: -0.847E-01 Change:  0.160E-03 Tolerance:  0.100E-04
+     ethr =  6.32E-10,  avg # of iterations =  2.5
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4680    magn:    0.0922    constr:    0.0000
-     atom:    2    charge:    9.4649    magn:    0.0930    constr:    0.0000
+     atom:    1    charge:    9.4688    magn:    0.0918    constr:    0.0000
+     atom:    2    charge:    9.4628    magn:    0.0933    constr:    0.0000
 
-     total cpu time spent up to now is       41.4 secs
+     total cpu time spent up to now is       34.3 secs
 
-     total energy              =    -217.99467520 Ry
-     Harris-Foulkes estimate   =    -217.99467711 Ry
-     estimated scf accuracy    <       0.00000007 Ry
+     total energy              =    -217.99203360 Ry
+     Harris-Foulkes estimate   =    -217.99204191 Ry
+     estimated scf accuracy    <       0.00000015 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.09 Bohr mag/cell
 
      iteration # 11     ecut=    50.00 Ry     beta=0.30
      Davidson diagonalization with overlap
-     ethr =  3.20E-10,  avg # of iterations =  1.0
-     
-     Adding image charge field due to neutral metal slab at origin in XY plane.
-     Including monopole and dipole terms.
-     Quadrupole not implemented yet.
-     System should not overlap with cell edges.
-     
+     ethr =  6.32E-10,  avg # of iterations =  2.0
 
      reference position (x0):         9.44863066    9.44863066    6.14160993 bohr
      Total charge   1.0000
-     Total dipole moment  -0.0004  -0.0004  -0.2534 au (Ha),  -0.0010  -0.0009  -0.6442 Debye
+     Total dipole moment  -0.0004  -0.0004  -0.5040 au (Ha),  -0.0010  -0.0010  -1.2810 Debye
 
-     Debug on write surface field to cube file.
        I         D           A         Val      Target            Str
-       1 0.109E+01   0.103E+01   0.621E-01   0.000E+00   0.000000E+00
-     Image interaction energy: -0.847E-01 Change:  0.206E-08 Tolerance:  0.100E-04
-     
-     Adding image charge field due to neutral metal slab at origin in XY plane.
-     Including monopole and dipole terms.
-     Quadrupole not implemented yet.
-     System should not overlap with cell edges.
-     
-
-     reference position (x0):         9.44863066    9.44863066    6.14160993 bohr
-     Total charge   1.0000
-     Total dipole moment  -0.0004  -0.0004  -0.2534 au (Ha),  -0.0010  -0.0009  -0.6442 Debye
-
-     Debug on write surface field to cube file.
+       1 0.112E+01   0.100E+01   0.124E+00   0.000E+00   0.000000E+00
+     Image interaction energy: -0.169E+00 [Ry] Change:  0.999E-03 [Ry] Tolerance:  0.100E-04 [Ry]
 
      Magnetic moment per site:
-     atom:    1    charge:    9.4680    magn:    0.0923    constr:    0.0000
-     atom:    2    charge:    9.4648    magn:    0.0931    constr:    0.0000
+     atom:    1    charge:    9.4688    magn:    0.0918    constr:    0.0000
+     atom:    2    charge:    9.4628    magn:    0.0933    constr:    0.0000
 
-     total cpu time spent up to now is       46.4 secs
+     total cpu time spent up to now is       37.8 secs
+
+     total energy              =    -217.99204246 Ry
+     Harris-Foulkes estimate   =    -217.99203858 Ry
+     estimated scf accuracy    <          4.5E-09 Ry
+
+     total magnetization       =     1.00 Bohr mag/cell
+     absolute magnetization    =     1.09 Bohr mag/cell
+
+     iteration # 12     ecut=    50.00 Ry     beta=0.30
+     Davidson diagonalization with overlap
+     ethr =  1.98E-11,  avg # of iterations =  2.0
+
+     reference position (x0):         9.44863066    9.44863066    6.14160993 bohr
+     Total charge   1.0000
+     Total dipole moment  -0.0004  -0.0004  -0.5040 au (Ha),  -0.0010  -0.0010  -1.2810 Debye
+
+       I         D           A         Val      Target            Str
+       1 0.112E+01   0.100E+01   0.124E+00   0.000E+00   0.000000E+00
+     Image interaction energy: -0.169E+00 [Ry] Change:  0.416E-07 [Ry] Tolerance:  0.100E-04 [Ry]
+
+     reference position (x0):         9.44863066    9.44863066    6.14160993 bohr
+     Total charge   1.0000
+     Total dipole moment  -0.0004  -0.0004  -0.5040 au (Ha),  -0.0010  -0.0010  -1.2810 Debye
+
+
+     Magnetic moment per site:
+     atom:    1    charge:    9.4688    magn:    0.0919    constr:    0.0000
+     atom:    2    charge:    9.4628    magn:    0.0933    constr:    0.0000
+
+     total cpu time spent up to now is       40.4 secs
 
      End of self-consistent calculation
 
@@ -432,8 +420,8 @@ A      1.00
 
           k = 0.0000 0.0000 0.0000 ( 34896 PWs)   bands (ev):
 
-   -14.3569   -13.6450   -13.6450   -12.8754   -12.8712   -12.6425   -12.6257   -12.4098
-   -12.4098   -12.3634   -10.4166    -6.5458    -3.7957    -2.9352
+   -13.2254   -12.5172   -12.5172   -11.7538   -11.7499   -11.5133   -11.4968   -11.2794
+   -11.2794   -11.2335    -9.2998    -5.4029    -2.6963    -1.7772
      occupation numbers 
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   0.0000   0.0000
@@ -443,95 +431,88 @@ A      1.00
 
           k = 0.0000 0.0000 0.0000 ( 34896 PWs)   bands (ev):
 
-   -14.2245   -13.5356   -13.5356   -12.7977   -12.7934   -12.5633   -12.5465   -12.2554
-   -12.2554   -12.1763   -10.1721    -5.6230    -3.4428    -3.4428
+   -13.0914   -12.4075   -12.4075   -11.6777   -11.6738   -11.4333   -11.4170   -11.1255
+   -11.1254   -11.0467    -9.0544    -4.4798    -2.3436    -2.3436
      occupation numbers 
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   0.0000   0.0000   0.0000
 
-     highest occupied level (ev):    -6.5458
-     
-     Adding image charge field due to neutral metal slab at origin in XY plane.
-     Including monopole and dipole terms.
-     Quadrupole not implemented yet.
-     System should not overlap with cell edges.
-     
+     highest occupied level (ev):    -5.4029
 
      reference position (x0):         9.44863066    9.44863066    6.14160993 bohr
      Total charge   1.0000
-     Total dipole moment  -0.0004  -0.0004  -0.2534 au (Ha),  -0.0010  -0.0009  -0.6442 Debye
+     Total dipole moment  -0.0004  -0.0004  -0.5040 au (Ha),  -0.0010  -0.0010  -1.2810 Debye
 
-     Debug on write surface field to cube file.
        I         D           A         Val      Target            Str
-       1 0.109E+01   0.103E+01   0.621E-01   0.000E+00   0.000000E+00
-     Image interaction energy: -0.847E-01 Change:  0.206E-08 Tolerance:  0.100E-04
+       1 0.112E+01   0.100E+01   0.124E+00   0.000E+00   0.000000E+00
+     Image interaction energy: -0.169E+00 [Ry] Change:  0.416E-07 [Ry] Tolerance:  0.100E-04 [Ry]
 
-!    total energy              =    -217.99466213 Ry
-     Harris-Foulkes estimate   =    -217.99467711 Ry
-     estimated scf accuracy    <       0.00000007 Ry
+!    total energy              =    -217.99203082 Ry
+     Harris-Foulkes estimate   =    -217.99203858 Ry
+     estimated scf accuracy    <          4.7E-09 Ry
 
      The total energy is the sum of the following terms:
 
-     one-electron contribution =    -399.99969517 Ry
-     hartree contribution      =     209.58906825 Ry
-     xc contribution           =     -32.48638652 Ry
+     one-electron contribution =    -399.98980343 Ry
+     hartree contribution      =     209.58109527 Ry
+     xc contribution           =     -32.48498880 Ry
      ewald contribution        =       4.90223735 Ry
      CDFT correction           =      -0.00000000 Ry
-     scf correction            =       0.00011397 Ry
+     scf correction            =      -0.00057121 Ry
 
      total magnetization       =     1.00 Bohr mag/cell
      absolute magnetization    =     1.09 Bohr mag/cell
 
-     convergence has been achieved in  11 iterations
+     convergence has been achieved in  12 iterations
 
      Writing output data file left.save
 
-     init_run     :      5.34s CPU      6.13s WALL (       1 calls)
-     electrons    :     38.11s CPU     41.90s WALL (       1 calls)
+     init_run     :      3.35s CPU      3.48s WALL (       1 calls)
+     electrons    :     36.02s CPU     37.52s WALL (       1 calls)
 
      Called by init_run:
-     wfcinit      :      1.06s CPU      1.26s WALL (       1 calls)
-     potinit      :      3.67s CPU      4.14s WALL (       1 calls)
+     wfcinit      :      1.17s CPU      1.18s WALL (       1 calls)
+     potinit      :      1.59s CPU      1.69s WALL (       1 calls)
 
      Called by electrons:
-     c_bands      :     15.76s CPU     17.28s WALL (      11 calls)
-     sum_band     :      4.26s CPU      4.87s WALL (      11 calls)
-     v_of_rho     :     10.51s CPU     11.63s WALL (      11 calls)
-     v_h          :      0.35s CPU      0.38s WALL (      11 calls)
-     v_xc         :     10.16s CPU     11.25s WALL (      11 calls)
-     mix_rho      :      1.47s CPU      1.67s WALL (      11 calls)
+     c_bands      :     16.89s CPU     17.61s WALL (      12 calls)
+     sum_band     :      4.63s CPU      4.78s WALL (      12 calls)
+     v_of_rho     :     11.30s CPU     11.74s WALL (      12 calls)
+     v_h          :      0.38s CPU      0.40s WALL (      12 calls)
+     v_xc         :     10.92s CPU     11.34s WALL (      12 calls)
+     mix_rho      :      1.66s CPU      1.70s WALL (      12 calls)
 
      Called by c_bands:
-     init_us_2    :      0.36s CPU      0.39s WALL (      46 calls)
-     regterg      :     15.03s CPU     16.46s WALL (      22 calls)
+     init_us_2    :      0.39s CPU      0.41s WALL (      50 calls)
+     regterg      :     16.17s CPU     16.85s WALL (      24 calls)
 
      Called by sum_band:
 
      Called by *egterg:
-     h_psi        :     14.60s CPU     16.12s WALL (      82 calls)
-     g_psi        :      0.06s CPU      0.06s WALL (      58 calls)
-     rdiaghg      :      0.03s CPU      0.04s WALL (      80 calls)
-     regterg:over :      0.48s CPU      0.51s WALL (      58 calls)
-     regterg:upda :      0.29s CPU      0.31s WALL (      58 calls)
-     regterg:last :      0.12s CPU      0.13s WALL (      22 calls)
+     h_psi        :     15.76s CPU     16.38s WALL (      90 calls)
+     g_psi        :      0.07s CPU      0.07s WALL (      64 calls)
+     rdiaghg      :      0.04s CPU      0.04s WALL (      88 calls)
+     regterg:over :      0.52s CPU      0.54s WALL (      64 calls)
+     regterg:upda :      0.33s CPU      0.34s WALL (      64 calls)
+     regterg:last :      0.13s CPU      0.14s WALL (      24 calls)
 
      Called by h_psi:
-     h_psi:vloc   :     13.82s CPU     15.26s WALL (      82 calls)
-     h_psi:vnl    :      0.72s CPU      0.79s WALL (      82 calls)
-     add_vuspsi   :      0.32s CPU      0.35s WALL (      82 calls)
+     h_psi:vloc   :     14.88s CPU     15.48s WALL (      90 calls)
+     h_psi:vnl    :      0.79s CPU      0.82s WALL (      90 calls)
+     add_vuspsi   :      0.36s CPU      0.37s WALL (      90 calls)
 
      General routines
-     calbec       :      0.40s CPU      0.44s WALL (      82 calls)
-     fft          :      6.79s CPU      7.57s WALL (     292 calls)
-     fftw         :     14.05s CPU     15.72s WALL (    1036 calls)
+     calbec       :      0.44s CPU      0.45s WALL (      90 calls)
+     fft          :      6.91s CPU      7.21s WALL (     313 calls)
+     fftw         :     14.70s CPU     15.30s WALL (    1146 calls)
 
      Parallel routines
-     fft_scatter  :     10.88s CPU     12.07s WALL (    1328 calls)
+     fft_scatter  :     10.35s CPU     10.79s WALL (    1459 calls)
 
-     PWSCF        :    43.65s CPU        48.36s WALL
+     PWSCF        :    39.56s CPU        41.24s WALL
 
 
-   This run was terminated on:   8:52:11  10May2016            
+   This run was terminated on:  14:23:22  10May2016            
 
 =------------------------------------------------------------------------------=
    JOB DONE.
