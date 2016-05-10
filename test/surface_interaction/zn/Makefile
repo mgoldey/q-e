@@ -5,6 +5,8 @@ all: pw2.out pw2.25.out pw2.50.out pw2.75.out pw3.out pw4.out pw5.out pw6.out pw
 
 nofld: pw_no2.out pw_no4.out pw_no6.out pw_no8.out
 
+large: pwlarge.out pwlarge_nofld.out
+
 clean: 
 	rm -rf *.out out *cub
 
@@ -48,4 +50,10 @@ pw_no6.out: pw_no6.in
 	$(PW_CMD) < $^ > $@
 
 pw_no8.out: pw_no8.in
+	$(PW_CMD) < $^ > $@
+
+pwlarge.out: pwlarge.in
+	$(PW_CMD) < $^ > $@
+
+pwlarge_nofld.out: pwlarge_nofld.in
 	$(PW_CMD) < $^ > $@
