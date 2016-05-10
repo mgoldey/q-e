@@ -35,7 +35,7 @@ set pointsize 1.5
 set key bottom right
 
 set xlabel 'd [Bohr]'
-set title 'Surface Interaction Energy'
+set title 'Surface Interaction Energy - Dipole term'
 set ylabel 'Energy [Ry]'
 #unset ytics
 #set xrange [2.9:17]
@@ -55,6 +55,9 @@ set ylabel 'Energy [Ry]'
 # fit f2(x) 'bc1' using 1:2 via a2, b2, c2
 
 e2 = 2.0 #Ry units
+#eo = -217.98563718
+#
 
-#plot 'bc3' u 1:2 w p ls 1 t 'bc3', a1*exp(-b1*x/2.0)+c1 notitle, 'bc1' u 1:2 w p ls 2 t 'bc1', a2*exp(-b2*x/2.0)+c2 notitle,
-plot 'data' u 1:2 w p ls 1 notitle , -e2/(2*x) ls 1 t '-e^2/(2d)'
+# removing dipole term p^2/4d^3 from interaction energy
+
+plot 'datafld' u 1:($2+(    ($3)**2/(4*$1)   )) w p ls 1 notitle, -e2/(2*x) ls 1 t '-e^2/(2d)'

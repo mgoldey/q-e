@@ -1,7 +1,8 @@
 #include ../../Makefile.inc
 PW_CMD = mpirun -np 4 ../../../espresso-5.1.1/bin/pw.x
 
-all: pw2.out pw2.25.out pw2.50.out pw2.75.out pw3.out pw4.out pw5.out pw6.out pw7.out pw8.out 
+all: pw2.out pw2.25.out pw2.50.out pw2.75.out pw3.out pw4.out pw5.out pw6.out pw7.out pw8.out \
+	pw_no2.out pw_no4.out pw_no6.out pw_no8.out
 
 clean: 
 	rm -rf *.out out *cub
@@ -34,4 +35,16 @@ pw7.out: pw7.in
 	$(PW_CMD) < $^ > $@
 
 pw8.out: pw8.in
+	$(PW_CMD) < $^ > $@
+
+pw_no2.out: pw_no2.in
+	$(PW_CMD) < $^ > $@
+
+pw_no4.out: pw_no4.in
+	$(PW_CMD) < $^ > $@
+
+pw_no6.out: pw_no6.in
+	$(PW_CMD) < $^ > $@
+
+pw_no8.out: pw_no8.in
 	$(PW_CMD) < $^ > $@
