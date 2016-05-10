@@ -25,7 +25,7 @@
   mixing_beta = 0.30,
 /
 EPCDFT
-1 1.D+2 1.D-2 100 .true.
+1 1.D+2 1.D-2 100 .true. 1.D-3
 delta_charge 1 1 2 2 0.0 0.0
 
 K_POINTS {Gamma}
