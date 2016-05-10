@@ -67,6 +67,9 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   REAL(DP) :: tmp
   SAVE first
   !write(*,*) "sum_vrs",sum(vr(:,1))
+  x0 = 0.D0
+  qq = 0.D0
+  dipole = 0.D0
   !
   IF (first .or. .not. allocated(epcdft_field)) THEN
     !
