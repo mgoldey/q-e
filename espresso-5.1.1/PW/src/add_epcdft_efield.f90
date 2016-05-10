@@ -73,13 +73,13 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
     !
   ENDIF
   !
-  IF(epcdft_surface)THEN
-    !
-    vconstr = 0.D0
-    CALL calc_epcdft_surface_field(vconstr, x0, qq, dipole)
-    vpoten = vpoten + vconstr 
-    !
-  ENDIF
+  !IF(epcdft_surface)THEN
+  !  !
+  !  vconstr = 0.D0
+  !  CALL calc_epcdft_surface_field(vconstr, x0, qq, dipole)
+  !  vpoten = vpoten + vconstr 
+  !  !
+  !ENDIF
   !
 END SUBROUTINE add_epcdft_efield
 !
@@ -88,7 +88,7 @@ END SUBROUTINE add_epcdft_efield
 SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   !--------------------------------------------------------------------------
   ! 
-  ! Calculate the monopole and dipole potential due to an image charge
+  ! add the monopole and dipole potential due to an image charge
   ! created by neutral charge slab in the xy plane at z = 0. 
   !
   ! The potential is saved in vin.
@@ -142,7 +142,7 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   !  Variable initialization
   !---------------------
   !
-  vin = 0.D0
+  !vin = 0.D0
   r = 0.D0
   qq = 0.D0
   zvtot = 0.D0
@@ -319,14 +319,14 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   !
   ! debug
   !
-  IF(debug)THEN
-    !
-    IF(ionode)THEN
-      WRITE(*,*)"    Debug on write surface field to cube file."
-    ENDIF
-    CALL write_cube_r ( 9519395, 'surface_field.cub', vin(:,1) )
-    !
-  ENDIF
+  !IF(debug)THEN
+  !  !
+  !  IF(ionode)THEN
+  !    WRITE(*,*)"    Debug on write surface field to cube file."
+  !  ENDIF
+  !  CALL write_cube_r ( 9519395, 'surface_field.cub', vin(:,1) )
+  !  !
+  !ENDIF
   !
 END SUBROUTINE calc_epcdft_surface_field
 !

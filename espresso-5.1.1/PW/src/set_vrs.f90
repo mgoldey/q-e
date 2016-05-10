@@ -60,6 +60,9 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   ! input: the total local pseudopotential
   ! input: the scf(H+xc) part of the local potential
   !
+  REAL(DP) :: x0(3) ! center of charge of system
+  REAL(DP) :: qq ! total charge
+  REAL(DP) :: dipole(3)!, quadrupole(3) ! total dips
   integer:: is
   REAL(DP) :: tmp
   SAVE first
@@ -119,6 +122,7 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
     ! epcdft surface also added in call below only if epcdft_surface=T
     !
     CALL add_epcdft_efield(epcdft_field,.TRUE.)
+    IF(epcdft_surface) CALL calc_epcdft_surface_field( epcdft_field, x0, qq, dipole )
     reset_field=.false.
     !
   ENDIF

@@ -7,6 +7,8 @@ nofld: pw_no2.out pw_no4.out pw_no6.out pw_no8.out
 
 large: pwlarge.out pwlarge_nofld.out
 
+coupling: left2.out left4.out left6.out left8.out  right2.out right4.out right6.out right8.out
+ 
 clean: 
 	rm -rf *.out out *cub
 
@@ -56,4 +58,28 @@ pwlarge.out: pwlarge.in
 	$(PW_CMD) < $^ > $@
 
 pwlarge_nofld.out: pwlarge_nofld.in
+	$(PW_CMD) < $^ > $@
+
+left2.out: left2.in
+	$(PW_CMD) < $^ > $@
+
+left4.out: left4.in
+	$(PW_CMD) < $^ > $@
+
+left6.out: left6.in
+	$(PW_CMD) < $^ > $@
+
+left8.out: left8.in
+	$(PW_CMD) < $^ > $@
+
+right2.out: right2.in
+	$(PW_CMD) < $^ > $@
+
+right4.out: right4.in
+	$(PW_CMD) < $^ > $@
+
+right6.out: right6.in
+	$(PW_CMD) < $^ > $@
+
+right8.out: right8.in
 	$(PW_CMD) < $^ > $@
