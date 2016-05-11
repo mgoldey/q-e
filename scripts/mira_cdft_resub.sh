@@ -20,10 +20,23 @@
 usage() { 
 	echo ""
 	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-c <coupling.out>] [-n <jobname>]" 1>&2
+	echo ""
+	echo "If no options given the default values above are used."
+	echo ""
 	echo "RUN SCRIPT section needs to be modded before use."
 	echo ""
 	exit 1
 }
+
+# defualt values
+lf="left.out"
+lif="left.in"
+rf="right.out"
+rif="right.in"
+cf="coupling.out"
+dir=`pwd`
+name="${dir##*/}"
+
 
 while getopts ":l:L:r:R:c:n:" o; do
     case "${o}" in
@@ -98,7 +111,7 @@ head="
 #COBALT --jobname=$name\n
 #\n
 \n
-pwpream=\"--block \$COBALT_PARTNAME -p 16 --envs OMP_NUM_THREADS=1\"\n
+pwpream=\"--block \$COBALT_PARTNAME -p 1 --envs OMP_NUM_THREADS=1\"\n
 root='/home/nbrawand/src/epcdft'\n
 pwrun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/pw.x' \n
 pprun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'\n
@@ -106,7 +119,7 @@ pprun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'\n
 { \n
 "
 
-mkcin="sh \${root}/scripts/setup_coupling_input.sh $lf $rf >& coupling.in"
+mkcin="bash \${root}/scripts/setup_coupling_input.sh $lf $rf >& coupling.in"
 runc="runjob \$pwpream : \$pprun < coupling.in >& $cf"
 runright="runjob \$pwpream : \$pwrun < $rif >& $rf"
 runleft="runjob \$pwpream : \$pwrun < $lif >& $lf"
