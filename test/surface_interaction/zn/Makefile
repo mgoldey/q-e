@@ -1,11 +1,13 @@
 #include ../../Makefile.inc
 PW_CMD = mpirun -np 4 ../../../espresso-5.1.1/bin/pw.x
 
-all: pw2.out pw2.25.out pw2.50.out pw2.75.out pw3.out pw4.out pw5.out pw6.out pw7.out pw8.out 
+fld: pw2.out pw2.25.out pw2.50.out pw2.75.out pw3.out pw4.out pw5.out pw6.out pw7.out pw8.out 
 
 nofld: pw_no2.out pw_no4.out pw_no6.out pw_no8.out
 
 large: pwlarge.out pwlarge_nofld.out
+
+esm: pwbc3_3.out pwbc3_4.out pwbc3_5.out pwbc3_6.out pwbc3_7.out
 
 #coupling: left2.out left4.out left6.out left8.out  right2.out right4.out right6.out right8.out
  
@@ -60,6 +62,20 @@ pwlarge.out: pwlarge.in
 pwlarge_nofld.out: pwlarge_nofld.in
 	$(PW_CMD) < $^ > $@
 
+pwbc3_3.out: pwbc3_3.in
+	$(PW_CMD) < $^ > $@
+
+pwbc3_4.out: pwbc3_4.in
+	$(PW_CMD) < $^ > $@
+
+pwbc3_5.out: pwbc3_5.in
+	$(PW_CMD) < $^ > $@
+
+pwbc3_6.out: pwbc3_6.in
+	$(PW_CMD) < $^ > $@
+
+pwbc3_7.out: pwbc3_7.in
+	$(PW_CMD) < $^ > $@
 #left2.out: left2.in
 #	$(PW_CMD) < $^ > $@
 #
