@@ -20,10 +20,23 @@
 usage() { 
 	echo ""
 	echo "Usage: $0 [-L <left.in>] [-l <left.out>] [-R <right.in>] [-r <right.out>] [-c <coupling.out>] [-n <jobname>]" 1>&2
+	echo ""
+	echo "If no options given the default values above are used."
+	echo ""
 	echo "RUN SCRIPT section needs to be modded before use."
 	echo ""
 	exit 1
 }
+
+# defualt values
+lf="left.out"
+lif="left.in"
+rf="right.out"
+rif="right.in"
+cf="coupling.out"
+dir=`pwd`
+name="${dir##*/}"
+
 
 while getopts ":l:L:r:R:c:n:" o; do
     case "${o}" in
