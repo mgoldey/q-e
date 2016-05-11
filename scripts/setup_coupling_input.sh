@@ -9,6 +9,29 @@
 e1=`awk '/! /{print $5}' $1 | tail -n 1`
 e2=`awk '/! /{print $5}' $2 | tail -n 1`
 #
+# add surface interaction to e1 and e2
+#
+pyadd(){
+python -<<EOF
+print ($1+$2)
+EOF
+}
+#
+issurf1=`awk '/epcdft with surface/{print $4}' $1`
+issurf2=`awk '/epcdft with surface/{print $4}' $2`
+#
+if [ "$issurf1" = 'T' ];then 
+  surfe1=`awk '/Image interaction energy/{print $4}' $1 | tail -n1`
+  e1=`pyadd $e1 $surfe1`
+fi
+#
+if [ "$issurf2" = 'T' ];then 
+  surfe2=`awk '/Image interaction energy/{print $4}' $2 | tail -n1`
+  e2=`pyadd $e2 $surfe2`
+fi
+#
+# surface done
+#
 i1=`echo $1 | sed 's/\.out/\.in/'`
 i2=`echo $2 | sed 's/\.out/\.in/'`
 #
