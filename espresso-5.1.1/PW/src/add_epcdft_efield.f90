@@ -113,6 +113,7 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   USE mp_bands,  ONLY : me_bgrp
   USE io_global, ONLY : ionode
   USE constants, ONLY : e2
+  USE epcdft,    ONLY : epcdft_surface_cm_start, epcdft_surface_cm_end
   !USE epcdft, ONLY :
   !
   IMPLICIT NONE
@@ -162,32 +163,63 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   !
   ! get center of charge
   !
+  ! if user defined center of charge use atoms from input
+  !
+  IF( (epcdft_surface_cm_start.gt.0) .and. (epcdft_surface_cm_end.gt.0) )THEN
+    !
+    zvtot = 0.D0
+    x0 = 0.D0
+    DO ia = epcdft_surface_cm_start, epcdft_surface_cm_end
+       !
+       zvtot = zvtot + zv(ityp(ia))
+       !
+       x0(:) = x0(:) + tau(:,ia)*zv(ityp(ia))
+       !
+    END DO
+    !
+    x0(:) = x0(:) / zvtot
+    !
+  ELSE ! not user defined use center of nucs
+    !
+    zvtot = 0.D0
+    x0 = 0.D0
+    DO ia = 1, nat
+       !
+       zvtot = zvtot + zv(ityp(ia))
+       !
+       x0(:) = x0(:) + tau(:,ia)*zv(ityp(ia))
+       !
+    END DO
+    !
+    x0(:) = x0(:) / zvtot
+    !
+  ENDIF
+  !
+  ! get total nuc charge
+  !
+  zvtot = 0.D0
   DO ia = 1, nat
      !
      zvtot = zvtot + zv(ityp(ia))
      !
-     x0(:) = x0(:) + tau(:,ia)*zv(ityp(ia))
-     !
   END DO
-  !
-  x0(:) = x0(:) / zvtot
   !
   ! get electronic dipole
   !
   CALL compute_dipole( dfftp%nnr, nspin, rho%of_r, x0, e_dipole, e_quadrupole )
   !
-  ! compute ionic+electronic total charge here
-  ! before zvtot is changed
+  ! compute ionic+electronic total charge 
   !
   qq = -e_dipole(0) + zvtot
   !
   ! compute ion dipole moments
   !
+  !zvtot = 0.D0
   DO ia = 1, nat
      !
      zvia = zv(ityp(ia))
      !
-     zvtot = zvtot + zvia
+     !zvtot = zvtot + zvia
      !
      DO ip = 1, 3
         !

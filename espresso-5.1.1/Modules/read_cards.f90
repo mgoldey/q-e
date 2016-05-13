@@ -1545,7 +1545,15 @@ CONTAINS
       ELSEIF ( nfield == 6) THEN 
          !
          READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, &
-                               epcdft_update_intrvl, epcdft_surface, epcdft_surface_tol
+                               epcdft_update_intrvl, &
+                               epcdft_surface, epcdft_surface_tol
+         !
+      ELSEIF ( nfield == 8) THEN 
+         !
+         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, &
+                               epcdft_update_intrvl, &
+                               epcdft_surface, epcdft_surface_tol, &
+                               epcdft_surface_cm_start, epcdft_surface_cm_end
          !
       ELSE
          !
@@ -1558,6 +1566,7 @@ CONTAINS
          'Reading',nconstr_epcdft,' constraint(s); tolerance:', epcdft_tol, ' max change in field ',epcdft_delta_fld 
       WRITE(stdout,'(5x,a,i4)') 'epcdft_update_intrvl:', epcdft_update_intrvl
       WRITE(stdout,'(5x,a,L2)') 'epcdft with surface:', epcdft_surface
+      WRITE(stdout,'(5x,a,i4,2x,i4)') 'cm atom start,end:', epcdft_surface_cm_start, epcdft_surface_cm_end
       !
       CALL allocate_input_epcdft()
       !

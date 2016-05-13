@@ -19,7 +19,7 @@ SAVE
                                ! local potential
        conv_epcdft,     &      ! localization condition flag
        reset_field=.false., &  ! reset field (so we don't do this every time)
-       epcdft_surface          ! simulate metal surface in xy plane
+       epcdft_surface=.false.         ! simulate metal surface in xy plane
   !
   INTEGER :: epcdft_fields = 4   ! max number of fields that is allowed to
                                  ! define a constraint
@@ -27,13 +27,17 @@ SAVE
   INTEGER :: epcdft_update_intrvl = 40  ! update the potential every this many steps and 
                                         ! after electrons reach scf
   !
+  INTEGER :: epcdft_surface_cm_start = 0  ! starting atom for cm calculation
+  INTEGER :: epcdft_surface_cm_end = 0    ! end atom for cm calculation
+  !                                       ! If both are zero then use cm(center of charge) of all nucs
+  !
   INTEGER  :: nconstr_epcdft    = 0
   REAL(DP) :: epcdft_delta_fld =1.E-1_DP
   REAL(DP) :: epcdft_tol = 1.E-4_DP
   REAL(DP) :: epcdft_surface_tol = 1.E-4_DP
   !
   REAL(DP) :: epcdft_shift            ! energy shift from all fields
-  REAL(DP) :: epcdft_surface_shift    ! energy shift from surface field
+  REAL(DP) :: epcdft_surface_shift=0  ! energy shift from surface field
   !
   CHARACTER(len=20), ALLOCATABLE :: epcdft_type(:)    ! type
   INTEGER,           ALLOCATABLE :: epcdft_locs(:,:)  ! atoms start end (start end) ()-if delta
