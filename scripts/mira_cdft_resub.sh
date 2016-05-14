@@ -97,7 +97,8 @@ resubrunfil="run_resub"
 # modded based on runscrpt
 resubjob="qsub $newrun"
 runresub="qsub $resubrunfil"
-qoe="ECSInterface"
+#qoe="ECSInterface"
+qoe="CompSpectro"
 
 # this time must be less than walltime\n
 resubtime=" sleep 57m ; exit 0 ; \n"
@@ -111,7 +112,7 @@ head="
 #COBALT --jobname=$name\n
 #\n
 \n
-pwpream=\"--block \$COBALT_PARTNAME -p 1 --envs OMP_NUM_THREADS=1\"\n
+pwpream=\"--block \$COBALT_PARTNAME -p 16 --envs OMP_NUM_THREADS=1\"\n
 root='/home/nbrawand/src/epcdft'\n
 pwrun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/pw.x' \n
 pprun='/home/nbrawand/src/epcdft/espresso-5.1.1/bin/epcdft_coupling.x'\n
@@ -140,11 +141,23 @@ resubhead="
 # commands to check if calcs are complete 
 if [ ! -z "`grep 'convergence has' $lf`" ] && [ ! -z "`grep 'JOB DONE' $lf`" ]; then
 	ldone=true
+elif [ ! -z "`grep 'JOB DONE' $lf`" ];then #job rdy to restart
+        sed -i 's/restart_mode/!restart_mode/g' $lif
+        sed -i "s/CONTROL/CONTROL \n restart_mode = 'restart'/g" $lif
+else #job crashed 
+        sed -i 's/restart_mode/!restart_mode/g' $lif
 fi
+
 
 if [ ! -z "`grep 'convergence has' $rf`" ] && [ ! -z "`grep 'JOB DONE' $rf`" ]; then
 	rdone=true
+elif [ ! -z "`grep 'JOB DONE' $rf`" ];then #job rdy to restart
+        sed -i 's/restart_mode/!restart_mode/g' $rif
+        sed -i "s/CONTROL/CONTROL \n restart_mode = 'restart'/g" $rif
+else #job crashed 
+        sed -i 's/restart_mode/!restart_mode/g' $rif
 fi
+
 
 if [ ! -z "`grep 'JOB DONE' $cf`" ]; then
 	cdone=true
