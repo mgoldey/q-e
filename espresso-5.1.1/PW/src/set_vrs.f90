@@ -128,9 +128,10 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
     IF(epcdft_surface) CALL calc_epcdft_surface_field( epcdft_field, x0, qq, dipole )
     reset_field=.false.
     !
+    vr=vr+epcdft_field
+    !
   ENDIF
   !
-  vr=vr+epcdft_field
   !write(*,*) "sum_vrs",sum(vr(:,1))
   ! confirmed the potential was changing here
 
