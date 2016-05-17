@@ -325,7 +325,8 @@ SUBROUTINE electrons_scf ( no_printout )
   USE iso_c_binding,        ONLY : c_int
   !
   USE plugin_variables,     ONLY : plugin_etot
-  USE epcdft,           ONLY : do_epcdft, conv_epcdft, epcdft_shift, epcdft_field
+  USE epcdft,               ONLY : do_epcdft, conv_epcdft, epcdft_shift, epcdft_field, &
+                                   epcdft_surface_field, epcdft_surface
   !
   IMPLICIT NONE
   !
@@ -599,6 +600,7 @@ SUBROUTINE electrons_scf ( no_printout )
         ELSE IF (do_epcdft) THEN
           CALL epcdft_controller()
           if (conv_epcdft .and. conv_elec) deallocate(epcdft_field)
+          if (conv_epcdft .and. conv_elec .and. epcdft_surface) deallocate(epcdft_surface_field)
           IF (.not.conv_epcdft) THEN
             conv_elec=.false.
            !
