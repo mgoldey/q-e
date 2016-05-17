@@ -1566,7 +1566,17 @@ CONTAINS
          'Reading',nconstr_epcdft,' constraint(s); tolerance:', epcdft_tol, ' max change in field ',epcdft_delta_fld 
       WRITE(stdout,'(5x,a,i4)') 'epcdft_update_intrvl:', epcdft_update_intrvl
       WRITE(stdout,'(5x,a,L2)') 'epcdft with surface:', epcdft_surface
-      WRITE(stdout,'(5x,a,i4,2x,i4)') 'cm atom start,end:', epcdft_surface_cm_start, epcdft_surface_cm_end
+      !
+      IF(epcdft_surface_cm_start .eq. 0 .and. epcdft_surface_cm_end .eq. 0)THEN
+        !
+        WRITE(stdout,'(5x,a)') 'center of charge for surface calc unsing center of positive charge'
+        !
+      ELSE
+        !
+        WRITE(stdout,'(5x,a,2x,i4,2x,i4)') 'center of charge for surface calc unsing atom start, end:', &
+                epcdft_surface_cm_start, epcdft_surface_cm_end
+        !
+      ENDIF
       !
       CALL allocate_input_epcdft()
       !

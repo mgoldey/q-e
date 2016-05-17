@@ -45,8 +45,9 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   USE kinds
   USE io_global,     ONLY : ionode
   USE io_global,     ONLY : stdout, ionode
+  USE fft_base,      ONLY : dfftp
   USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field, epcdft_surface_shift,&
-                        epcdft_surface
+                        epcdft_surface, epcdft_surface_field
   !
   implicit none
 
@@ -67,70 +68,61 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   REAL(DP) :: tmp
   SAVE first
   !write(*,*) "sum_vrs",sum(vr(:,1))
+  !
   x0 = 0.D0
   qq = 0.D0
   dipole = 0.D0
   !
-  IF (first .or. .not. allocated(epcdft_field)) THEN
-    !
-    allocate(epcdft_field(nrxx,nspin))
-    reset_field=.true.
-    !
-  END IF
+  ! allocate and add epcdft and surface field
   !
-  IF(first)THEN
+  IF(do_epcdft)THEN
     !
-    ! set image interaction energy
+    ! all epcdft routines assume epcdft_fiels are (dfftp%nnr, nspin) 
+    ! if this function is called with diff bounds then throw error
     !
-    IF(epcdft_surface)THEN
-      !
-      !
-      IF (ionode) THEN
-        !
-        WRITE( stdout,'(5x,"":)')
-        WRITE( stdout,'(5x,"Adding image charge field due to neutral metal slab at origin in XY plane.":)')
-        WRITE( stdout,'(5x,"Including monopole and dipole terms.":)')
-        WRITE( stdout,'(5x,"Quadrupole not implemented yet.":)')
-        WRITE( stdout,'(5x,"System should not overlap with cell edges.":)')
-        WRITE( stdout,'(5x,"":)')
-        !WRITE( stdout,'(8x,"Amplitude [Ry a.u.] : ", es11.4)') eamp 
-        !WRITE( stdout,'(8x,"Postion on atom # : ", I11.1)') edir
-        !WRITE( stdout,'(8x,"Well radius [bohr] : ", es11.4)') emaxpos * alat
-        !
-      ENDIF
-      !
-      epcdft_field = 0.D0
-      tmp = 0.D0
-      !
-      CALL epcdft_surface_energy(epcdft_field, tmp)
-      !
-      epcdft_surface_shift = tmp
-      !
-      IF(ionode)THEN
-        WRITE(*,*)
-        WRITE(*,'(5x,"First surface image interaction energy:",e10.3,"[Ry]")') epcdft_surface_shift
-        WRITE(*,*)
-      ENDIF
-      !
+    IF(nrxx .ne. dfftp%nnr)THEN
+      CALL errore( 'set_vrs', 'set_vrs with do_epcdft=.true. and nrxx != dfftp%nnr. &
+                    nrxx must be = to dfftp%nnr for epcdft.', 1 )
     ENDIF
+    !
+    IF (first .or. .not. allocated(epcdft_field)) THEN
       !
-  ENDIF
-  !
-  first=.false.
-  !
-  IF ( do_epcdft .and. reset_field) THEN
+      reset_field=.true.
+      !
+      IF(.not. allocated(epcdft_field)) allocate(epcdft_field(nrxx,nspin))
+      !
+      IF(epcdft_surface)THEN
+        IF( .not. allocated(epcdft_surface_field) ) ALLOCATE(epcdft_surface_field(nrxx,nspin))
+        IF(first) CALL print_epcdft_surface_energy_and_warning ( )
+      ENDIF
+      !
+    END IF
     !
-    epcdft_field=0.0D0
+    first=.false.
     !
-    ! epcdft surface also added in call below only if epcdft_surface=T
+    IF (reset_field) THEN
+      !
+      ! cdft field
+      !
+      epcdft_field=0.0D0
+      CALL add_epcdft_efield(epcdft_field,.TRUE.)
+      reset_field=.false.
+      !
+      ! surface field
+      !
+      ! field passed to calc_epcdft_surface_field is zeroed
+      !
+      IF(epcdft_surface) CALL calc_epcdft_surface_field( epcdft_surface_field, x0, qq, dipole )
+      !
+    ENDIF !end if reset field
     !
-    CALL add_epcdft_efield(epcdft_field,.TRUE.)
-    IF(epcdft_surface) CALL calc_epcdft_surface_field( epcdft_field, x0, qq, dipole )
-    reset_field=.false.
+    ! add epcdft and surface field to potential
     !
     vr=vr+epcdft_field
     !
-  ENDIF
+    IF(epcdft_surface) vr=vr+epcdft_surface_field
+    !
+  ENDIF! end if epcdft
   !
   !write(*,*) "sum_vrs",sum(vr(:,1))
   ! confirmed the potential was changing here

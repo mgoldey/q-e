@@ -44,6 +44,7 @@ SAVE
   REAL(DP),          ALLOCATABLE :: epcdft_guess(:)   !  guess values of constraints
   REAL(DP),          ALLOCATABLE :: epcdft_target(:)  ! target values of constraints
   REAL(DP),          ALLOCATABLE :: epcdft_field(:,:) ! constraint field
+  REAL(DP),          ALLOCATABLE :: epcdft_surface_field(:,:) ! surface field
   !
   REAL(DP), ALLOCATABLE :: epcdft_forces(:,:)
   !

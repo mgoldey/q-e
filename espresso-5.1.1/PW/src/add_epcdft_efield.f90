@@ -73,14 +73,6 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
     !
   ENDIF
   !
-  !IF(epcdft_surface)THEN
-  !  !
-  !  vconstr = 0.D0
-  !  CALL calc_epcdft_surface_field(vconstr, x0, qq, dipole)
-  !  vpoten = vpoten + vconstr 
-  !  !
-  !ENDIF
-  !
 END SUBROUTINE add_epcdft_efield
 !
 !
@@ -91,7 +83,7 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   ! add the monopole and dipole potential due to an image charge
   ! created by neutral charge slab in the xy plane at z = 0. 
   !
-  ! The potential is saved in vin.
+  ! vin is zeroed and surface energy is returned.
   !
   !
   !                  metal@z=0
@@ -143,7 +135,7 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   !  Variable initialization
   !---------------------
   !
-  !vin = 0.D0
+  vin = 0.D0
   r = 0.D0
   qq = 0.D0
   zvtot = 0.D0
@@ -362,6 +354,46 @@ SUBROUTINE calc_epcdft_surface_field( vin, x0, qq, dipole )
   !
 END SUBROUTINE calc_epcdft_surface_field
 !
+!--------------------------------------------------------------------
+SUBROUTINE print_epcdft_surface_energy_and_warning ( )
+  !--------------------------------------------------------------------
+  !
+  ! print warning message about using surface method and the starting energy
+  !
+  USE kinds,     ONLY : DP
+  USE io_global, ONLY : stdout, ionode
+  USE lsda_mod,  ONLY : nspin
+  USE fft_base,  ONLY : dfftp
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP) field(dfftp%nnr, nspin)
+  REAL(DP) energy
+  !
+  IF (ionode) THEN
+    !
+    WRITE( stdout,'(5x,"":)')
+    WRITE( stdout,'(5x,"Adding image charge field due to neutral metal slab at origin in XY plane.":)')
+    WRITE( stdout,'(5x,"Including monopole and dipole terms.":)')
+    WRITE( stdout,'(5x,"Quadrupole not implemented yet.":)')
+    WRITE( stdout,'(5x,"System should not overlap with cell edges.":)')
+    WRITE( stdout,'(5x,"":)')
+    !
+  ENDIF
+  !
+  field = 0.D0
+  energy = 0.D0
+  !
+  CALL epcdft_surface_energy(field, energy)
+  !
+  IF(ionode)THEN
+    WRITE(*,*)
+    WRITE(*,'(5x,"First surface image interaction energy:",e10.3,"[Ry]")') energy
+    WRITE(*,*)
+  ENDIF
+  !
+  !
+END SUBROUTINE print_epcdft_surface_energy_and_warning
 !
 !--------------------------------------------------------------------------
 SUBROUTINE calc_hirshfeld_v( v,iconstraint)
