@@ -748,10 +748,17 @@ SUBROUTINE electrons_scf ( no_printout )
      ! ... adds possible external contribution from plugins to the energy
      !
      etot = etot + plugin_etot 
-
+     !
+     ! called every step, this will allow cdft dynamic updating
+     !
+     IF(do_epcdft) CALL epcdft_controller()
+     !
+     ! add this line to avoid dynamic updating
+     !
      !IF(conv_elec .and. do_epcdft) CALL epcdft_controller()
-     IF(conv_elec .and. do_epcdft) CALL epcdft_controller()
-
+     !
+     !
+     !
      !IF(do_epcdft) etot=etot+epcdft_shift ! appears to now be taken into account
 
      !
