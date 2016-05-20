@@ -327,6 +327,7 @@ SUBROUTINE epcdft_controller()
         write(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e12.3,e17.8)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint), &
         last_epcdft_amp(iconstraint),epcdft_guess(iconstraint)
+        write(*,'(5x,a,2x,e17.8)') 'CDFT charge error:', enumerr
         !
         ! surface
         !
@@ -342,6 +343,7 @@ SUBROUTINE epcdft_controller()
         write(*,'(5x,a3,a10,a2,a10,a12,a12,a15)') "I","D",'  ','A','Val','Target','Str'
         write(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e15.6)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),epcdft_guess(iconstraint)
+        write(*,'(5x,a,2x,e17.8)') 'CDFT charge error:', enumerr
         !
         ! surface
         !
