@@ -682,4 +682,8 @@ SUBROUTINE epcdft_surface_energy(vin, eout)
     !
   ENDDO ! atoms
   !
+  ! image chage energy must be removed
+  !
+  eout = eout / 2.D0
+  !
 END SUBROUTINE epcdft_surface_energy
