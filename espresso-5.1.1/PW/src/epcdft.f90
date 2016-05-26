@@ -87,7 +87,12 @@ SUBROUTINE epcdft_controller()
   !
   ! Don't try to update too often or else the number of electrons will sometimes go the wrong way and mess up the solver
   ictr=ictr+1
-  if (.not. conv_elec .and. mod( ictr, epcdft_update_intrvl ) .ne. 0 ) RETURN
+  !
+  IF (.not. conv_elec .and. mod( ictr, epcdft_update_intrvl ) .ne. 0 ) RETURN
+  !
+  ! restart the counter but dont start at 0 or u will need to reallocate
+  !
+  ictr = 1
   !
   ! calc is converged lets compute and print the correction
   !
