@@ -52,7 +52,7 @@ This README would normally document whatever steps are necessary to get your app
 
 * Systems studied with CDFT are often difficult to converge. This is not a problem with CDFT but a matter of SCF convergence. Here is what you should do to achieve convergence.
 * Turn off MT. We found that MT for the most part doesn't change the coupling but can really cause convergence issues even for simple systems.
-* Turn on smearing start with a big value like 0.1 if you really don't have a good guess of the constraint potential.
+* Turn on smearing start with a big value like 0.02Ry if you really don't have a good guess of the constraint potential. 0.002 normally does the trick if you are near the right solution. 
 * Run your CDFT calculation with loose convergence parameters (e.g. scf convergence threshold) and smearing and the program will being finding a better starting constraint potential.
 * As your error in the constrained charge decreases, back off on the smearing and tighten your convergence parameters and continue restarting the CDFT calculation with new constraint potential.
 * and iterate.
