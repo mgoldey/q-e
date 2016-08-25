@@ -57,10 +57,11 @@ This README would normally document whatever steps are necessary to get your app
 * As your error in the constrained charge decreases, back off on the smearing and tighten your convergence parameters and continue restarting the CDFT calculation with new constraint potential.
 * and iterate.
 * In some cases, espescially for charged systems the individual sites have degenerate homos and you need to use small smearing to converge regardless if you are running CDFT.
+* For difficult systems you can expect to run 600 or so SCF steps before converging. 
 * Some other convergence tips: 
 * try starting from a smaller cdft field
 * Try fewer electrons - compare with the N-1 electron system?
 * increase epcdft_thr
 
 ### Other tips ###
-* check spin density difference  rho_up(r) - rho_down(r) using pp.x. This is extremely helpful for understanding the orbitals that are participating in charge transfer. 
+* check spin density difference  rho_up(r) - rho_down(r) using pp.x. This is extremely helpful for understanding the orbitals that are participating in charge transfer.
