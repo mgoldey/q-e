@@ -48,10 +48,20 @@ This README would normally document whatever steps are necessary to get your app
 * Other community or team contact
 
 
-### What to do if it doesn't work? ###
-* add unoccupied states
-* check spin density difference  rho_up(r) - rho_down(r) using pp.x
+### Help! I can't achieve SCF convergence! ###
+
+* Systems studied with CDFT are often difficult to converge. This is not a problem with CDFT but a matter of SCF convergence. Here is what you should do to achieve convergence.
+* Turn off MT. We found that MT for the most part doesn't change the coupling but can really cause convergence issues even for simple systems.
+* Turn on smearing start with a big value like 0.02Ry if you really don't have a good guess of the constraint potential. 0.002 normally does the trick if you are near the right solution. 
+* Run your CDFT calculation with loose convergence parameters (e.g. scf convergence threshold) and smearing and the program will being finding a better starting constraint potential.
+* As your error in the constrained charge decreases, back off on the smearing and tighten your convergence parameters and continue restarting the CDFT calculation with new constraint potential.
+* and iterate.
+* In some cases, espescially for charged systems the individual sites have degenerate homos and you need to use small smearing to converge regardless if you are running CDFT.
+* For difficult systems you can expect to run 600 or so SCF steps before converging. 
+* Some other convergence tips: 
 * try starting from a smaller cdft field
 * Try fewer electrons - compare with the N-1 electron system?
 * increase epcdft_thr
-* use smearing till you converge W then restart the calculation with the same W and rho and back off on the smearing
+
+### Other tips ###
+* check spin density difference  rho_up(r) - rho_down(r) using pp.x. This is extremely helpful for understanding the orbitals that are participating in charge transfer.
