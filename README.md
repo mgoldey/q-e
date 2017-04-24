@@ -20,4 +20,4 @@ Nick Brawand nicholasbrawand@gmail.com or Matthew Goldey matthew.goldey@gmail.co
 
 ## License
 
-Please to not distribute.
+Please do not distribute.
