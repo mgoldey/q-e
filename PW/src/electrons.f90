@@ -652,6 +652,8 @@ SUBROUTINE electrons_scf ( printout, exxen )
             !
             conv_elec=.false.
             !
+            iter = 0
+            !
             ! ... no convergence yet: calculate new potential from mixed
             ! ... charge density (i.e. the new estimate)
             !
