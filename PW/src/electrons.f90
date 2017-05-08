@@ -41,7 +41,7 @@ SUBROUTINE electrons()
                                    lambda, report
   USE uspp,                 ONLY : okvan
   USE exx,                  ONLY : exxinit, exxenergy2, exxenergy, exxbuff, &
-                                   fock0, fock1, fock2, dexx
+                                   fock0, fock1, fock2, dexx, use_ace
   USE funct,                ONLY : dft_is_hybrid, exx_is_active
   USE control_flags,        ONLY : adapt_thr, tr2_init, tr2_multi, gamma_only
   !
@@ -49,6 +49,7 @@ SUBROUTINE electrons()
   USE paw_onecenter,        ONLY : PAW_potential
   USE paw_symmetry,         ONLY : PAW_symmetrize_ddd
   USE ions_base,            ONLY : nat
+  USE epcdft,        ONLY : do_epcdft, epcdft_shift
   !
   !
   IMPLICIT NONE
@@ -77,8 +78,8 @@ SUBROUTINE electrons()
   first = .true.
   tr2_final = tr2
   IF ( dft_is_hybrid() ) THEN
-     printout = 0  ! do not print etot and energy components at each scf step
-     !printout = 1  ! print etot, not energy components at each scf step
+     !printout = 0  ! do not print etot and energy components at each scf step
+     printout = 1  ! print etot, not energy components at each scf step
   ELSE IF ( lmd ) THEN
      printout = 1  ! print etot, not energy components at each scf step
   ELSE
@@ -173,11 +174,11 @@ SUBROUTINE electrons()
         ! then calculate exchange energy (will be useful at next step)
         !
         CALL exxinit()
-#if defined(__EXX_ACE) 
-        fock2 = exxenergyace()
-#else  
-        fock2 = exxenergy2()
-#endif
+        IF ( use_ace) THEN
+           fock2 = exxenergyace()
+        ELSE
+           fock2 = exxenergy2()
+        ENDIF
         exxen = 0.50d0*fock2 
         etot = etot - etxc 
         !
@@ -197,11 +198,11 @@ SUBROUTINE electrons()
         ! fock1 is the exchange energy calculated for orbitals at step n,
         !       using orbitals at step n-1 in the expression of exchange
         !
-#if defined(__EXX_ACE)
-        fock1 = exxenergyace()
-#else  
-        fock1 = exxenergy2()
-#endif
+        IF ( use_ace) THEN
+           fock1 = exxenergyace()
+        ELSE
+           fock1 = exxenergy2()
+        ENDIF
         !
         ! Set new orbitals for the calculation of the exchange term
         !
@@ -212,11 +213,11 @@ SUBROUTINE electrons()
         ! fock0 is fock2 at previous step
         !
         fock0 = fock2
-#if defined(__EXX_ACE) 
-        fock2 = exxenergyace()
-#else  
-        fock2 = exxenergy2()
-#endif
+        IF ( use_ace) THEN
+           fock2 = exxenergyace()
+        ELSE
+           fock2 = exxenergy2()
+        ENDIF
         !
         ! check for convergence. dexx is positive definite: if it isn't,
         ! there is some numerical problem. One such cause could be that
@@ -226,6 +227,7 @@ SUBROUTINE electrons()
         IF ( dexx < 0d0 ) THEN
 !           WRITE(stdout,'(5x,a,1e12.3)') "BEWARE: negative dexx:", dexx
 !           dexx = ABS(dexx)
+          WRITE( stdout, * ) "dexx:", dexx
           CALL errore( 'electrons', 'dexx is negative! &
            & Check that exxdiv_treatment is appropriate for the system,&
            & or ecutfock may be too low', 1 )
@@ -234,13 +236,13 @@ SUBROUTINE electrons()
         !   remove the estimate exchange energy exxen used in the inner SCF
         !
         etot = etot + exxen + 0.5D0*fock2 - fock1
+        hwf_energy = hwf_energy + exxen + 0.5D0*fock2 - fock1 ! [LP]
         exxen = 0.5D0*fock2 
-        ! write(*,*) '@chken', etot
-        hwf_energy = hwf_energy + 0.5D0*fock2 - fock1
+        !
         IF ( dexx < tr2_final ) THEN
-           WRITE( stdout, 9066 ) '!', etot, hwf_energy
+           WRITE( stdout, 9066 ) '!!', etot, hwf_energy
         ELSE
-           WRITE( stdout, 9066 ) ' ', etot, hwf_energy
+           WRITE( stdout, 9066 ) '  ', etot, hwf_energy
         END IF
         IF(dexx>1.d-8)THEN
           WRITE( stdout, 9067 ) dexx
@@ -250,6 +252,7 @@ SUBROUTINE electrons()
         
         WRITE( stdout, 9062 ) - fock1
         WRITE( stdout, 9064 ) 0.5D0*fock2
+        IF ( do_epcdft )          WRITE( stdout, 9063 ) epcdft_shift
         !
         IF ( dexx < tr2_final ) THEN
            IF ( do_makov_payne ) CALL makov_payne( etot )
@@ -288,9 +291,11 @@ SUBROUTINE electrons()
   !
   ! ... formats
   !
+
 9062 FORMAT( '     - averaged Fock potential =',0PF17.8,' Ry' )
+9063 FORMAT( '     CDFT correction           =',F17.8,' Ry' )
 9064 FORMAT( '     + Fock energy             =',0PF17.8,' Ry' )
-9066 FORMAT(/,A1,'    total energy              =',0PF17.8,' Ry' &
+9066 FORMAT(/,A2,'   total energy              =',0PF17.8,' Ry' &
             /'     Harris-Foulkes estimate   =',0PF17.8,' Ry' )
 9067 FORMAT('     est. exchange err (dexx)  =',0PF17.8,' Ry' )
 9068 FORMAT('     est. exchange err (dexx)  =',1PE17.1,' Ry' )
@@ -368,10 +373,13 @@ SUBROUTINE electrons_scf ( printout, exxen )
   USE esm,                  ONLY : do_comp_esm, esm_printpot, esm_ewald
   USE fcp_variables,        ONLY : lfcpopt, lfcpdyn
   USE iso_c_binding,        ONLY : c_int
+  USE funct,                ONLY : dft_is_hybrid,exx_is_active
+  USE exx,                  ONLY : dexx
   !
   USE plugin_variables,     ONLY : plugin_etot
   USE epcdft,               ONLY : do_epcdft, conv_epcdft, epcdft_shift, epcdft_field, &
                                    epcdft_surface_field, epcdft_surface
+  USE input_parameters,     ONLY : lipr                                
   !
   IMPLICIT NONE
   !
@@ -643,23 +651,33 @@ SUBROUTINE electrons_scf ( printout, exxen )
            !
         ELSE IF (do_epcdft) THEN
           !
-          CALL epcdft_controller()
-          !
-          IF (conv_epcdft .and. conv_elec) deallocate(epcdft_field)
-          IF (conv_epcdft .and. conv_elec .and. epcdft_surface) deallocate(epcdft_surface_field)
-          !
-          IF (.not.conv_epcdft) THEN
+          IF (dft_is_hybrid()) THEN
+            if (exx_is_active() .and. dexx < tr2) THEN
+              CALL epcdft_controller()
+            ENDIF
+          ELSE 
+
+            CALL epcdft_controller()
+
+            IF (conv_epcdft .and. conv_elec) deallocate(epcdft_field)
+            IF (conv_epcdft .and. conv_elec .and. epcdft_surface) deallocate(epcdft_surface_field)
             !
-            conv_elec=.false.
-            !
-            iter = 0
-            !
-            ! ... no convergence yet: calculate new potential from mixed
-            ! ... charge density (i.e. the new estimate)
-            !
-            CALL v_of_rho( rhoin, rho_core, rhog_core, &
-                           ehart, etxc, vtxc, eth, etotefield, charge, v)
-            !
+            IF (.not.conv_epcdft) THEN
+              !
+              conv_elec=.false.
+
+              iter = 0
+              !
+              ! ... no convergence yet: calculate new potential from mixed
+              ! ... charge density (i.e. the new estimate)
+              !
+            ENDIF
+            
+             vnew%of_r(:,:) = v%of_r(:,:)
+             CALL v_of_rho( rho,rho_core,rhog_core, &
+                            ehart, etxc, vtxc, eth, etotefield, charge, v)
+             vnew%of_r(:,:) = v%of_r(:,:) - vnew%of_r(:,:)
+            
             IF (okpaw) THEN
                CALL PAW_potential(rhoin%bec, ddd_paw, epaw)
                CALL PAW_symmetrize_ddd(ddd_paw)
@@ -678,7 +696,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
             !
             CALL scf_type_COPY( rhoin, rho )
             !
-          ENDIF 
+          ENDIF
           !
         ELSE 
            !
@@ -757,7 +775,9 @@ SUBROUTINE electrons_scf ( printout, exxen )
               CALL write_ns()
            ENDIF
         ENDIF
+        
         CALL print_ks_energies()
+        if (lipr .eqv. .true.) CALL print_ks_iprs()
         !
      END IF
      !
@@ -774,9 +794,9 @@ SUBROUTINE electrons_scf ( printout, exxen )
      !
      etot = eband + ( etxc - etxcc ) + ewld + ehart + deband + demet + descf
      ! for hybrid calculations, add the current estimate of exchange energy
+     ! (it will subtracted later if exx_is_active to be replaced with a better estimate)
      etot = etot - exxen
-     hwf_energy = hwf_energy - exxen
-     ! write(*,*) '@chk', etot 
+     hwf_energy = hwf_energy - exxen ! [LP]
      !
      IF (okpaw) etot = etot + epaw
      IF ( lda_plus_u ) etot = etot + eth
@@ -891,7 +911,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
 9000 FORMAT(/'     total cpu time spent up to now is ',F10.1,' secs' )
 9001 FORMAT(/'     per-process dynamical memory: ',f7.1,' Mb' )
 9002 FORMAT(/'     Self-consistent Calculation' )
-9010 FORMAT(/'     iteration #',I3,'     ecut=', F9.2,' Ry',5X,'beta=',F4.2 )
+9010 FORMAT(/'     iteration #',I3,'     ecut=', F9.2,' Ry',5X,'beta=',F5.2 )
 9050 FORMAT(/'     WARNING: integrated charge=',F15.8,', expected=',F15.8 )
 9101 FORMAT(/'     End of self-consistent calculation' )
 9110 FORMAT(/'     convergence has been achieved in ',i3,' iterations' )
@@ -1166,7 +1186,8 @@ SUBROUTINE electrons_scf ( printout, exxen )
           IF ( ts_vdw )  WRITE ( stdout , 9076 ) 2.0d0*EtsvdW
           IF ( textfor)  WRITE ( stdout , 9077 ) eext
           IF ( tefield )            WRITE( stdout, 9061 ) etotefield
-          IF ( do_epcdft )            WRITE( stdout, 9063 ) epcdft_shift
+          IF ( monopole )           WRITE( stdout, 9062 ) etotmonofield ! TB
+          IF ( do_epcdft )          WRITE( stdout, 9063 ) epcdft_shift
           IF ( lda_plus_u )         WRITE( stdout, 9065 ) eth
           IF ( ABS (descf) > eps8 ) WRITE( stdout, 9069 ) descf
           IF ( okpaw ) THEN
@@ -1236,7 +1257,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
             /'     xc contribution           =',F17.8,' Ry' &
             /'     ewald contribution        =',F17.8,' Ry' )
 9061 FORMAT( '     electric field correction =',F17.8,' Ry' )
-9062 FORMAT( '     monopole field correction =',F17.8,' Ry' ) ! TB
+9062 FORMAT( '     monopole field correction =',F17.8,' Ry' ) 
 9063 FORMAT( '     CDFT correction           =',F17.8,' Ry' )
 9065 FORMAT( '     Hubbard energy            =',F17.8,' Ry' )
 9067 FORMAT( '     one-center paw contrib.   =',F17.8,' Ry' )

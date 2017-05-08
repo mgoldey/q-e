@@ -18,14 +18,13 @@ SUBROUTINE epcdft_controller()
   !   This routine calculates the correction to the total energy
   !   due to the constraining potential from cdft and prints it. 
   !   It also evaluates the charge difference between the donor
-  !   and acceptor. If this number is not
-  !   equal to that of the target charge within epcdft_tol, 
-  !   the amplitude of the well is changed and the scf loop is restarted. 
+  !   and acceptor. If this number is not equal to that of the 
+  !   target charge within epcdft_tol, the amplitude of the well
+  !   is changed and the scf loop is restarted. 
   !
   !
   USE io_global,     ONLY : stdout, ionode
   USE kinds,         ONLY : DP
-  USE io_files,      ONLY : tmp_dir
   USE plugin_flags
   USE kinds,         ONLY : DP
   USE constants,     ONLY : fpi, eps8, e2, au_debye

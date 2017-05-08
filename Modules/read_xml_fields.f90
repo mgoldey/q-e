@@ -449,6 +449,9 @@ CONTAINS
     CASE ( 'lelfield' )
        CALL iotk_scan_dat_inside( xmlinputunit, lelfield, ierr = ierr )
        !
+    CASE ( 'lipr' )
+       CALL iotk_scan_dat_inside( xmlinputunit, lelfield, ierr = ierr )
+       !
     CASE ( 'lorbm' )
        CALL iotk_scan_dat_inside( xmlinputunit, lorbm, ierr = ierr )
        !
@@ -706,6 +709,9 @@ CONTAINS
        !
     CASE ( 'tefield' )
        CALL iotk_scan_dat_inside( xmlinputunit, tefield, ierr = ierr )
+       !
+    !CASE ( 'do_epcdft' )
+    !   CALL iotk_scan_dat_inside( xmlinputunit, do_epcdft, ierr = ierr )
        !
     CASE ( 'temph' ) 
        CALL iotk_scan_dat_inside( xmlinputunit, temph, ierr = ierr )

@@ -78,7 +78,7 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   !
   IF(do_epcdft)THEN
     !
-    ! all epcdft routines assume epcdft_fiels are (dfftp%nnr, nspin) 
+    ! all epcdft routines assume epcdft_field is (dfftp%nnr, nspin) 
     ! if this function is called with diff bounds then throw error
     !
     IF(nrxx .ne. dfftp%nnr)THEN
@@ -97,7 +97,7 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
         IF(first) CALL print_epcdft_surface_energy_and_warning ( )
       ENDIF
       !
-    END IF
+    END IF ! END FIRST
     !
     first=.false.
     !
@@ -123,28 +123,25 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
     !
     IF(epcdft_surface) vr=vr+epcdft_surface_field
     !
+
   ENDIF! end if epcdft
   !
-  DO is = 1, nspin
-    !
-    ! define the total local potential (external + scf) for each spin ...
-    !
-    IF (is > 1 .and. nspin == 4) then
-      !
-      ! noncolinear case: only the first component contains vltot
-      !
-      vrs (:, is) = vr (:, is)
-      !
-    ELSE
-      !
-      vrs (:, is) = vltot (:) + vr (:, is)
-      !
-    ENDIF
-    !
-  ENDDO
-  !
-  RETURN 
-  !
+   do is = 1, nspin
+     !
+     ! define the total local potential (external + scf) for each spin ...
+     !
+     if (is > 1 .and. nspin == 4) then
+        !
+        ! noncolinear case: only the first component contains vltot
+        !
+        vrs (:, is) = vr (:, is)
+     else
+        vrs (:, is) = vltot (:) + vr (:, is)
+     end if
+     !
+   enddo ! end spin loop
+  return
+
 end subroutine sum_vrs
 !
 !--------------------------------------------------------------------

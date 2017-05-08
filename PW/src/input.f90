@@ -91,7 +91,7 @@ SUBROUTINE iosys()
                             forcemono
   !
   !
-  USE epcdft,        ONLY : do_epcdft_       => do_epcdft
+  USE epcdft, ONLY : do_epcdft_ => do_epcdft !,epcdft_forces
   !
   USE io_files,      ONLY : input_drho, output_drho, &
                             psfile, tmp_dir, wfc_dir, &
@@ -103,13 +103,12 @@ SUBROUTINE iosys()
   USE fft_base, ONLY : dfftp
   USE fft_base, ONLY : dffts
   !
-  USE klist,         ONLY : lgauss, ngauss, two_fermi_energies, &
+  USE klist,         ONLY : ltetra, lgauss, ngauss, two_fermi_energies, &
                             smearing_          => smearing, &
                             degauss_           => degauss, &
                             tot_charge_        => tot_charge, &
                             tot_magnetization_ => tot_magnetization
-  !
-  USE ktetra,        ONLY : ltetra
+  USE ktetra,        ONLY : tetra_type
   USE start_k,       ONLY : init_start_k
   !
   USE ldaU,          ONLY : Hubbard_U_     => hubbard_u, &
@@ -139,8 +138,8 @@ SUBROUTINE iosys()
                             exxdiv_treatment_ => exxdiv_treatment, &
                             yukawa_           => yukawa, &
                             ecutvcut_         => ecutvcut, &
-                            ecutfock_         => ecutfock
-  !
+                            ecutfock_         => ecutfock, &
+                            local_thr, use_scdm, use_ace
   !
   USE lsda_mod,      ONLY : nspin_                  => nspin, &
                             starting_magnetization_ => starting_magnetization, &
@@ -194,7 +193,7 @@ SUBROUTINE iosys()
 
   !
   USE symm_base, ONLY : no_t_rev_ => no_t_rev, nofrac, allfrac, &
-                        nosym_ => nosym, nosym_evc_=> nosym_evc
+                        nosym_ => nosym, nosym_evc_=> nosym_evc, spacegroup
   !
   USE bfgs_module,   ONLY : bfgs_ndim_        => bfgs_ndim, &
                             trust_radius_max_ => trust_radius_max, &
@@ -243,7 +242,7 @@ SUBROUTINE iosys()
                                x_gamma_extrapolation, nqx1, nqx2, nqx3,     &
                                exxdiv_treatment, yukawa, ecutvcut,          &
                                exx_fraction, screening_parameter, ecutfock, &
-                               gau_parameter,                               &
+                               gau_parameter, localization_thr, scdm, ace,  &
                                edir, emaxpos, eopreg, eamp, noncolin, lambda, &
                                angle1, angle2, constrained_magnetization,     &
                                B_field, fixed_magnetization, report, lspinorb,&
@@ -550,11 +549,11 @@ SUBROUTINE iosys()
   tfixed_occ = .false.
   ltetra     = .false.
   lgauss     = .false.
+  ngauss     = 0
   !
   SELECT CASE( trim( occupations ) )
   CASE( 'fixed' )
      !
-     ngauss = 0
      IF ( degauss /= 0.D0 ) THEN
         CALL errore( ' iosys ', &
                    & ' fixed occupations, gauss. broadening ignored', -1 )
@@ -587,18 +586,18 @@ SUBROUTINE iosys()
      !
   CASE( 'tetrahedra' )
      !
-     ! replace "errore" with "infomsg" in the next line if you really want
-     ! to perform a calculation with forces using tetrahedra 
-     !
-     IF( lforce ) CALL errore( 'iosys', &
-        'force calculation with tetrahedra not recommanded: use smearing',1)
-     !
-     ! as above, for stress
-     !
-     IF( lstres ) CALL errore( 'iosys', &
-        'stress calculation with tetrahedra not recommanded: use smearing',1)
-     ngauss = 0
      ltetra = .true.
+     tetra_type = 0
+     !
+  CASE( 'tetrahedra_lin', 'tetrahedra-lin')
+     !
+     ltetra = .true.
+     tetra_type = 1
+     !
+  CASE('tetrahedra_opt', 'tetrahedra-opt')
+     !
+     ltetra = .true.
+     tetra_type = 2
      !
   CASE( 'from_input' )
      !
@@ -608,10 +607,16 @@ SUBROUTINE iosys()
   CASE DEFAULT
      !
      CALL errore( 'iosys','occupations ' // trim( occupations ) // &
-                & 'not implemented', 1 )
+                & ' not implemented', 1 )
      !
   END SELECT
   !
+  IF( ltetra ) THEN
+     IF( lforce ) CALL infomsg( 'iosys', &
+       'BEWARE:  force calculation with tetrahedra (not recommanded)')
+     IF( lstres ) CALL infomsg( 'iosys', &
+       'BEWARE: stress calculation with tetrahedra (not recommanded)')
+  END IF
   IF( nbnd < 1 ) &
      CALL errore( 'iosys', 'nbnd less than 1', nbnd )
   !
@@ -1268,14 +1273,17 @@ SUBROUTINE iosys()
   END SELECT
   IF ( london ) THEN
      CALL infomsg("iosys","london is obsolete, use ""vdw_corr='grimme-d2'"" instead")
+     vdw_corr='grimme-d2'
      llondon = .TRUE.
   END IF
   IF ( xdm ) THEN
      CALL infomsg("iosys","xdm is obsolete, use ""vdw_corr='xdm'"" instead")
+     vdw_corr='xdm'
      lxdm = .TRUE.
   END IF
   IF ( ts_vdw ) THEN
      CALL infomsg("iosys","ts_vdw is obsolete, use ""vdw_corr='TS'"" instead")
+     vdw_corr='TS'
      ts_vdw_ = .TRUE.
   END IF
   IF ( llondon.AND.lxdm .OR. llondon.AND.ts_vdw_ .OR. lxdm.AND.ts_vdw_ ) &
@@ -1309,6 +1317,7 @@ SUBROUTINE iosys()
                                                    &number',1 )
      CALL sup_spacegroup(rd_pos,sp_pos,rd_for,rd_if_pos,space_group,nat,&
               uniqueb,rhombohedral,origin_choice,ibrav_sg)
+     spacegroup = space_group
      IF (ibrav==-1) THEN
         ibrav=ibrav_sg
      ELSEIF (ibrav /= ibrav_sg) THEN
@@ -1417,6 +1426,8 @@ SUBROUTINE iosys()
   ENDIF
   !
   IF ( tefield ) ALLOCATE( forcefield( 3, nat_ ) )
+  IF ( monopole ) ALLOCATE( forcemono( 3, nat_ ) ) !TB monopole forces
+  ! IF ( do_epcdft ) ALLOCATE( epcdft_forces( 3, nat_ ) )
   !
   ! ... note that read_cards_pw no longer reads cards!
   !
@@ -1521,6 +1532,13 @@ SUBROUTINE iosys()
   exxdiv_treatment_ = trim(exxdiv_treatment)
   yukawa_   = yukawa
   ecutvcut_ = ecutvcut
+  local_thr = localization_thr
+  use_scdm  = scdm
+  use_ace   = ace
+  IF ( .NOT.scdm .AND. localization_thr > 0.0_dp ) &
+     CALL infomsg ('iosys', 'localization threshold needs SCDM')
+  IF ( scdm .AND..NOT.ace ) &
+     CALL errore  ('iosys', 'SCDM implemented only with ACE',1)
   !
   IF(ecutfock <= 0.0_DP) THEN
      ! default case
@@ -1560,7 +1578,7 @@ SUBROUTINE iosys()
      ! The next two lines have been moved before the call to read_config_from_file:
      !      at_old    = at
      !      omega_old = omega
-     IF ( cell_factor_ <= 0.D0 ) cell_factor_ = 1.2D0
+     IF ( cell_factor_ <= 0.0_dp ) cell_factor_ = 2.0_dp
      !
      IF ( cmass <= 0.D0 ) &
         CALL errore( 'iosys', &

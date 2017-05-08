@@ -30,6 +30,9 @@ MODULE symme
   !
   LOGICAL :: &
        no_rho_sym=.true.      ! do not perform symetrization of charge density
+  LOGICAL :: &
+       sym_init_called=.false. ! if true, sym_rho_init no longer challed
+  PUBLIC :: sym_init_called
   INTEGER :: ngs              ! number of symmetry-related G-vector shells
   TYPE shell_type
      INTEGER, POINTER :: vect(:)

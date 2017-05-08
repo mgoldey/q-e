@@ -257,6 +257,7 @@ xspectra.o : ../../Modules/uspp.o
 xspectra.o : ../../PW/src/pwcom.o
 xspectra.o : ../../PW/src/start_k.o
 xspectra.o : ../../PW/src/symm_base.o
+xspectra.o : ../../PW/src/tetra.o
 xspectra.o : gaunt_mod.o
 xspectra.o : paw_gipaw.o
 xspectra.o : radin_mod.o

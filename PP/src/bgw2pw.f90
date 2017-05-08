@@ -137,8 +137,8 @@ PROGRAM bgw2pw
   CALL openfil_pp ( )
 
   IF ( wfng_flag ) THEN
-    input_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( wfng_file )
-    output_dir_name = TRIM ( tmp_dir ) // '/' // TRIM ( prefix ) // '.save'
+    input_file_name = TRIM ( tmp_dir ) // TRIM ( wfng_file )
+    output_dir_name = TRIM ( tmp_dir ) // TRIM ( prefix ) // '.save'
     IF ( ionode ) WRITE ( 6, '(5x,"call write_evc")' )
     CALL start_clock ( 'write_evc' )
     CALL write_evc ( input_file_name, real_or_complex, wfng_nband, &
@@ -148,8 +148,8 @@ PROGRAM bgw2pw
   ENDIF
 
   IF ( rhog_flag ) THEN
-    input_file_name = TRIM ( tmp_dir ) // '/' // TRIM ( rhog_file )
-    output_dir_name = TRIM ( tmp_dir ) // '/' // TRIM ( prefix ) // '.save'
+    input_file_name = TRIM ( tmp_dir ) // TRIM ( rhog_file )
+    output_dir_name = TRIM ( tmp_dir ) // TRIM ( prefix ) // '.save'
     IF ( ionode ) WRITE ( 6, '(5x,"call write_cd")' )
     CALL start_clock ( 'write_cd' )
     CALL write_cd ( input_file_name, real_or_complex, output_dir_name )
@@ -194,7 +194,9 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
   USE mp_pools, ONLY : kunit, npool, my_pool_id, intra_pool_comm
   USE symm_base, ONLY : s, nsym
   USE xml_io_base, ONLY : create_directory
+#if defined (__OLDXML)
   USE qexml_module, ONLY : qexml_kpoint_dirname, qexml_wfc_filename
+#endif
 #if defined(__MPI)
   USE parallel_include, ONLY : MPI_INTEGER, MPI_DOUBLE_COMPLEX
 #endif
@@ -442,7 +444,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
         DO is = 1, ns
           IF ( real_or_complex .EQ. 1 ) THEN
             DO ig = 1, ngk_g ( ik )
-              wfng_buf ( ig, is ) = CMPLX ( wfngr ( ig, is ), 0.0D0 )
+              wfng_buf ( ig, is ) = CMPLX ( wfngr ( ig, is ), 0.0D0, KIND=dp )
             ENDDO
           ELSE
             DO ig = 1, ngk_g ( ik )
@@ -465,7 +467,7 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
 #else
       DO is = 1, ns
         DO ig = 1, ngkdist_g
-          wfng_dist ( ig, ib, is, ik ) = wfng_buf ( ig, is )
+         wfng_dist ( ig, ib, is, ik ) = wfng_buf ( ig, is )
         ENDDO
       ENDDO
 #endif
@@ -513,9 +515,13 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
   CALL mp_max ( npw_g, world_comm )
 
   CALL create_directory ( output_dir_name )
+#if defined (__OLDXML)
   DO ik = 1, nk
     CALL create_directory (qexml_kpoint_dirname( output_dir_name, ik ) )
   ENDDO
+#else
+  CALL errore('bgw2pw','XSD implementation pending',1)
+#endif
 
   filename = TRIM ( output_dir_name ) // '/gvectors.dat'
 
@@ -536,8 +542,9 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
 
   DO ik = 1, nk
 
+#if defined (__OLDXML)
     filename = TRIM ( qexml_wfc_filename ( output_dir_name, 'gkvectors', ik ) )
-
+#endif
     IF ( ionode ) THEN
       CALL iotk_open_write ( iu, FILE = TRIM ( filename ), ROOT="GK-VECTORS", BINARY = .TRUE. )
       CALL iotk_write_dat ( iu, "NUMBER_OF_GK-VECTORS", ngk_g ( ik ) )
@@ -564,13 +571,13 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
     ENDIF
 
     DO is = 1, ns
-
+#if defined (__OLDXML)
       IF ( ns .GT. 1 ) THEN
         filename = TRIM ( qexml_wfc_filename ( output_dir_name, 'eigenval', ik, is, EXTENSION = 'xml' ) )
       ELSE
         filename = TRIM ( qexml_wfc_filename ( output_dir_name, 'eigenval', ik, EXTENSION = 'xml' ) )
       ENDIF
-
+#endif
       IF ( ionode ) THEN
         CALL iotk_open_write ( iu, FILE = TRIM ( filename ), BINARY = .FALSE. )
         CALL iotk_write_attr ( attr, "nbnd", nb, FIRST = .TRUE. )
@@ -583,13 +590,13 @@ SUBROUTINE write_evc ( input_file_name, real_or_complex, &
         CALL iotk_write_dat ( iu, "OCCUPATIONS", oc ( :, ik, is ) )
         CALL iotk_close_write ( iu )
       ENDIF
-
+#if defined (__OLDXML)
       IF ( ns .GT. 1 ) THEN
         filename = TRIM ( qexml_wfc_filename ( output_dir_name, 'evc', ik, is ) )
       ELSE
         filename = TRIM ( qexml_wfc_filename ( output_dir_name, 'evc', ik ) )
       ENDIF
-
+#endif
       IF ( ionode ) THEN
         CALL iotk_open_write ( iu, FILE = TRIM ( filename ), ROOT = "WFC", BINARY = .TRUE. )
         CALL iotk_write_attr ( attr, "ngw", npw_g, FIRST = .TRUE. )
@@ -784,7 +791,7 @@ SUBROUTINE write_cd ( input_file_name, real_or_complex, output_dir_name )
     DO is = 1, ns
       IF ( real_or_complex .EQ. 1 ) THEN
         DO ig = 1, ng
-          rhog ( ig, is ) = CMPLX ( rhogr ( ig, is ), 0.0D0 )
+          rhog ( ig, is ) = CMPLX ( rhogr ( ig, is ), 0.0D0, KIND=dp )
         ENDDO
       ELSE
         DO ig = 1, ng
@@ -804,7 +811,7 @@ SUBROUTINE write_cd ( input_file_name, real_or_complex, output_dir_name )
   IF ( ionode ) THEN
     DO is = 1, ns
       DO ig = 1, ng
-        rhog ( ig, is ) = rhog ( ig, is ) / CMPLX ( omega, 0.0D0 )
+        rhog ( ig, is ) = rhog ( ig, is ) / CMPLX ( omega, 0.0D0, KIND=dp )
       ENDDO
     ENDDO
   ENDIF

@@ -24,6 +24,7 @@ constants.o \
 constraints_module.o \
 control_flags.o \
 coulomb_vcut.o \
+dist.o \
 electrons_base.o \
 environment.o \
 epcdft_module.o \
@@ -51,6 +52,7 @@ mp.o \
 mp_bands.o \
 mp_base.o \
 mp_diag.o \
+mp_exx.o \
 mp_global.o \
 mp_images.o \
 mp_pools.o \
@@ -115,6 +117,7 @@ qexsd_input.o \
 qexsd_reader_module.o \
 hdf5_qe.o\
 xsf.o \
+wyckoff.o \
 wypos.o \
 zdotc_wrapper.o  \
 zvscal.o 
@@ -125,7 +128,6 @@ OBJS = \
 atomic_number.o \
 capital.o \
 cryst_to_car.o \
-dost.o \
 erf.o \
 expint.o \
 find_free_unit.o \

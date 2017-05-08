@@ -1,0 +1,11 @@
+&INPUTPP
+prefix='zn_05_left'
+outdir="out"
+filplot = 'left.sdd'
+plot_num = 6
+/
+&PLOT
+iflag = 3
+output_format = 6
+fileout = 'left.cube'
+/

@@ -49,7 +49,7 @@ SUBROUTINE setup()
   USE fft_base,           ONLY : smap
   USE gvecs,              ONLY : doublegrid, gcutms, dual
   USE klist,              ONLY : xk, wk, nks, nelec, degauss, lgauss, &
-                                 lxkcry, nkstot, &
+                                 ltetra, lxkcry, nkstot, &
                                  nelup, neldw, two_fermi_energies, &
                                  tot_charge, tot_magnetization
   USE lsda_mod,           ONLY : lsda, nspin, current_spin, isk, &
@@ -58,10 +58,11 @@ SUBROUTINE setup()
   USE electrons_base,     ONLY : set_nelup_neldw
   USE start_k,            ONLY : nks_start, xk_start, wk_start, &
                                  nk1, nk2, nk3, k1, k2, k3
-  USE ktetra,             ONLY : tetra, ntetra, ltetra
+  USE ktetra,             ONLY : tetra_type, opt_tetra_init, tetra_init
   USE symm_base,          ONLY : s, t_rev, irt, nrot, nsym, invsym, nosym, &
                                  d1,d2,d3, time_reversal, sname, set_sym_bl, &
-                                 find_sym, inverse_s, no_t_rev, allfrac
+                                 find_sym, inverse_s, no_t_rev &
+                                 , allfrac, remove_sym
   USE wvfct,              ONLY : nbnd, nbndx
   USE control_flags,      ONLY : tr2, ethr, lscf, lmd, david, lecrpa,  &
                                  isolve, niter, noinv, ts_vdw, &
@@ -81,13 +82,13 @@ SUBROUTINE setup()
   USE noncollin_module,   ONLY : noncolin, npol, m_loc, i_cons, &
                                  angle1, angle2, bfield, ux, nspin_lsda, &
                                  nspin_gga, nspin_mag
-! 
-  USE pw_restart_new,     ONLY : pw_readschema_file, init_vars_from_schema 
-  USE qes_libs_module,    ONLY : qes_reset_output, qes_reset_input, qes_reset_parallel_info, qes_reset_general_info
-  USE qes_types_module,   ONLY : output_type, input_type, parallel_info_type, general_info_type 
-!
+#if defined(__OLDXML) 
   USE pw_restart,         ONLY : pw_readfile
-!
+#else
+  USE pw_restart_new,     ONLY : pw_readschema_file, init_vars_from_schema 
+  USE qes_libs_module,    ONLY : qes_reset_output, qes_reset_parallel_info, qes_reset_general_info
+  USE qes_types_module,   ONLY : output_type, parallel_info_type, general_info_type 
+#endif
   USE exx,                ONLY : ecutfock, exx_grid_init, exx_mp_init, exx_div_check
   USE funct,              ONLY : dft_is_meta, dft_is_hybrid, dft_is_gradient
   USE paw_variables,      ONLY : okpaw
@@ -102,11 +103,10 @@ SUBROUTINE setup()
   !
   LOGICAL, EXTERNAL  :: check_para_diag
 !
-#if defined(__XSD)
-  TYPE(output_type),ALLOCATABLE             :: output_obj 
-  TYPE(input_type),ALLOCATABLE              :: input_obj
-  TYPE(parallel_info_type),ALLOCATABLE      :: parinfo_obj
-  TYPE(general_info_type),ALLOCATABLE       :: geninfo_obj
+#if !defined(__OLDXML)
+  TYPE(output_type)                         :: output_obj 
+  TYPE(parallel_info_type)                  :: parinfo_obj
+  TYPE(general_info_type)                   :: geninfo_obj
 #endif
 !  
 #if defined(__MPI)
@@ -168,22 +168,7 @@ SUBROUTINE setup()
   !
   nelec = ionic_charge - tot_charge
   !
-#if defined (__XSD)
-  IF ( lbands .OR. ( (lfcpopt .OR. lfcpdyn ) .AND. restart )) THEN 
-     ALLOCATE ( output_obj, input_obj, parinfo_obj, geninfo_obj )
-     CALL pw_readschema_file( ierr , output_obj, input_obj, parinfo_obj, geninfo_obj )
-  END IF
-  !
-  ! 
-  IF (lfcpopt .AND. restart ) THEN  
-     CALL init_vars_from_schema( 'fcpopt', ierr,  output_obj, input_obj, parinfo_obj, geninfo_obj)
-     tot_charge = ionic_charge - nelec
-  END IF 
-  IF (lfcpdyn .AND. restart ) THEN    
-     CALL init_vars_from_schema( 'fcpdyn', ierr,  output_obj, input_obj, parinfo_obj, geninfo_obj ) 
-     tot_charge = ionic_charge - nelec 
-  END IF
-#else 
+#if defined (__OLDXML)
   IF ( lfcpopt .AND. restart ) THEN
      CALL pw_readfile( 'fcpopt', ierr )
      tot_charge = ionic_charge - nelec
@@ -193,6 +178,20 @@ SUBROUTINE setup()
 
      CALL pw_readfile( 'fcpdyn', ierr )
      tot_charge = ionic_charge - nelec
+  END IF
+#else 
+  IF ( lbands .OR. ( (lfcpopt .OR. lfcpdyn ) .AND. restart )) THEN 
+     CALL pw_readschema_file( ierr , output_obj, parinfo_obj, geninfo_obj )
+  END IF
+  !
+  ! 
+  IF (lfcpopt .AND. restart ) THEN  
+     CALL init_vars_from_schema( 'fcpopt', ierr,  output_obj, parinfo_obj, geninfo_obj)
+     tot_charge = ionic_charge - nelec
+  END IF 
+  IF (lfcpdyn .AND. restart ) THEN    
+     CALL init_vars_from_schema( 'fcpdyn', ierr,  output_obj, parinfo_obj, geninfo_obj ) 
+     tot_charge = ionic_charge - nelec 
   END IF
 #endif
   !
@@ -428,8 +427,9 @@ SUBROUTINE setup()
   ! ... Compute the cut-off of the G vectors
   !
   doublegrid = ( dual > 4.D0 )
-  IF ( doublegrid .AND. (.NOT.okvan .AND. .not.okpaw) ) &
-     CALL infomsg ( 'setup', 'no reason to have ecutrho>4*ecutwfc' )
+  IF ( doublegrid .AND. ( .NOT.okvan .AND. .NOT.okpaw .AND. &
+                          .NOT. ANY (upf(1:ntyp)%nlcc)      ) ) &
+       CALL infomsg ( 'setup', 'no reason to have ecutrho>4*ecutwfc' )
   gcutm = dual * ecutwfc / tpiba2
   gcutw = ecutwfc / tpiba2
   !
@@ -551,8 +551,9 @@ SUBROUTINE setup()
      !
      ! ... eliminate rotations that are not symmetry operations
      !
-     CALL find_sym ( nat, tau, ityp, dfftp%nr1, dfftp%nr2, dfftp%nr3, &
-                  magnetic_sym, m_loc, monopole )
+     CALL find_sym ( nat, tau, ityp, magnetic_sym, m_loc, monopole )
+     !
+     IF ( .NOT. allfrac ) CALL remove_sym ( dfftp%nr1, dfftp%nr2, dfftp%nr3 )
      !
   END IF
   !
@@ -576,41 +577,39 @@ SUBROUTINE setup()
            .AND. .NOT. ( calc == 'mm' .OR. calc == 'nm' ) ) &
        CALL infomsg( 'setup', 'Dynamics, you should have no symmetries' )
   !
-  ntetra = 0
-  !
   IF ( lbands ) THEN
      !
      ! ... if calculating bands, we read the Fermi energy
      !
-#if defined (__XSD)
-     CALL init_vars_from_schema( 'ef',   ierr , output_obj, input_obj,parinfo_obj, geninfo_obj)
-#else
+#if defined (__OLDXML)
      CALL pw_readfile( 'reset', ierr )
      CALL pw_readfile( 'ef',   ierr )
+#else
+     CALL init_vars_from_schema( 'ef',   ierr , output_obj, parinfo_obj, geninfo_obj)
 #endif 
      CALL errore( 'setup ', 'problem reading ef from file ' // &
              & TRIM( tmp_dir ) // TRIM( prefix ) // '.save', ierr )
-
      !
   ELSE IF ( ltetra ) THEN
      !
      ! ... Calculate quantities used in tetrahedra method
      !
-     ntetra = 6 * nk1 * nk2 * nk3
+     IF (nks_start /= 0) CALL errore( 'setup ', 'tetrahedra need automatic k-point grid',1)
      !
-     ALLOCATE( tetra( 4, ntetra ) )
-     !
-     CALL tetrahedra( nsym, s, time_reversal, t_rev, at, bg, npk, k1, k2, k3, &
-          nk1, nk2, nk3, nkstot, xk, wk, ntetra, tetra )
+     IF (tetra_type == 0) then
+        CALL tetra_init( nsym, s, time_reversal, t_rev, at, bg, npk, k1,k2,k3, &
+             nk1, nk2, nk3, nkstot, xk )
+     ELSE 
+        CALL opt_tetra_init(nsym, s, time_reversal, t_rev, at, bg, npk, &
+             k1, k2, k3, nk1, nk2, nk3, nkstot, xk, 1)
+     END IF
      !
   END IF
-#if defined(__XSD) 
+#if !defined(__OLDXML) 
   IF ( lbands .OR. ( (lfcpopt .OR. lfcpdyn ) .AND. restart ) ) THEN 
      CALL qes_reset_output ( output_obj ) 
-     CALL qes_reset_input ( input_obj ) 
      CALL qes_reset_parallel_info ( parinfo_obj ) 
      CALL qes_reset_general_info ( geninfo_obj ) 
-     DEALLOCATE ( output_obj, input_obj, parinfo_obj, geninfo_obj ) 
   END IF 
 #endif
   !

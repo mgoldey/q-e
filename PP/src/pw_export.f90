@@ -357,6 +357,8 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
   USE kinds,          ONLY : DP
   USE pwcom
+  USE gvecs,          ONLY : dual
+  USE gvect,          ONLY : ngm, ngm_g, mill, ig_l2g
   USE gvecw,          ONLY : ecutwfc, gcutw
   USE start_k,        ONLY : nk1, nk2, nk3, k1, k2, k3
   USE control_flags,  ONLY : gamma_only
@@ -428,7 +430,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
   IF( ionode ) THEN
     WRITE(0,*) "Opening file "//trim(pp_file)
-    CALL iotk_open_write(50,file=trim(tmp_dir)//'/'//trim(pp_file))
+    CALL iotk_open_write(50,file=trim(tmp_dir) // trim(pp_file))
     WRITE(0,*) "Reconstructing the main grid"
   ENDIF
 
@@ -817,7 +819,7 @@ SUBROUTINE write_export (pp_file,kunit,uspp_spsi, ascii, single_file, raw)
 
                npw = ngk(ik-iks+1)
                local_pw = npw
-	       CALL init_us_2(npw, igk_k(1,ik-iks-1), xk(1, ik), vkb)
+	       CALL init_us_2(npw, igk_k(1,ik-iks+1), xk(1, ik), vkb)
 
                IF ( gamma_only ) THEN
                   CALL calbec ( npw, vkb, evc, becp )

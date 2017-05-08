@@ -609,7 +609,7 @@ SUBROUTINE extrapolate_charge( rho_extr )
             '(5X,"extrapolated charge ",F10.5,", renormalised to ",F10.5)') &
          charge, nelec
      !
-     rho%of_r  = rho%of_r  / charge*nelec
+     rho%of_r = rho%of_r / charge*nelec
      rho%of_g = rho%of_g / charge*nelec
      !
   END IF

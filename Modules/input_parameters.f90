@@ -5,10 +5,6 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
-!---------------------------------------------
-! TB
-! included monopole related stuff, search 'TB'
-!---------------------------------------------
 !
 !=----------------------------------------------------------------------------=!
 !
@@ -202,13 +198,16 @@ MODULE input_parameters
           ! if .TRUE. a monopole plane in charged systems is added with a
           ! total charge which is opposite to the charge of the system
 
-          LOGICAL :: tefield2  = .false.
+        LOGICAL :: tefield2  = .false.
           ! if .TRUE. a second finite electric field is added to the local potential
           ! only used in CP
-
+        
         LOGICAL :: lelfield = .false.
           ! if .TRUE. a static homogeneous electric field is present
           ! via the modern theory of polarizability - differs from tefield!
+
+        LOGICAL :: lipr = .false.
+          ! if .TRUE. it computes and prints IPRs at the end of the KS iterations
 
         LOGICAL :: lorbm = .false.
           ! if .TRUE. an orbital magnetization is computed (Kubo terms)
@@ -282,7 +281,7 @@ MODULE input_parameters
           nstep, iprint, isave, tstress, tprnfor, dt, ndr, ndw, outdir,   &
           prefix, wfcdir, max_seconds, ekin_conv_thr, etot_conv_thr,      &
           forc_conv_thr, pseudo_dir, disk_io, tefield, dipfield, lberry,  &
-          gdir, nppstr, wf_collect, lelfield, nberrycyc, refg,            &
+          gdir, nppstr, wf_collect, lelfield, lipr, nberrycyc, refg,      &
           tefield2, saverho, tabps, lkpoint_dir, use_wannier, lecrpa,     &
           tqmmm, vdw_table_name, lorbm, memory, point_label_type,         &
           lfcpopt, lfcpdyn, input_xml_schema_file, monopole                                        
@@ -436,6 +435,9 @@ MODULE input_parameters
         REAL(DP) :: conv_thr_init = 0.001_DP
         REAL(DP) :: conv_thr_multi = 0.1_DP
         REAL(DP) :: ecutfock = -1.d0
+          ! variables used in Lin Lin's ACE and SCDM
+        REAL(DP) :: localization_thr = 0.0_dp
+        LOGICAL  :: scdm=.FALSE., ace=.TRUE.
 
           ! parameters for external electric field
         INTEGER  :: edir = 0
@@ -592,7 +594,7 @@ MODULE input_parameters
              Hubbard_J0, Hubbard_beta,                                        &
              edir, emaxpos, eopreg, eamp, smearing, starting_ns_eigenvalue,   &
              U_projection_type, input_dft, la2F, assume_isolated,             &
-             nqx1, nqx2, nqx3, ecutfock,                                      &
+             nqx1, nqx2, nqx3, ecutfock, localization_thr, scdm, ace,         &
              exxdiv_treatment, x_gamma_extrapolation, yukawa, ecutvcut,       &
              exx_fraction, screening_parameter, ref_alat,                     &
              noncolin, lspinorb, starting_spin_angle, lambda, angle1, angle2, &

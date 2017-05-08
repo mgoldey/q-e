@@ -17,7 +17,6 @@ SUBROUTINE punch( what )
        tmp_dir, prefix
   USE control_flags,        ONLY : io_level, twfcollect, io_level, lscf
   USE klist,                ONLY : nks
-  USE pw_restart_new,       ONLY : pw_write_schema, pw_write_binaries
   USE io_files,             ONLY : xmlpun_schema, psfile, pseudo_dir
   USE wrappers,             ONLY : f_copy
   USE xml_io_base,          ONLY : create_directory
@@ -26,9 +25,13 @@ SUBROUTINE punch( what )
   USE scf,                  ONLY : rho
   USE lsda_mod,             ONLY : nspin
   USE ions_base,            ONLY : nsp
-!
+  USE funct,                ONLY : get_inlc
+  USE kernel_table,         ONLY : vdw_table_name, kernel_file_name
+#if defined (__OLDXML) 
   USE pw_restart,           ONLY : pw_writefile
-!
+#else
+  USE pw_restart_new,       ONLY : pw_write_schema, pw_write_binaries
+#endif
   USE a2F,                  ONLY : la2F, a2Fsave
   USE wavefunctions_module, ONLY : evc
   !
@@ -37,7 +40,7 @@ SUBROUTINE punch( what )
   CHARACTER(LEN=*) :: what
   LOGICAL :: exst
   CHARACTER(LEN=320) :: cp_source, cp_dest
-  INTEGER            :: cp_status, nt
+  INTEGER            :: cp_status, nt, inlc
   !
   !
   IF (io_level < 0 ) RETURN
@@ -55,7 +58,11 @@ SUBROUTINE punch( what )
   END IF
   iunpun = 4
   !
-#if defined(__XSD)
+#if defined(__OLDXML)
+  !
+  CALL pw_writefile( TRIM( what ) )
+  !
+#else
   !
   ! ...New-style I/O with xml schema and (optionally) hdf5 binaries
   !
@@ -77,8 +84,8 @@ SUBROUTINE punch( what )
      ! ... make a copy of xml file one level up (FIXME: why?)
      !
      IF (ionode) THEN
-        cp_source = TRIM(tmp_dir)//'/'//TRIM(prefix)//'.save/'//xmlpun_schema
-        cp_dest   = TRIM(tmp_dir)//'/'//TRIM(prefix)//'.xml'
+        cp_source = TRIM(tmp_dir)//TRIM(prefix)//'.save/'//xmlpun_schema
+        cp_dest   = TRIM(tmp_dir)//TRIM(prefix)//'.xml'
         cp_status = f_copy(cp_source, cp_dest)
      END IF
      !
@@ -90,17 +97,19 @@ SUBROUTINE punch( what )
      !
      DO nt = 1, nsp
         cp_source = TRIM(pseudo_dir)//psfile(nt)
-        cp_dest   = TRIM(tmp_dir)//'/'//TRIM(prefix)//'.save/'//psfile(nt)
+        cp_dest   = TRIM(tmp_dir)//TRIM(prefix)//'.save/'//psfile(nt)
         IF ( TRIM(cp_source) /= TRIM(cp_dest) ) &
              cp_status = f_copy(cp_source, cp_dest)
      END DO
-     !
+     inlc = get_inlc()
+     IF ( inlc > 0 ) THEN 
+        cp_source = TRIM(kernel_file_name)
+        cp_dest = TRIM(tmp_dir)//TRIM(prefix)//'.save/'//TRIM(vdw_table_name)
+        IF ( TRIM(cp_source) /= TRIM(cp_dest) ) & 
+           cp_status = f_copy(cp_source, cp_dest)
+     END IF  
+      !
   END IF
-#else
-  !
-  ! ...Old-style I/O
-  !
-  CALL pw_writefile( TRIM( what ) )
   !
 #endif
   !

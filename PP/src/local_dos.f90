@@ -35,7 +35,7 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
                                    nkstot, ngk, igk_k
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE scf,                  ONLY : rho
-  USE symme,                ONLY : sym_rho, sym_rho_init
+  USE symme,                ONLY : sym_rho, sym_rho_init, sym_init_called
   USE uspp,                 ONLY : nkb, vkb, becsum, nhtol, nhtoj, indv
   USE uspp_param,           ONLY : upf, nh, nhm
   USE wavefunctions_module, ONLY : evc, psic, psic_nc
@@ -111,7 +111,7 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
   !
   !   calculate the correct weights
   !
-  IF (iflag /= 0.and. iflag /=3 .and. .not.lgauss) CALL errore ('local_dos', &
+  IF (iflag /= 0.and. iflag /=3 .and. iflag /= 4 .and. .not.lgauss) CALL errore ('local_dos', &
        'gaussian broadening needed', 1)
   IF (iflag == 2 .and. ngauss /= -99) CALL errore ('local_dos', &
        ' beware: not using Fermi-Dirac function ',  - ngauss)
@@ -131,6 +131,11 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
            ELSE
               wg (ibnd, ik) = 0.d0
            ENDIF
+        !
+        !    Local density of states at given energy emin with broadening emax
+        !
+        ELSEIF (iflag == 4) THEN
+           wg(ibnd,ik) = wk(ik) * w0gauss((emin - et(ibnd, ik))/emax, 0) / emax
         ELSE
            CALL errore ('local_dos', ' iflag not allowed', abs (iflag) )
         ENDIF
@@ -170,7 +175,9 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
      !     here we compute the density of states
      !
         DO ibnd = 1, nbnd
-           IF (ibnd == kband .or. iflag /= 0) THEN
+         ! Neglect summands with too low weight
+         IF ( (wg(ibnd, ik) * nks > epsilon(0.0_DP)) .and. &
+             (ibnd == kband .or. iflag /= 0)) THEN
               IF (noncolin) THEN
                  psic_nc = (0.d0,0.d0)
                  DO ig = 1, npw
@@ -352,9 +359,10 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
                 ENDIF
               ENDDO
            ENDIF
-        ENDDO
-     ENDIF
-  ENDDO
+        ENDDO ! loop over bands
+    ENDIF 
+  ENDDO ! loop over k-points
+
   IF (gamma_only) THEN
      DEALLOCATE(rbecp)
   ELSE
@@ -412,7 +420,10 @@ SUBROUTINE local_dos (iflag, lsign, kpoint, kband, spin_component, &
   !
   !    symmetrization of the local dos
   !
-  CALL sym_rho_init ( gamma_only )
+  IF (.not.sym_init_called) then
+      CALL sym_rho_init (gamma_only )
+      sym_init_called=.true.
+  ENDIF
   !
   psic(:) = cmplx ( dos(:), 0.0_dp, kind=dp)
   CALL fwfft ('Dense', psic, dfftp)

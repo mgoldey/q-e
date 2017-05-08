@@ -14,7 +14,7 @@ add_shift_lc.o \
 add_shift_us.o \
 atomic_wfc_nc_proj.o \
 cft.o \
-chdens.o \
+chdens_module.o \
 chdens_bspline.o \
 compute_ppsi.o \
 compute_sigma_avg.o \
@@ -26,6 +26,7 @@ do_shift_ew.o \
 d_matrix_nc.o \
 d_matrix_so.o \
 elf.o \
+fermisurfer_common.o \
 ggen1d.o \
 local_dos.o \
 local_dos_mag.o \
@@ -67,7 +68,8 @@ all : tldeps average.x bands.x dos.x epsilon.x initial_state.x fs.x \
       pawplot.x sumpdos.x pw2wannier90.x pw_export.x pw2gw.x \
       wannier_ham.x wannier_plot.x molecularpdos.x \
       pw2bgw.x bgw2pw.x wfck2r.x importexport_binary.x \
-      epcdft_coupling.x
+      fermi_velocity.x fermi_proj.x epcdft_coupling.x \
+      rad_avg.x
 
 
 libpp.a : $(PPOBJS) 
@@ -99,6 +101,12 @@ pawplot.x : pawplot.o libpp.a libpp.a $(MODULES) $(LIBOBJS)
 plan_avg.x : plan_avg.o libpp.a $(MODULES) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ \
 		plan_avg.o libpp.a $(MODULES) \
+		$(LIBOBJS) $(LIBS)
+	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
+
+rad_avg.x : rad_avg.o libpp.a $(MODULES) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ \
+		rad_avg.o libpp.a $(MODULES) \
 		$(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 
@@ -150,9 +158,9 @@ pw2wannier90.x : pw2wannier90.o libpp.a $(MODULES) $(LIBOBJS)
 		pw2wannier90.o libpp.a $(MODULES) $(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 
-wfck2r.x : wfck2r.o libpp.a $(PHOBJS) $(MODULES) $(LIBOBJS) 
+wfck2r.x : wfck2r.o libpp.a $(MODULES) $(LIBOBJS) 
 	$(LD) $(LDFLAGS) -o $@ \
-		wfck2r.o libpp.a $(PHOBJS) $(MODULES) $(LIBOBJS)  $(LIBS)
+		wfck2r.o libpp.a $(MODULES) $(LIBOBJS)  $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 
 epcdft_coupling.x : epcdft_coupling.o libpp.a $(PHOBJS) $(MODULES) $(LIBOBJS) 
@@ -218,6 +226,16 @@ fs.x : fermisurface.o libpp.a $(MODULES) $(LIBOBJS)
 tldeps :
 	if test -n "$(TLDEPS)" ; then \
 	( cd ../.. ; $(MAKE) $(TLDEPS) || exit 1 ) ; fi
+
+fermi_velocity.x : fermi_velocity.o libpp.a $(MODULES) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ \
+		fermi_velocity.o libpp.a $(MODULES) $(LIBOBJS) $(LIBS)
+	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
+
+fermi_proj.x : fermi_proj.o libpp.a $(MODULES) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ \
+		fermi_proj.o libpp.a $(MODULES) $(LIBOBJS) $(LIBS)
+	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 
 clean :
 	- /bin/rm -f *.x *.o *~ *_tmp.f90 *.d *.mod *.i *.L libpp.a

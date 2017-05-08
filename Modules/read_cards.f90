@@ -1648,7 +1648,7 @@ CONTAINS
          WRITE(stdout,'(5x,a15,a15,a4,a4,a4,a4,a7,a7)') &
             "constraint", "type", "A","A","D","D","T","L"
 
-         WRITE(stdout,'(5x,i15,a2,a13,i4,i4,i4,i4,f7.4,f7.4)') i, "  ", &
+         WRITE(stdout,'(5x,i15,a2,a13,i4,i4,i4,i4,f7.4,e17.8)') i, "  ", &
              epcdft_type(i), &
              epcdft_locs(1,i) , &
              epcdft_locs(2,i), &

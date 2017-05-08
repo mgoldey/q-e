@@ -430,6 +430,7 @@ lr_readin.o : ../../PW/src/newd.o
 lr_readin.o : ../../PW/src/pwcom.o
 lr_readin.o : ../../PW/src/realus.o
 lr_readin.o : ../../PW/src/scf_mod.o
+lr_readin.o : ../../PW/src/tetra.o
 lr_readin.o : ../../iotk/src/iotk_module.o
 lr_readin.o : lr_charg_resp.o
 lr_readin.o : lr_dav_variables.o

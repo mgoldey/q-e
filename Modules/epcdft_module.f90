@@ -18,7 +18,7 @@ SAVE
 !
   PUBLIC :: do_epcdft, conv_epcdft, epcdft_fields, nconstr_epcdft,&
     epcdft_delta_fld, epcdft_tol, epcdft_shift, epcdft_type, &
-    epcdft_locs, epcdft_guess, epcdft_target, &
+    epcdft_locs, epcdft_guess, epcdft_target, & !epcdft_forces, &
     update_intrvl
   !
   LOGICAL :: &
@@ -51,6 +51,8 @@ SAVE
   REAL(DP),          ALLOCATABLE :: epcdft_target(:)  ! target values of constraints
   REAL(DP),          ALLOCATABLE :: epcdft_field(:,:) ! constraint field
   REAL(DP),          ALLOCATABLE :: epcdft_surface_field(:,:) ! surface field
+  !
+  !   REAL(DP), ALLOCATABLE :: epcdft_forces(:,:)
   !
 CONTAINS
   !

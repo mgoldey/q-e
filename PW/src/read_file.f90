@@ -5,10 +5,7 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
-#if defined(__XSD)
-SUBROUTINE read_file_dummy()
-END SUBROUTINE read_file_dummy
-#else
+#if defined(__OLDXML)
 !----------------------------------------------------------------------------
 ! TB
 ! included allocation of the force field of the monopole, search for 'TB'
@@ -29,6 +26,7 @@ SUBROUTINE read_file()
   USE paw_onecenter,        ONLY : paw_potential
   USE uspp,                 ONLY : becsum
   USE scf,                  ONLY : rho
+  USE epcdft,               ONLY : do_epcdft
   USE realus,               ONLY : betapointlist, &
                                    init_realspace_vars,real_space
   USE dfunct,               ONLY : newd
@@ -120,8 +118,8 @@ SUBROUTINE read_xml_file_internal(withbs)
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE wvfct,                ONLY : nbnd, nbndx, et, wg
   USE symm_base,            ONLY : irt, d1, d2, d3, checkallsym, nsym
-  USE ktetra,               ONLY : tetra, ntetra 
   USE extfield,             ONLY : forcefield, tefield, monopole, forcemono
+  USE epcdft,               ONLY : do_epcdft
   USE cellmd,               ONLY : cell_factor, lmovecell
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
@@ -137,10 +135,9 @@ SUBROUTINE read_xml_file_internal(withbs)
   USE vlocal,               ONLY : strf
   USE io_files,             ONLY : tmp_dir, prefix, iunpun, nwordwfc, iunwfc
   USE noncollin_module,     ONLY : noncolin, npol, nspin_lsda, nspin_mag, nspin_gga
-  USE pw_restart,           ONLY : pw_readfile
+  USE pw_restart,           ONLY : pw_readfile, pp_check_file
   USE io_rho_xml,           ONLY : read_rho
   USE read_pseudo_mod,      ONLY : readpp
-  USE xml_io_base,          ONLY : pp_check_file
   USE uspp,                 ONLY : becsum
   USE uspp_param,           ONLY : upf
   USE paw_variables,        ONLY : okpaw, ddd_PAW
@@ -186,7 +183,7 @@ SUBROUTINE read_xml_file_internal(withbs)
   CALL errore( 'read_xml_file ', 'problem reading file ' // &
              & TRIM( tmp_dir ) // TRIM( prefix ) // '.save', ierr )
   !
-  ! ... allocate space for atomic positions, symmetries, forces, tetrahedra
+  ! ... allocate space for atomic positions, symmetries, forces
   !
   IF ( nat < 0 ) CALL errore( 'read_xml_file', 'wrong number of atoms', 1 )
   !
@@ -202,7 +199,6 @@ SUBROUTINE read_xml_file_internal(withbs)
   IF ( monopole ) ALLOCATE( forcemono( 3, nat ) ) ! TB
   !
   ALLOCATE( irt( 48, nat ) )
-  ALLOCATE( tetra( 4, MAX( ntetra, 1 ) ) )
   !
   CALL set_dimensions()
   CALL fft_type_allocate ( dfftp, at, bg, gcutm, intra_bgrp_comm )
@@ -255,7 +251,7 @@ SUBROUTINE read_xml_file_internal(withbs)
   !
   ! ... check on symmetry
   !
-  IF (nat > 0) CALL checkallsym( nat, tau, ityp, dfftp%nr1, dfftp%nr2, dfftp%nr3 )
+  IF (nat > 0) CALL checkallsym( nat, tau, ityp )
   !
   !  Set the different spin indices
   !
@@ -388,4 +384,7 @@ SUBROUTINE read_xml_file_internal(withbs)
     END SUBROUTINE set_dimensions
     !
   END SUBROUTINE read_xml_file_internal
+#else
+SUBROUTINE read_file_dummy()
+END SUBROUTINE read_file_dummy
 #endif

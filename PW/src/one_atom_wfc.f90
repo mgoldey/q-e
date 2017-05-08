@@ -40,7 +40,7 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom,nfuncs)
              i0, i1, i2, i3,  ipol, n1, n2, n3, natomwfc,npw
   integer :: ig_start, ig_end
   real(DP), allocatable :: qg(:), ylm (:,:), chiq (:,:), gk (:,:)
-  complex(DP), allocatable :: sk (:), aux(:)
+  complex(DP), allocatable :: sk (:)
   complex(DP) :: kphase, lphase
 
   complex(DP) ::      eigts1 ( -dfftp%nr1:dfftp%nr1), &
@@ -115,7 +115,6 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom,nfuncs)
 
   deallocate (qg, gk)
 
-  allocate ( aux(npw) )
   !
   wfcatom(:,:) = (0.0_dp, 0.0_dp)
   !
@@ -167,7 +166,7 @@ SUBROUTINE one_atom_wfc (ik, wfcatom,iatom,nfuncs)
   END DO
    !
 
-  deallocate(aux, sk, chiq, ylm)
+  deallocate(sk, chiq, ylm)
   ! collect results across bgrp
   call mp_sum(wfcatom, inter_bgrp_comm)
 
@@ -205,14 +204,13 @@ SUBROUTINE one_atom_shifted_wfc (ik, wfcatom,iatom,nfuncs,idir,dx)
   USE constants,  ONLY : tpi, fpi, pi
   USE cell_base,  ONLY : omega, tpiba, bg, alat
   USE ions_base,  ONLY : nat, ntyp => nsp, ityp, tau
-  !USE basis,      ONLY : natomwfc
   USE gvect,      ONLY : mill, g ! eigts1, eigts2, eigts3
   USE klist,      ONLY : xk, igk_k, ngk
-  USE fft_base,      ONLY : dfftp !, grid_scatter, grid_gather
+  USE fft_base,   ONLY : dfftp !, grid_scatter, grid_gather
   USE wvfct,      ONLY : npwx
   USE us,         ONLY : tab_at, dq
   USE uspp_param, ONLY : upf
-  USE io_global,     ONLY : stdout,ionode, ionode_id
+  USE io_global,  ONLY : stdout,ionode, ionode_id
   USE mp_bands,   ONLY : inter_bgrp_comm, set_bgrp_indices
   USE mp,         ONLY : mp_sum
 
@@ -239,10 +237,11 @@ SUBROUTINE one_atom_shifted_wfc (ik, wfcatom,iatom,nfuncs,idir,dx)
   real(DP) :: arg, px, ux, vx, wx, x, y, z
   real(DP) :: bgtau (3)
 
-  call start_clock ('one_atomic_wfc')
+  call start_clock ('one_atomic_shifted_wfc')
 
   ! calculate max angular momentum required in wavefunctions
   nt=ityp(iatom)
+  lmax_wfc = 0
   lmax_wfc = MAXVAL (upf(nt)%lchi(1:upf(nt)%nwfc) )
   npw = ngk(ik)
   !
@@ -251,7 +250,7 @@ SUBROUTINE one_atom_shifted_wfc (ik, wfcatom,iatom,nfuncs,idir,dx)
   allocate ( ylm (npw,(lmax_wfc+1)**2), chiq(npw,upf(nt)%nwfc), &
              sk(npw), gk(3,npw), qg(npw) )
   !
-  do ig = ig_start, ig_end
+  do ig = 1, npw
 	 iig = igk_k (ig,ik)
 	 gk (1,ig) = xk(1, ik) + g(1,iig)
 	 gk (2,ig) = xk(2, ik) + g(2,iig)
@@ -309,7 +308,7 @@ SUBROUTINE one_atom_shifted_wfc (ik, wfcatom,iatom,nfuncs,idir,dx)
     endif
   enddo
 
-  deallocate (qg, gk)
+  deallocate(qg, gk)
 
   !
   wfcatom(:,:) = (0.0_dp, 0.0_dp)
@@ -367,7 +366,7 @@ SUBROUTINE one_atom_shifted_wfc (ik, wfcatom,iatom,nfuncs,idir,dx)
   ! collect results across bgrp
   call mp_sum(wfcatom, inter_bgrp_comm)
 
-  call stop_clock ('one_atomic_wfc')
+  call stop_clock ('one_atomic_shifted_wfc')
 
   return
 

@@ -1,0 +1,17 @@
+&INPUTPP
+prefix='zn_05_left'
+prefix2='zn_05_right'
+outdir="out"
+outdir2="out"
+  occup1       = 20
+  occup2       = 20
+  occdown1     = 19
+  occdown2     = 19
+  debug        = .true.
+  eig_of_w     = .false.
+  s_spin       = .true.
+  free1 = -800.11550092
+  free2 = -800.11587317
+  cor1 =  0.32847125 
+  cor2 =  0.32843521
+/

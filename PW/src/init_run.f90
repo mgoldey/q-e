@@ -10,7 +10,7 @@ SUBROUTINE init_run()
   !----------------------------------------------------------------------------
   !
   USE klist,              ONLY : nkstot
-  USE symme,              ONLY : sym_rho_init
+  USE symme,              ONLY : sym_rho_init, sym_init_called !PSD
   USE wvfct,              ONLY : nbnd, et, wg, btype
   USE control_flags,      ONLY : lmd, gamma_only, smallmem, ts_vdw
   USE cell_base,          ONLY : at, bg, set_h_ainv
@@ -34,9 +34,7 @@ SUBROUTINE init_run()
   USE wavefunctions_module, ONLY : evc
 #if defined(__HDF5)
   USE hdf5_qe, ONLY : initialize_hdf5
-  USE wavefunctions_module,ONLY : evc
 #endif
-
   !
   IMPLICIT NONE
   !
@@ -50,9 +48,6 @@ SUBROUTINE init_run()
   ! ... determine the data structure for fft arrays
   !
   CALL data_structure( gamma_only )
-  !
-  IF ( dft_is_hybrid() .AND. dtgs%have_task_groups ) &
-     CALL errore ('init_run', '-ntg option incompatible with EXX',1)
   !
   ! ... print a summary and a memory estimate before starting allocating
   !
@@ -76,7 +71,10 @@ SUBROUTINE init_run()
   !
   ! ... variable initialization for parallel symmetrization
   !
-  CALL sym_rho_init (gamma_only )
+  IF (.not.sym_init_called) then
+       CALL sym_rho_init (gamma_only )
+       sym_init_called=.true.
+  ENDIF
   !
   ! ... allocate memory for all other arrays (potentials, wavefunctions etc)
   !
@@ -116,9 +114,6 @@ SUBROUTINE init_run()
   CALL initialize_hdf5()
 #endif 
   !
-#if defined __HDF5
-  CALL initialize_hdf5()
-#endif
   CALL wfcinit()
   !
   IF(use_wannier) CALL wannier_init()

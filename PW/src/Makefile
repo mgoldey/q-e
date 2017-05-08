@@ -8,9 +8,6 @@ MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules $(MOD_FLAG)../../FF
 PWOBJS = \
 pwscf.o 
 
-MANYPWOBJS = \
-manypw.o 
-
 PWLIBS = \
 a2fmod.o \
 add_bfield.o \
@@ -127,6 +124,7 @@ lchk_tauxk.o \
 ldaU.o \
 make_pointlists.o \
 makov_payne.o \
+manypw.o \
 martyna_tuckerman.o \
 memory_report.o \
 mix_rho.o \
@@ -165,6 +163,7 @@ plus_u_full.o \
 potinit.o \
 print_clock_pw.o \
 print_ks_energies.o \
+print_ks_iprs.o \
 punch.o \
 pw_restart.o \
 pw_restart_new.o \
@@ -226,11 +225,11 @@ symme.o \
 symm_base.o \
 symmetrize_at.o \
 tabd.o \
+tetra.o \
 transform_becsum_so.o \
 transform_becsum_nc.o \
 transform_qq_so.o \
 trnvecc.o \
-tweights.o \
 update_pot.o \
 us_exx.o \
 usnldiag.o \
@@ -251,24 +250,20 @@ wannier_init.o \
 wannier_check.o \
 wannier_clean.o \
 wannier_occ.o \
-wannier_enrg.o \
-wyckoff.o       
+wannier_enrg.o
 
 QEMODS=../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a
 
 TLDEPS=bindir mods libs liblapack libblas
 
-all : tldeps pw.x manypw.x generate_vdW_kernel_table.x generate_rVV10_kernel_table.x
+all : tldeps pw.x generate_vdW_kernel_table.x generate_rVV10_kernel_table.x
 
 pw.x : $(PWOBJS) libpw.a $(LIBOBJS) $(QEMODS)
 	$(LD) $(LDFLAGS) -o $@ \
 	   $(PWOBJS) libpw.a $(QEMODS) $(LIBOBJS) $(LIBS)
-	- ( cd ../../bin; ln -fs ../PW/src/$@ . )
-
-manypw.x : $(MANYPWOBJS) libpw.a $(LIBOBJS) $(QEMODS)
-	$(LD) $(LDFLAGS) -o $@ \
-	 $(MANYPWOBJS) libpw.a $(QEMODS) $(LIBOBJS) $(LIBS)
-	- ( cd ../../bin; ln -fs ../PW/src/$@ . )
+	- ( cd ../../bin; ln -fs ../PW/src/$@ . ; \
+               ln -fs ../PW/src/$@ dist.x ; ln -fs ../PW/src/$@ manypw.x ; )
+# dist.x and manypw.x link the same executable pw.x
 
 libpw.a : $(PWLIBS) 
 	$(AR) $(ARFLAGS) $@ $?
