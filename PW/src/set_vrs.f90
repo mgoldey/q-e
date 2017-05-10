@@ -46,13 +46,9 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   USE io_global,     ONLY : ionode
   USE io_global,     ONLY : stdout, ionode
   USE fft_base,      ONLY : dfftp
-  USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field, epcdft_surface_shift,&
-                        epcdft_surface, epcdft_surface_field
-
+  
   !
   implicit none
-
-  logical :: first=.true.
   integer :: nspin, nrxx
   ! input: number of spin components: 1 if lda, 2 if lsd, 4 if noncolinear
   ! input: the fft grid dimension
@@ -62,69 +58,8 @@ subroutine sum_vrs ( nrxx, nspin, vltot, vr, vrs )
   ! input: the total local pseudopotential
   ! input: the scf(H+xc) part of the local potential
   !
-  REAL(DP) :: x0(3) ! center of charge of system
-  REAL(DP) :: qq ! total charge
-  REAL(DP) :: dipole(3)!, quadrupole(3) ! total dips
   integer:: is
   REAL(DP) :: tmp
-  SAVE first
-  !write(*,*) "sum_vrs",sum(vr(:,1))
-  !
-  x0 = 0.D0
-  qq = 0.D0
-  dipole = 0.D0
-  !
-  ! allocate and add epcdft and surface field
-  !
-  IF(do_epcdft)THEN
-    !
-    ! all epcdft routines assume epcdft_field is (dfftp%nnr, nspin) 
-    ! if this function is called with diff bounds then throw error
-    !
-    IF(nrxx .ne. dfftp%nnr)THEN
-      CALL errore( 'set_vrs', 'set_vrs with do_epcdft=.true. and nrxx != dfftp%nnr. &
-                    nrxx must be = to dfftp%nnr for epcdft.', 1 )
-    ENDIF
-    !
-    IF (first .or. .not. allocated(epcdft_field)) THEN
-      !
-      reset_field=.true.
-      !
-      IF(.not. allocated(epcdft_field)) allocate(epcdft_field(nrxx,nspin))
-      !
-      IF(epcdft_surface)THEN
-        IF( .not. allocated(epcdft_surface_field) ) ALLOCATE(epcdft_surface_field(nrxx,nspin))
-        IF(first) CALL print_epcdft_surface_energy_and_warning ( )
-      ENDIF
-      !
-    END IF ! END FIRST
-    !
-    first=.false.
-    !
-    IF (reset_field) THEN
-      !
-      ! cdft field
-      !
-      epcdft_field=0.0D0
-      CALL add_epcdft_efield(epcdft_field,.TRUE.)
-      reset_field=.false.
-      !
-      ! surface field
-      !
-      ! field passed to calc_epcdft_surface_field is zeroed
-      !
-      IF(epcdft_surface) CALL calc_epcdft_surface_field( epcdft_surface_field, x0, qq, dipole )
-      !
-    ENDIF !end if reset field
-    !
-    ! add epcdft and surface field to potential
-    !
-    vr=vr+epcdft_field
-    !
-    IF(epcdft_surface) vr=vr+epcdft_surface_field
-    !
-
-  ENDIF! end if epcdft
   !
    do is = 1, nspin
      !

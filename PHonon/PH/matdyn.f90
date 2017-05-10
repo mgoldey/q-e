@@ -143,6 +143,7 @@ PROGRAM matdyn
   USE rap_point_group,  ONLY : code_group
   USE bz_form,    ONLY : transform_label_coord
   USE parser,     ONLY : read_line
+  USE ktetra,     ONLY : tetra_dos_t
 
   USE ifconstants, ONLY : frc, atm, zeu, tau_blk, ityp_blk, m_loc
   !
@@ -156,14 +157,14 @@ PROGRAM matdyn
   INTEGER:: nax, nax_blk
   INTEGER, PARAMETER:: ntypx=10, nrwsx=200
   REAL(DP), PARAMETER :: eps=1.0d-6
-  INTEGER :: nr1, nr2, nr3, nsc, nk1, nk2, nk3, ntetra, ibrav
+  INTEGER :: nr1, nr2, nr3, nsc, nk1, nk2, nk3, ibrav
   CHARACTER(LEN=256) :: flfrc, flfrq, flvec, fltau, fldos, filename, fldyn, fleig
   CHARACTER(LEN=10)  :: asr
   LOGICAL :: dos, has_zstar, q_in_cryst_coord, eigen_similarity
   COMPLEX(DP), ALLOCATABLE :: dyn(:,:,:,:), dyn_blk(:,:,:,:), frc_ifc(:,:,:,:)
   COMPLEX(DP), ALLOCATABLE :: z(:,:)
   REAL(DP), ALLOCATABLE:: tau(:,:), q(:,:), w2(:,:), freq(:,:), wq(:)
-  INTEGER, ALLOCATABLE:: tetra(:,:), ityp(:), itau_blk(:)
+  INTEGER, ALLOCATABLE:: ityp(:), itau_blk(:)
   REAL(DP) ::     omega,alat, &! cell parameters and volume
                   at_blk(3,3), bg_blk(3,3),  &! original cell
                   omega_blk,                 &! original cell volume
@@ -182,7 +183,7 @@ PROGRAM matdyn
   !
   LOGICAL :: readtau, la2F, xmlifc, lo_to_split, na_ifc, fd, nosym
   !
-  REAL(DP) :: qhat(3), qh, DeltaE, Emin=0._dp, Emax, E, DOSofE(1), qq
+  REAL(DP) :: qhat(3), qh, DeltaE, Emin=0._dp, Emax, E, DOSofE(2), qq
   REAL(DP) :: delta, pathL
   REAL(DP), ALLOCATABLE :: xqaux(:,:)
   INTEGER, ALLOCATABLE :: nqb(:)
@@ -391,11 +392,10 @@ PROGRAM matdyn
      IF (dos) THEN
         IF (nk1 < 1 .OR. nk2 < 1 .OR. nk3 < 1) &
              CALL errore  ('matdyn','specify correct q-point grid!',1)
-        ntetra = 6 * nk1 * nk2 * nk3
         nqx = nk1*nk2*nk3
-        ALLOCATE ( tetra(4,ntetra), q(3,nqx) )
+        ALLOCATE ( q(3,nqx) )
         CALL gen_qpoints (ibrav, at, bg, nat, tau, ityp, nk1, nk2, nk3, &
-             ntetra, nqx, nq, q, tetra, nosym)
+             nqx, nq, q, nosym)
      ELSE
         !
         ! read q-point list
@@ -403,7 +403,6 @@ PROGRAM matdyn
         IF (ionode) READ (5,*) nq
         CALL mp_bcast(nq, ionode_id, world_comm)
         ALLOCATE ( q(3,nq) )
-        ALLOCATE( tetra(1,1) )
         IF (.NOT.q_in_band_form) THEN
            DO n = 1,nq
               IF (ionode) READ (5,*) (q(i,n),i=1,3)
@@ -517,7 +516,7 @@ PROGRAM matdyn
      ALLOCATE ( tmp_w2(3*nat), abs_similarity(3*nat,3*nat), mask(3*nat) )
 
      if(la2F.and.ionode) open(unit=300,file='dyna2F',status='unknown')
-     IF (xmlifc) CALL set_sym(nat, tau, ityp, nspin_mag, m_loc, 6, 6, 6 )
+     IF (xmlifc) CALL set_sym(nat, tau, ityp, nspin_mag, m_loc )
 
      ALLOCATE(num_rap_mode(3*nat,nq))
      ALLOCATE(high_sym(nq))
@@ -528,7 +527,7 @@ PROGRAM matdyn
         dyn(:,:,:,:) = (0.d0, 0.d0)
 
         lo_to_split=.FALSE.
-        f_of_q(:,:,:,:)=CMPLX(0.d0,0.d0)
+        f_of_q(:,:,:,:) = (0.d0,0.d0)
 
         IF(na_ifc) THEN
 
@@ -711,7 +710,7 @@ PROGRAM matdyn
         IF (ionode) OPEN (unit=2,file=fldos,status='unknown',form='formatted')
         DO n= 1, ndos
            E = Emin + (n - 1) * DeltaE
-           CALL dos_t(freq, 1, 3*nat, nq, ntetra, tetra, E, DOSofE)
+           CALL tetra_dos_t(freq, 1, 3*nat, nq, E, DOSofE)
            !
            ! The factor 0.5 corrects for the factor 2 in dos_t,
            ! that accounts for the spin in the electron DOS.
@@ -745,7 +744,7 @@ PROGRAM matdyn
          call a2Fdos (nat, nq, nr1, nr2, nr3, ibrav, at, bg, tau, alat, &
                            nsc, nat_blk, at_blk, bg_blk, itau_blk, omega_blk, &
                            rws, nrws, dos, Emin, DeltaE, ndos, &
-                           ntetra, tetra, asr, q, freq,fd)
+                           asr, q, freq,fd)
          !
          IF (.NOT.dos) THEN
             DO isig=1,10
@@ -907,7 +906,7 @@ SUBROUTINE frc_blk(dyn,q,tau,nat,nr1,nr2,nr3,frc,at,bg,rws,nrws,f_of_q,fd)
   USE io_global,  ONLY : stdout
   !
   IMPLICIT NONE
-  INTEGER nr1, nr2, nr3, nat, n1, n2, n3, &
+  INTEGER nr1, nr2, nr3, nat, n1, n2, n3, nr1_, nr2_, nr3_, &
           ipol, jpol, na, nb, m1, m2, m3, nint, i,j, nrws, nax
   COMPLEX(DP) dyn(3,3,nat,nat), f_of_q(3,3,nat,nat)
   REAL(DP) frc(nr1,nr2,nr3,3,3,nat,nat), tau(3,nat), q(3), arg, &
@@ -919,16 +918,19 @@ SUBROUTINE frc_blk(dyn,q,tau,nat,nr1,nr2,nr3,frc,at,bg,rws,nrws,f_of_q,fd)
   LOGICAL,SAVE :: first=.true.
   LOGICAL :: fd
   !
+  nr1_=2*nr1
+  nr2_=2*nr2
+  nr3_=2*nr3
   FIRST_TIME : IF (first) THEN
     first=.false.
-    ALLOCATE( wscache(-2*nr3:2*nr3, -2*nr2:2*nr2, -2*nr1:2*nr1, nat,nat) )
+    ALLOCATE( wscache(-nr3_:nr3_, -nr2_:nr2_, -nr1_:nr1_, nat,nat) )
     DO na=1, nat
        DO nb=1, nat
           total_weight=0.0d0
           !
-          DO n1=-2*nr1,2*nr1
-             DO n2=-2*nr2,2*nr2
-                DO n3=-2*nr3,2*nr3
+          DO n1=-nr1_,nr1_
+             DO n2=-nr2_,nr2_
+                DO n3=-nr3_,nr3_
                    DO i=1, 3
                       r(i) = n1*at(i,1)+n2*at(i,2)+n3*at(i,3)
                       r_ws(i) = r(i) + tau(i,na)-tau(i,nb)
@@ -949,9 +951,9 @@ SUBROUTINE frc_blk(dyn,q,tau,nat,nr1,nr2,nr3,frc,at,bg,rws,nrws,f_of_q,fd)
   DO na=1, nat
      DO nb=1, nat
         total_weight=0.0d0
-        DO n1=-2*nr1,2*nr1
-           DO n2=-2*nr2,2*nr2
-              DO n3=-2*nr3,2*nr3
+        DO n1=-nr1_,nr1_
+           DO n2=-nr2_,nr2_
+              DO n3=-nr3_,nr3_
                  !
                  ! SUM OVER R VECTORS IN THE SUPERCELL - VERY VERY SAFE RANGE!
                  !
@@ -1000,29 +1002,6 @@ SUBROUTINE frc_blk(dyn,q,tau,nat,nr1,nr2,nr3,frc,at,bg,rws,nrws,f_of_q,fd)
      END DO
   END DO
   !
-!  alat=10.2
-!  nax=0
-!  DO n1=1,nr1
-!     DO n2=1,nr2
-!        DO n3=1,nr3
-!           do na=1,nat
-!              nax=nax+1
-!              do i=1,3
-!                 tttx(i,nax)=ttt(i,na,n1,n2,n3)*alat*0.529177
-!              end do
-!           end do
-!        end do
-!     end do
-!  end do
-!
-!  do nb=1,nat
-!     write(6,'(3(f15.9,1x))') tau(1,nb),tau(2,nb),tau(3,nb)
-!  enddo
-!  print*, '========='
-!  do nb=1,nat*nr1*nr2*nr3
-!     write(6,'(3(f15.9,1x))') tttx(1,nb),tttx(2,nb),tttx(3,nb)
-!  enddo
-! 
   RETURN
 END SUBROUTINE frc_blk
 !
@@ -1204,7 +1183,6 @@ SUBROUTINE set_asr (asr, nr1, nr2, nr3, frc, zeu, nat, ibrav, tau)
       return
       !
    end if
-
   if(asr.eq.'crystal') n=3
   if(asr.eq.'one-dim') then
      ! the direction of periodicity is the rotation axis
@@ -1980,21 +1958,22 @@ END SUBROUTINE write_tau
 !
 !-----------------------------------------------------------------------
 SUBROUTINE gen_qpoints (ibrav, at_, bg_, nat, tau, ityp, nk1, nk2, nk3, &
-     ntetra, nqx, nq, q, tetra, nosym)
+     nqx, nq, q, nosym)
   !-----------------------------------------------------------------------
   !
   USE kinds,      ONLY : DP
   USE cell_base,  ONLY : at, bg
   USE symm_base,  ONLY : set_sym_bl, find_sym, s, irt, nsym, &
                          nrot, t_rev, time_reversal,  sname
+  USE ktetra,     ONLY : tetra_init
   !
   IMPLICIT NONE
   ! input
-  INTEGER :: ibrav, nat, nk1, nk2, nk3, ntetra, ityp(*)
+  INTEGER :: ibrav, nat, nk1, nk2, nk3, ityp(*)
   REAL(DP) :: at_(3,3), bg_(3,3), tau(3,nat)
   LOGICAL :: nosym
   ! output
-  INTEGER :: nqx, nq, tetra(4,ntetra)
+  INTEGER :: nqx, nq
   REAL(DP) :: q(3,nqx)
   ! local
   REAL(DP) :: xqq(3), wk(nqx), mdum(3,nat)
@@ -2015,16 +1994,13 @@ SUBROUTINE gen_qpoints (ibrav, at_, bg_, nat, tau, ityp, nk1, nk2, nk3, &
   CALL kpoint_grid ( nrot, time_reversal, skip_equivalence, s, t_rev, bg, nqx, &
                            0,0,0, nk1,nk2,nk3, nq, q, wk)
   !
-  CALL find_sym ( nat, tau, ityp, 6, 6, 6, .not.time_reversal, mdum )
+  CALL find_sym ( nat, tau, ityp, .not.time_reversal, mdum )
   !
   CALL irreducible_BZ (nrot, s, nsym, time_reversal, magnetic_sym, &
                        at, bg, nqx, nq, q, wk, t_rev)
   !
-  IF (ntetra /= 6 * nk1 * nk2 * nk3) &
-       CALL errore ('gen_qpoints','inconsistent ntetra',1)
-  !
-  CALL tetrahedra (nsym, s, time_reversal, t_rev, at, bg, nqx, 0, 0, 0, &
-       nk1, nk2, nk3, nq, q, wk, ntetra, tetra)
+  CALL tetra_init (nsym, s, time_reversal, t_rev, at, bg, nqx, 0, 0, 0, &
+       nk1, nk2, nk3, nq, q)
   !
   RETURN
 END SUBROUTINE gen_qpoints
@@ -2033,7 +2009,7 @@ END SUBROUTINE gen_qpoints
 SUBROUTINE a2Fdos &
      (nat, nq, nr1, nr2, nr3, ibrav, at, bg, tau, alat, &
      nsc, nat_blk, at_blk, bg_blk, itau_blk, omega_blk, rws, nrws, &
-     dos, Emin, DeltaE, ndos, ntetra, tetra, asr, q, freq,fd )
+     dos, Emin, DeltaE, ndos, asr, q, freq,fd )
   !-----------------------------------------------------------------------
   !
   USE kinds,      ONLY : DP
@@ -2043,11 +2019,11 @@ SUBROUTINE a2Fdos &
   USE mp_images,   ONLY : intra_image_comm
   USE ifconstants, ONLY : zeu, tau_blk
   USE constants,  ONLY : pi, RY_TO_THZ
+  USE ktetra,     ONLY : tetra_init
   !
   IMPLICIT NONE
   !
-  INTEGER, INTENT(in) :: nat, nq, nr1, nr2, nr3, ibrav, ndos, ntetra, &
-       tetra(4, ntetra)
+  INTEGER, INTENT(in) :: nat, nq, nr1, nr2, nr3, ibrav, ndos
   LOGICAL, INTENT(in) :: dos,fd
   CHARACTER(LEN=*), INTENT(IN) :: asr
   REAL(DP), INTENT(in) :: freq(3*nat,nq), q(3,nq), at(3,3), bg(3,3), &
@@ -2190,8 +2166,7 @@ SUBROUTINE a2Fdos &
            dos_tot = 0.0d0
            do j=1,nmodes
               !
-              dos_a2F(j) = dos_gam(nmodes, nq, j, ntetra, tetra, &
-                                   gamma, freq, E)
+              dos_a2F(j) = dos_gam(nmodes, nq, j, gamma, freq, E)
               dos_a2F(j) = dos_a2F(j) / dos_ee(isig) / 2.d0 / pi
               dos_tot = dos_tot + dos_a2F(j)
               !
@@ -2317,7 +2292,7 @@ subroutine setgam (q, gam, nat, at,bg,tau,itau_blk,nsc,alat, &
 end subroutine setgam
 !
 !--------------------------------------------------------------------
-function dos_gam (nbndx, nq, jbnd, ntetra, tetra, gamma, et, ef)
+function dos_gam (nbndx, nq, jbnd, gamma, et, ef)
   !--------------------------------------------------------------------
   ! calculates weights with the tetrahedron method (Bloechl version)
   ! this subroutine is based on tweights.f90 belonging to PW
@@ -2326,11 +2301,11 @@ function dos_gam (nbndx, nq, jbnd, ntetra, tetra, gamma, et, ef)
   ! and "et" means the frequency(mode,q-point)
   !
   USE kinds,       ONLY: DP
-  use parameters
-!  USE ifconstants, ONLY : gamma
+  USE parameters
+  USE ktetra, ONLY : ntetra, tetra
   implicit none
   !
-  integer :: nq, nbndx, ntetra, tetra(4,ntetra), jbnd
+  integer :: nq, nbndx, jbnd
   real(DP) :: et(nbndx,nq), gamma(nbndx,nq), func
 
   real(DP) :: ef

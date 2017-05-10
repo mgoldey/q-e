@@ -10,7 +10,7 @@
 !   Matthew B. Goldey (matthew.goldey@gmail.com)
 !
 !----------------------------------------------------------------------------
-SUBROUTINE epcdft_controller()
+SUBROUTINE epcdft_controller(dr2)
   !----------------------------------------------------------------------------
   !
   !   CDFT
@@ -29,7 +29,7 @@ SUBROUTINE epcdft_controller()
   USE kinds,         ONLY : DP
   USE constants,     ONLY : fpi, eps8, e2, au_debye
   USE ions_base,     ONLY : nat, ityp, zv
-  USE cell_base,     ONLY : alat, at, omega, bg, saw
+  USE cell_base,     ONLY : alat, at, omega, bg
   USE extfield,      ONLY : tefield, dipfield, edir, eamp, emaxpos, &
                             eopreg, forcefield
   USE force_mod,     ONLY : lforce
@@ -59,7 +59,8 @@ SUBROUTINE epcdft_controller()
   INTEGER  :: i, is, iatom,iconstraint
   INTEGER  :: ictr=0
   LOGICAL  :: first =.true.
-  REAL(DP) :: tmp
+  REAL(DP) :: tmp, step_factor
+  REAL(DP), INTENT(IN) :: dr2
   REAL(DP) :: dv
   REAL(DP) :: acharge, dcharge                     ! acceptor/donor charge 
   REAL(DP) :: achargep, dchargep                   ! acceptor/donor charge parallel
@@ -93,12 +94,16 @@ SUBROUTINE epcdft_controller()
   ! Don't update potential too often or CDFT will never converge
   !
   ictr=ictr+1
-  !
-  !
-  !
   IF ((.NOT. conv_elec) .AND. (mod( ictr, epcdft_update_intrvl ) .NE. 0) ) RETURN
+
+  step_factor=EXP(-SQRT(ABS(dr2)/1e-7)) ! fancy scaling of maximum step size based on SCF convergence
+  if (step_factor*MIN(0.001D0,epcdft_delta_fld) .lt. 1e-7) THEN 
+    ictr=ictr-1
+    write(*,*) "dr2 is ",dr2, " and thus too large to take any step"
+    RETURN ! SKIP IF NOT GOING TO TAKE ANY SIGNIFICANT STEP
+  ENDIF
   !
-  ! restart the counter but dont start at 0 or u will need to reallocate
+  ! restart the counter but dont start at 0 or you will need to reallocate
   !
   ictr = 1
   !
@@ -301,7 +306,7 @@ SUBROUTINE epcdft_controller()
         !
         IF(first) THEN
            !
-           next_epcdft_amp = epcdft_amp + SIGN(MIN(0.001D0,epcdft_delta_fld), enumerr)*SIGN(1.0D0,einwell)
+           next_epcdft_amp = epcdft_amp + step_factor*SIGN(MIN(0.001D0,epcdft_delta_fld), enumerr)*SIGN(1.0D0,einwell)
            first=.false.
            !
         ELSE
@@ -311,9 +316,9 @@ SUBROUTINE epcdft_controller()
            !
            ! abs of the change in amp must be <= |delta_fld|
            !
-           IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. ABS(epcdft_delta_fld) ) THEN
+           IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. step_factor*ABS(epcdft_delta_fld) ) THEN
              !
-             next_epcdft_amp = epcdft_amp + SIGN(1.D0, next_epcdft_amp - epcdft_amp) * epcdft_delta_fld
+             next_epcdft_amp = epcdft_amp + step_factor*SIGN(1.D0, next_epcdft_amp - epcdft_amp) * epcdft_delta_fld
              !
            ENDIF
            !
@@ -339,8 +344,8 @@ SUBROUTINE epcdft_controller()
       !
       ! CDFT
       !
-      WRITE(*,'(5x,a3,a10,a2,a10,a12,a12,a12,a12)') "I","D",'  ','A','Val','Target','Old','New'
-      WRITE(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e12.3,e17.8)') &
+      WRITE(*,'(5x,a3,a10,a2,a10,a12,a12,a17,a17)') "I","D",'  ','A','Val','Target','Old','New'
+      WRITE(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e17.8,e17.8)') &
       !
       iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint), &
       last_epcdft_amp(iconstraint),epcdft_guess(iconstraint)
@@ -360,8 +365,8 @@ SUBROUTINE epcdft_controller()
         !
         ! CDFT
         !
-        WRITE(*,'(5x,a3,a10,a2,a10,a12,a12,a15)') "I","D",'  ','A','Val','Target','Str'
-        WRITE(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e15.6)') &
+        WRITE(*,'(5x,a3,a10,a2,a10,a12,a12,a17)') "I","D",'  ','A','Val','Target','Str'
+        WRITE(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e17.8)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),epcdft_guess(iconstraint)
         WRITE(*,'(5x,a,2x,e17.8)') 'CDFT charge error:', enumerr
         !

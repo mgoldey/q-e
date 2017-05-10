@@ -2,15 +2,10 @@
    MODULE stick_base
 !=----------------------------------------------------------------------=
 
+        USE fft_param
         IMPLICIT NONE
         PRIVATE
         SAVE
-
-#if defined(__MPI)
-        INCLUDE 'mpif.h'
-#endif
-
-        INTEGER, PARAMETER :: DP = selected_real_kind(14,200)
 
         PUBLIC :: sticks_map_set
         PUBLIC :: sticks_map_index, sticks_sort_new, sticks_dist_new
@@ -103,7 +98,7 @@
         smap%indmap = 0
         smap%idx = 0
         smap%ist = 0
-     ELSE IF( smap%nstx < nstx ) THEN
+     ELSE IF( smap%nstx < nstx .OR. smap%ub(3) < ub(3) ) THEN
         !  change the size of the map, but keep the data already there
         IF( smap%lgamma .neqv.  lgamma ) THEN
            CALL fftx_error__(' sticks_map_allocate ',' changing gamma symmetry not allowed ', 1 )
@@ -165,10 +160,6 @@
     REAL(DP) , INTENT(in) :: bg(:,:) ! reciprocal space base vectors
     REAL(DP) , INTENT(in) :: gcut  ! cut-off for potentials
     INTEGER, OPTIONAL, INTENT(in) :: comm ! communicator of the g-vec group
-    !
-#if defined(__MPI)
-    INCLUDE 'mpif.h'
-#endif
     !
     !     stick map for wave functions, note that map is taken in YZ plane
     !

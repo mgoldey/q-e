@@ -72,7 +72,6 @@ SUBROUTINE electrons()
   LOGICAL :: first, exst
   REAL(DP) :: etot_cmp_paw(nat,2,2)
   !
-  !
   exxen = 0.0d0
   iter = 0
   first = .true.
@@ -378,7 +377,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
   !
   USE plugin_variables,     ONLY : plugin_etot
   USE epcdft,               ONLY : do_epcdft, conv_epcdft, epcdft_shift, epcdft_field, &
-                                   epcdft_surface_field, epcdft_surface
+                                   epcdft_surface_field, epcdft_surface,reset_field
   USE input_parameters,     ONLY : lipr                                
   !
   IMPLICIT NONE
@@ -416,6 +415,10 @@ SUBROUTINE electrons_scf ( printout, exxen )
   !
   REAL(DP), EXTERNAL :: ewald, get_clock
   REAL(DP) :: etot_cmp_paw(nat,2,2)
+  LOGICAL :: first_epcdft = .true. ! first call to cdft, used for hybrids + CDFT
+  SAVE first_epcdft
+  ! 
+  if (do_epcdft) conv_epcdft=.false.
   !
   iter = 0
   dr2  = 0.0_dp
@@ -622,8 +625,28 @@ SUBROUTINE electrons_scf ( printout, exxen )
               !
            END IF
            !
-        END IF
+        END IF        
         !
+        IF (conv_elec .AND. do_epcdft) THEN
+          !
+          ! skip first call to CDFT  if calculation is a hybrid
+          !
+          IF (.NOT. ( dft_is_hybrid() .AND. first_epcdft )) THEN
+            !
+            CALL epcdft_controller(dr2)
+            !
+            IF (conv_epcdft .and. conv_elec) deallocate(epcdft_field)
+            IF (conv_epcdft .and. conv_elec .and. epcdft_surface) deallocate(epcdft_surface_field)
+            !
+            IF (.not.conv_epcdft) THEN
+              conv_elec=.false.
+              iter = 0
+            ENDIF 
+            !
+          ENDIF
+        ENDIF        
+        if (reset_field) iter = 0
+
         IF ( .NOT. conv_elec ) THEN
            !
            ! ... no convergence yet: calculate new potential from mixed
@@ -649,55 +672,6 @@ SUBROUTINE electrons_scf ( printout, exxen )
            !
            CALL scf_type_COPY( rhoin, rho )
            !
-        ELSE IF (do_epcdft) THEN
-          !
-          IF (dft_is_hybrid()) THEN
-            if (exx_is_active() .and. dexx < tr2) THEN
-              CALL epcdft_controller()
-            ENDIF
-          ELSE 
-
-            CALL epcdft_controller()
-
-            IF (conv_epcdft .and. conv_elec) deallocate(epcdft_field)
-            IF (conv_epcdft .and. conv_elec .and. epcdft_surface) deallocate(epcdft_surface_field)
-            !
-            IF (.not.conv_epcdft) THEN
-              !
-              conv_elec=.false.
-
-              iter = 0
-              !
-              ! ... no convergence yet: calculate new potential from mixed
-              ! ... charge density (i.e. the new estimate)
-              !
-            ENDIF
-            
-             vnew%of_r(:,:) = v%of_r(:,:)
-             CALL v_of_rho( rho,rho_core,rhog_core, &
-                            ehart, etxc, vtxc, eth, etotefield, charge, v)
-             vnew%of_r(:,:) = v%of_r(:,:) - vnew%of_r(:,:)
-            
-            IF (okpaw) THEN
-               CALL PAW_potential(rhoin%bec, ddd_paw, epaw)
-               CALL PAW_symmetrize_ddd(ddd_paw)
-            ENDIF
-            !
-            ! ... estimate correction needed to have variational energy:
-            ! ... T + E_ion (eband + deband) are calculated in sum_band
-            ! ... and delta_e using the output charge density rho;
-            ! ... E_H (ehart) and E_xc (etxc) are calculated in v_of_rho
-            ! ... above, using the mixed charge density rhoin%of_r.
-            ! ... delta_escf corrects for this difference at first order
-            !
-            descf = delta_escf()
-            !
-            ! ... now copy the mixed charge density in R- and G-space in rho
-            !
-            CALL scf_type_COPY( rhoin, rho )
-            !
-          ENDIF
-          !
         ELSE 
            !
            ! ... convergence reached:
@@ -845,7 +819,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
      !
      ! called every step, this will allow cdft dynamic updating
      !
-     IF(do_epcdft) CALL epcdft_controller()
+     IF(do_epcdft .and. .not. conv_epcdft) CALL epcdft_controller(dr2)
      !
      !
      CALL print_energies ( printout )

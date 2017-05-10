@@ -32,8 +32,6 @@ subroutine force_corr (forcescc)
   USE wavefunctions_module, ONLY : psic
   USE mp_bands,             ONLY : intra_bgrp_comm
   USE mp,                   ONLY : mp_sum
-  USE epcdft,               ONLY : do_epcdft, conv_epcdft, epcdft_shift, epcdft_field, &
-                                   epcdft_surface_field, epcdft_surface
   !
   implicit none
   !
@@ -55,12 +53,6 @@ subroutine force_corr (forcescc)
      isdw = 2
      psic(:) = (vnew%of_r (:, isup) + vnew%of_r (:, isdw)) * 0.5d0
   end if
-  if (do_epcdft) then
-    psic(:)=psic(:)+.5*epcdft_field(:,1)+.5*epcdft_field(:,2)
-    if (epcdft_surface) then
-      psic(:)=psic(:)+.5*epcdft_surface_field(:,1)+.5*epcdft_surface_field(:,2)
-    ENDIF
-  ENDIF
   !
   ndm = MAXVAL ( msh(1:ntyp) )
   allocate ( aux(ndm), rhocgnt(ngl) )

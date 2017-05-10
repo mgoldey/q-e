@@ -29,11 +29,10 @@ SUBROUTINE lr_readin
   USE lsda_mod,            ONLY : isk
   USE ener,                ONLY : ef
   USE io_global,           ONLY : ionode, ionode_id, stdout
-  USE klist,               ONLY : nks, wk, nelec, lgauss
+  USE klist,               ONLY : nks, wk, nelec, lgauss, ltetra
   USE fixed_occ,           ONLY : tfixed_occ
   USE input_parameters,    ONLY : degauss, nosym, wfcdir, outdir,&
-                                  & max_seconds
-  USE ktetra,              ONLY : ltetra
+                                  & max_seconds, assume_isolated
   USE realus,              ONLY : real_space, real_space_debug,&
                                   & init_realspace_vars, qpointlist,&
                                   & betapointlist
@@ -99,7 +98,7 @@ SUBROUTINE lr_readin
                         & broadening,print_spectrum,start,finish,step,if_check_orth, if_random_init, &
                         & if_check_her,p_nbnd_occ,p_nbnd_virt,poor_of_ram,poor_of_ram2,max_iter,     &
                         & ecutfock, conv_assistant,if_dft_spectrum,no_hxc,d0psi_rs,lshift_d0psi,     &
-                        & lplot_drho, vccouple_shift
+                        & lplot_drho, vccouple_shift, ltammd
   !
   auto_rs = .TRUE.
   !

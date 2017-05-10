@@ -140,6 +140,17 @@ SUBROUTINE forces()
     ALLOCATE (force_epcdft(3,nat))
     force_epcdft=0._dp
     CALL EPCDFT_FORCE(force_epcdft,rho%of_r)
+
+    ! REMOVE NET FORCES  - FIX FOR IMAGE CHARGE CODE IF GRADIENT IS DESIRED
+    DO ipol=1,3
+      sumfor = 0.D0
+      DO na = 1, nat
+        sumfor=sumfor+force_epcdft(ipol,na)
+      ENDDO 
+      DO na = 1, nat
+        force_epcdft(ipol,na) = force_epcdft(ipol,na) - sumfor / DBLE ( nat )
+      END DO
+    END DO
   ENDIF
      
   !
@@ -380,7 +391,6 @@ SUBROUTINE forces()
                  force_epcdft(1,na)**2 + force_epcdft(2,na)**2 + force_epcdft(3,na)**2
      END DO
      sum_mm = SQRT( sum_mm )
-     WRITE ( stdout, '(/,5x, "Total CDFT Force = ",F12.6)') sum_mm
      !
   END IF
   !

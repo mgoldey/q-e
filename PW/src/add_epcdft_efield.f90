@@ -673,7 +673,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 !   USE scf,           ONLY : rho
   USE constants,     ONLY : fpi, eps8, e2, au_debye
   USE ions_base,     ONLY : nat, ntyp => nsp, ityp, tau, zv
-  USE cell_base,     ONLY : alat, at, omega, bg, saw, tpiba2,tpiba
+  USE cell_base,     ONLY : alat, at, omega, bg, tpiba2,tpiba
   USE force_mod,     ONLY : lforce
   USE control_flags, ONLY : mixing_beta
   USE lsda_mod,      ONLY : nspin
@@ -747,10 +747,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   COMPLEX(DP) :: vtop(dfftp%nnr,2) ! top of the hirshfeld potential fraction
   COMPLEX(DP) :: vbot(dfftp%nnr) ! bottom of the hirshfeld potential fraction
 
-  ! shifted
-!   COMPLEX(DP) :: sv(dfftp%nnr,2) ! hirshfeld weighting function for shifted atom
-!   COMPLEX(DP) :: svtop(dfftp%nnr,2) ! top of the hirshfeld potential fraction
-!   COMPLEX(DP) :: svbot(dfftp%nnr) ! bottom of the hirshfeld potential fraction
+  LOGICAL :: write_debug_cubes=.false.
 
   COMPLEX(DP) :: normfac, ival1,ival2
   COMPLEX(DP) :: cutoff
@@ -764,7 +761,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
 
   ! set up to be in bohr via one_atom_shifted_wfc
-  dx=1e-4
+  dx=1e-6
   
   ALLOCATE( wfcatomr(dfftp%nnr) )
   ALLOCATE( total_atom_rho_r(dfftp%nnr) )
@@ -946,17 +943,19 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
       if (v(ir,2) /= v(ir,2))  v(ir,2)=0.D0
     ENDDO
 
-    write(filename,*) "hirshfeld_v"
-    CALL write_cube_r ( 9519395, filename, REAL(v(:,1)))
+    if (write_debug_cubes) THEN
+      write(filename,*) "hirshfeld_v"
+      CALL write_cube_r ( 9519395, filename, REAL(v(:,1)))
 
-    write(filename,*) "rho_up"
-    CALL write_cube_r ( 9519395, filename, rho(:,1))
+      write(filename,*) "rho_up"
+      CALL write_cube_r ( 9519395, filename, rho(:,1))
 
-    write(filename,*) "rho_down"
-    CALL write_cube_r ( 9519395, filename, rho(:,2))
+      write(filename,*) "rho_down"
+      CALL write_cube_r ( 9519395, filename, rho(:,2))
 
-    write(filename,*) "vbot"
-    CALL write_cube_r ( 9519395, filename, REAL(vbot(:)))
+      write(filename,*) "vbot"
+      CALL write_cube_r ( 9519395, filename, REAL(vbot(:)))
+    ENDIF
 
 
     DO na = 1, nat ! for each atom
@@ -1053,12 +1052,14 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
           ENDDO ! nb
           shifted_atom1(ipol,:)=shifted_atom1(ipol,:)*normfac
 
-          if (na < 10) then
-            write(filename,"(A8,I1,A2,I1)") "atomic_0",na,"_-",ipol
-          else
-            write(filename,"(A7,I2,A2,I1)") "atomic_",na,"_-",ipol
+          if (write_debug_cubes) THEN
+            if (na < 10) then
+              write(filename,"(A8,I1,A2,I1)") "atomic_0",na,"_-",ipol
+            else
+              write(filename,"(A7,I2,A2,I1)") "atomic_",na,"_-",ipol
+            ENDIF
+            CALL write_cube_r ( 9519395, filename, REAL(shifted_atom1(ipol,:)))
           ENDIF
-          CALL write_cube_r ( 9519395, filename, REAL(shifted_atom1(ipol,:)))
 
           ! Positive displacement
           shifted_atom2(ipol,:)=0.d0
@@ -1088,12 +1089,14 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
           shifted_atom2(ipol,:)=shifted_atom2(ipol,:)*normfac
 
-          if (na < 10) then
-            write(filename,"(A8,I1,A1,I1)") "atomic_0",na,"_",ipol
-          else
-            write(filename,"(A7,I2,A1,I1)") "atomic_",na,"_",ipol
+          if (write_debug_cubes) THEN
+            if (na < 10) then
+              write(filename,"(A8,I1,A1,I1)") "atomic_0",na,"_",ipol
+            else
+              write(filename,"(A7,I2,A1,I1)") "atomic_",na,"_",ipol
+            ENDIF
+            CALL write_cube_r ( 9519395, filename, REAL(shifted_atom2(ipol,:)))
           ENDIF
-          CALL write_cube_r ( 9519395, filename, REAL(shifted_atom2(ipol,:)))
 
           ! shifted_atom now has drho_i/tot_rho in it, calculated using the two-point center formula
           shifted_atom1(ipol,:)=(shifted_atom2(ipol,:) - shifted_atom1(ipol,:))/(2*dx*vbot(:))
@@ -1114,17 +1117,17 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
         ! -V rho w*(-drho_i/tot_rho) 
         
         CASE('charge')
-          force_idir=-1.*REAL(SUM((v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
+          force_idir=REAL(SUM((v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
         CASE('spin')
-          force_idir=-1.*REAL(SUM((-v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
+          force_idir=REAL(SUM((-v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
         CASE('delta_charge')
-          force_idir=-1.*REAL(SUM((v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
+          force_idir=REAL(SUM((v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
         CASE('delta_spin')
-          force_idir=-1.*REAL(SUM((-v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
+          force_idir=REAL(SUM((-v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
         CASE('delta_alpha')
-          force_idir=-1.*REAL(SUM((-v(:,1)*rho(:,1)*shifted_atom1(ipol,:))))
+          force_idir=REAL(SUM((-v(:,1)*rho(:,1)*shifted_atom1(ipol,:))))
         CASE('delta_beta')
-          force_idir=-1.*REAL(SUM((-v(:,2)*rho(:,2)*shifted_atom1(ipol,:))))
+          force_idir=REAL(SUM((-v(:,2)*rho(:,2)*shifted_atom1(ipol,:))))
         END SELECT
 
         ! +/- (-V) rho (-drho_i/tot_rho)
@@ -1163,7 +1166,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
           ENDIF
         END SELECT
         CALL mp_sum( force_idir, intra_bgrp_comm )
-        force(ipol,na)=force_idir*epcdft_guess(icon) *dv
+        force(ipol,na)=force_idir*dv*epcdft_guess(icon)
       END DO ! ipol
       DEALLOCATE(wfcatomg)
     ENDDO ! atom

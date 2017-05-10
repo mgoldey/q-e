@@ -136,7 +136,6 @@ input_parameters.o : kind.o
 input_parameters.o : parameters.o
 input_parameters.o : wannier_new.o
 invmat.o : kind.o
-io_base.o : ../iotk/src/iotk_module.o
 io_base.o : hdf5_qe.o
 io_base.o : io_files.o
 io_base.o : io_global.o
