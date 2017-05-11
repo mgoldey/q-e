@@ -49,6 +49,7 @@ SUBROUTINE electrons()
   USE paw_onecenter,        ONLY : PAW_potential
   USE paw_symmetry,         ONLY : PAW_symmetrize_ddd
   USE ions_base,            ONLY : nat
+  USE epcdft,        ONLY : do_epcdft, epcdft_shift
   !
   !
   IMPLICIT NONE
@@ -251,6 +252,7 @@ SUBROUTINE electrons()
         
         WRITE( stdout, 9062 ) - fock1
         WRITE( stdout, 9064 ) 0.5D0*fock2
+        IF ( do_epcdft )          WRITE( stdout, 9063 ) epcdft_shift
         !
         IF ( dexx < tr2_final ) THEN
            IF ( do_makov_payne ) CALL makov_payne( etot )
@@ -290,6 +292,7 @@ SUBROUTINE electrons()
   ! ... formats
   !
 9062 FORMAT( '     - averaged Fock potential =',0PF17.8,' Ry' )
+9063 FORMAT( '     CDFT correction           =',F17.8,' Ry' )
 9064 FORMAT( '     + Fock energy             =',0PF17.8,' Ry' )
 9066 FORMAT(/,A2,'   total energy              =',0PF17.8,' Ry' &
             /'     Harris-Foulkes estimate   =',0PF17.8,' Ry' )
@@ -369,8 +372,12 @@ SUBROUTINE electrons_scf ( printout, exxen )
   USE esm,                  ONLY : do_comp_esm, esm_printpot, esm_ewald
   USE fcp_variables,        ONLY : lfcpopt, lfcpdyn
   USE iso_c_binding,        ONLY : c_int
+  USE funct,                ONLY : dft_is_hybrid,exx_is_active
+  USE exx,                  ONLY : dexx
   !
   USE plugin_variables,     ONLY : plugin_etot
+  USE epcdft,               ONLY : do_epcdft, conv_epcdft, epcdft_shift, epcdft_field, &
+                                   epcdft_surface_field, epcdft_surface,reset_field
   !
   IMPLICIT NONE
   !
@@ -407,6 +414,10 @@ SUBROUTINE electrons_scf ( printout, exxen )
   !
   REAL(DP), EXTERNAL :: ewald, get_clock
   REAL(DP) :: etot_cmp_paw(nat,2,2)
+  LOGICAL :: first_epcdft = .true. ! first call to cdft, used for hybrids + CDFT
+  SAVE first_epcdft
+  ! 
+  if (do_epcdft) conv_epcdft=.false.
   !
   iter = 0
   dr2  = 0.0_dp
@@ -615,6 +626,26 @@ SUBROUTINE electrons_scf ( printout, exxen )
            !
         END IF
         !
+        IF (conv_elec .AND. do_epcdft) THEN
+          !
+          ! skip first call to CDFT  if calculation is a hybrid
+          !
+          IF (.NOT. ( dft_is_hybrid() .AND. first_epcdft )) THEN
+            !
+            CALL epcdft_controller(dr2)
+            !
+            IF (conv_epcdft .and. conv_elec) deallocate(epcdft_field)
+            IF (conv_epcdft .and. conv_elec .and. epcdft_surface) deallocate(epcdft_surface_field)
+            !
+            IF (.not.conv_epcdft) THEN
+              conv_elec=.false.
+              iter = 0
+            ENDIF 
+            !
+          ENDIF
+        ENDIF        
+        if (reset_field) iter = 0
+
         IF ( .NOT. conv_elec ) THEN
            !
            ! ... no convergence yet: calculate new potential from mixed
@@ -782,6 +813,11 @@ SUBROUTINE electrons_scf ( printout, exxen )
      ! ... adds possible external contribution from plugins to the energy
      !
      etot = etot + plugin_etot 
+     !
+     ! called every step, this will allow cdft dynamic updating
+     !
+     IF(do_epcdft .and. .not. conv_epcdft) CALL epcdft_controller(dr2)
+     !
      !
      CALL print_energies ( printout )
      !
@@ -1097,6 +1133,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
        !-----------------------------------------------------------------------
        !
        USE constants, ONLY : eps8
+       USE epcdft,        ONLY : do_epcdft, epcdft_shift
        INTEGER, INTENT (IN) :: printout
        !
    
@@ -1119,6 +1156,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
           IF ( textfor)  WRITE ( stdout , 9077 ) eext
           IF ( tefield )            WRITE( stdout, 9061 ) etotefield
           IF ( monopole )           WRITE( stdout, 9062 ) etotmonofield ! TB
+          IF ( do_epcdft )          WRITE( stdout, 9063 ) epcdft_shift
           IF ( lda_plus_u )         WRITE( stdout, 9065 ) eth
           IF ( ABS (descf) > eps8 ) WRITE( stdout, 9069 ) descf
           IF ( okpaw ) THEN
@@ -1188,7 +1226,8 @@ SUBROUTINE electrons_scf ( printout, exxen )
             /'     xc contribution           =',F17.8,' Ry' &
             /'     ewald contribution        =',F17.8,' Ry' )
 9061 FORMAT( '     electric field correction =',F17.8,' Ry' )
-9062 FORMAT( '     monopole field correction =',F17.8,' Ry' ) ! TB
+9062 FORMAT( '     monopole field correction =',F17.8,' Ry' ) 
+9063 FORMAT( '     CDFT correction           =',F17.8,' Ry' )
 9065 FORMAT( '     Hubbard energy            =',F17.8,' Ry' )
 9067 FORMAT( '     one-center paw contrib.   =',F17.8,' Ry' )
 9068 FORMAT( '      -> PAW hartree energy AE =',F17.8,' Ry' &

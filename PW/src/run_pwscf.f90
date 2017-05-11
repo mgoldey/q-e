@@ -48,6 +48,7 @@ SUBROUTINE run_pwscf ( exit_status )
   USE fft_base,         ONLY : dfftp
   USE qmmm,             ONLY : qmmm_initialization, qmmm_shutdown, &
                                qmmm_update_positions, qmmm_update_forces
+  USE epcdft,           ONLY : do_epcdft, conv_epcdft
   USE qexsd_module,     ONLY:   qexsd_set_status
   !
   IMPLICIT NONE
@@ -128,6 +129,13 @@ SUBROUTINE run_pwscf ( exit_status )
         RETURN
      ENDIF
      !
+     ! CDFT check if charge is localized
+     !
+     IF (do_epcdft .and. .not. conv_epcdft ) THEN
+      CALL hinit1()
+      CYCLE
+     ENDIF
+     !
      ! ... ionic section starts here
      !
      CALL start_clock( 'ions' )
@@ -192,7 +200,7 @@ SUBROUTINE run_pwscf ( exit_status )
      ! ... terms of the hamiltonian depending upon nuclear positions
      ! ... are reinitialized here
      !
-     IF ( lmd .OR. lbfgs ) THEN
+     IF ( lmd .OR. lbfgs .OR. do_epcdft) THEN
         !
         ! ... update the wavefunctions, charge density, potential
         ! ... update_pot initializes structure factor array as well

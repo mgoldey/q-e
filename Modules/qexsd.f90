@@ -337,6 +337,7 @@ CONTAINS
     SUBROUTINE qexsd_init_convergence_info(obj, n_scf_steps, scf_error, &
                                            opt_conv_ispresent, n_opt_steps, grad_norm )
       !------------------------------------------------------------------------
+      USE epcdft, only : do_epcdft
       IMPLICIT NONE
       !
       TYPE(convergence_info_type)   :: obj
@@ -349,6 +350,7 @@ CONTAINS
       CHARACTER(27)       :: subname="qexsd_init_convergence_info"
       TYPE(scf_conv_type) :: scf_conv
       TYPE(opt_conv_type) :: opt_conv
+      TYPE(epcdft_params_type) :: epcdft_params
       !
       call qes_init_scf_conv(scf_conv, "scf_conv", n_scf_steps, scf_error)
       !
@@ -359,11 +361,19 @@ CONTAINS
           !
           call qes_init_opt_conv(opt_conv, "opt_conv", n_opt_steps, grad_norm)
       ENDIF
+
+      IF (do_epcdft) THEN
+        call qes_init_epcdft_params(epcdft_params, "epcdft_params")
+      ENDIF
       !
-      call qes_init_convergence_info(obj, "convergence_info", scf_conv, opt_conv_ispresent, opt_conv)
+      call qes_init_convergence_info(obj, "convergence_info", scf_conv, opt_conv_ispresent,&
+               opt_conv,epcdft_params)
       !
       call qes_reset_scf_conv(scf_conv)
       call qes_reset_opt_conv(opt_conv)
+      IF (do_epcdft) THEN
+          call qes_reset_epcdft_params(epcdft_params)
+      ENDIF
       !
     END SUBROUTINE qexsd_init_convergence_info
     !

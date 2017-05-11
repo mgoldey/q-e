@@ -27,6 +27,7 @@ coulomb_vcut.o \
 dist.o \
 electrons_base.o \
 environment.o \
+epcdft_module.o \
 error_handler.o \
 fcp_variables.o \
 fd_gradient.o \

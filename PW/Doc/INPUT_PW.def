@@ -70,6 +70,12 @@ input_description -distribution {Quantum Espresso} -package PWscf -program pw.x 
          [ f_inp2(1)  f_inp2(2)  f_inp2(3) ... f_inp2(10)
            f_inp2(11) f_inp2(12) ... f_inp2(nbnd) ] ]
 
+        [ @b EPCDFT
+          numconstr   { cdft_constr_tol   } { field_step   } { update_frequency   }
+          cdft_constr_type(1) cdft_constr(1)(1) cdft_constr(2)(1) [ cdft_constr(3)(1) cdft_constr(4)(1) ] cdft_constr_target(1) cdft_constr_guess(1)
+          ...
+          cdft_constr_type(numconstr) cdft_constr(1)(numconstr) cdft_constr(2)(numconstr) [ constr(3)(numconstr) cdft_constr(4)(numconstr) ] cdft_constr_target(numconstr) cdft_constr_guess(numconstr)]
+
         [ @b CONSTRAINTS
            nconstr  { constr_tol }
            constr_type(.)   constr(1,.)   constr(2,.) [ constr(3,.)   constr(4,.) ] { constr_target(.) } ]
@@ -2816,6 +2822,106 @@ input_description -distribution {Quantum Espresso} -package PWscf -program pw.x 
             }
         }
     }
+
+    #
+    # EPCDFT
+    #
+    card EPCDFT {      
+        label { 
+            Optional card, only needed for performing Constrained DFT calculations.
+        }
+
+        syntax {
+            line {
+                var numconstr -type INTEGER {
+                    default { 0 }
+                    info { Number of constraints. }
+                }
+                
+                optional {
+                    var cdft_constr_tol -type REAL {
+                        default {1.E-4_DP}
+                        info { Tolerance for satisfying the constraint in units of electrons. Decrease if the overlap given by epcdft_coupling.x appears spuriously high.}
+                    }
+                }
+
+                optional {
+                    var field_step -type REAL {
+                        default {1.E-1_DP}
+                        info { Maximum change in field (Rydberg atomic units). Decrease this if these changes result in large changes in the wavefunction.}
+                    }
+                }
+                optional {
+                    var update_frequency -type INTEGER {
+                        default { 40 }
+                        info { Maximum number of SCF steps until the constraint is updated. Increase this if unconverged wavefunctions result in poor guesses for constraint values. }
+                    }
+                }
+            }
+            table constraints_table {
+                rows -start 1 -end numconstr {
+                    col cdft_constr_type -type CHARACTER {
+            options {
+                            info {
+                                Type of constraint :
+                            }
+                            opt -val 'delta_charge' {
+                                constraint on the difference of total charge [electron+nuclear] between donor and acceptor regions
+                            }
+                            opt -val 'charge' {
+                                constraint on the total charge [electron+nuclear] in the acceptor region. Note: not tested.
+                            }
+                            opt -val 'delta_spin' {
+                                constraint on the difference of the total integrated spin density between donor and acceptor regions. Note: not tested.
+                            }
+                            opt -val 'spin' {
+                                constraint on the integrated spin density in the acceptor region. Note: not tested.
+                            }
+                        }                       
+                    }
+                    colgroup {
+                        col cdft_constr(1)
+                        col cdft_constr(2)
+                        conditional {
+                            col cdft_constr(3)
+                            col cdft_constr(4)
+                        }
+                        col cdft_constr_target
+                        col cdft_constr_guess
+                        info {
+                            These variables have different meanings for different constraint types:
+
+                            @b 'delta_charge' :
+                               @i cdft_constr(1) is the index of the atom defining the start of the acceptor region
+                               @i cdft_constr(2) is the index of the atom defining the end of the acceptor region
+                               @i cdft_constr(3) is the index of the atom defining the start of the donor region
+                               @i cdft_constr(4) is the index of the atom defining the end of the donor region
+                               @i cdft_constr_target is the target difference in charges between the two regions
+                               @i cdft_constr_guess is the initial guess for the constraint in Rydberg atomic units
+                            @b 'charge' :
+                               @i cdft_constr(1) is the index of the atom defining the start of the constrained region
+                               @i cdft_constr(2) is the index of the atom defining the end of the constrained region
+                               @i cdft_constr_target is the target total charge for the constrained region
+                               @i cdft_constr_guess is the initial guess for the constraint in Rydberg atomic units
+                            @b 'delta_spin' :
+                               @i cdft_constr(1) is the index of the atom defining the start of the acceptor region
+                               @i cdft_constr(2) is the index of the atom defining the end of the acceptor region
+                               @i cdft_constr(3) is the index of the atom defining the start of the donor region
+                               @i cdft_constr(4) is the index of the atom defining the end of the donor region
+                               @i cdft_constr_target is the target difference in integrated spin density between the two regions
+                               @i cdft_constr_guess is the initial guess for the constraint in Rydberg atomic units
+                            @b 'spin' :
+                               @i cdft_constr(1) is the index of the atom defining the start of the constrained region
+                               @i cdft_constr(2) is the index of the atom defining the end of the constrained region
+                               @i cdft_constr_target is the target integrated spin density for the constrained region
+                               @i cdft_constr_guess is the initial guess for the constraint in Rydberg atomic units
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
 
     #

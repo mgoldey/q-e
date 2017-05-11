@@ -26,7 +26,8 @@ MODULE pw_restart
                           qexml_write_header, qexml_write_control ,   &
                           qexml_write_cell, qexml_write_moving_cell,  &
                           qexml_write_ions, qexml_write_symmetry,     &
-                          qexml_write_efield, qexml_write_planewaves, &
+                          qexml_write_efield, qexml_write_epcdft, &
+                          qexml_write_planewaves, &
                           qexml_write_spin, qexml_write_magnetization, &
                           qexml_write_xc, qexml_write_exx, qexml_write_occ, &
                           qexml_write_bz,qexml_write_para, qexml_write_bands_info, &
@@ -37,7 +38,8 @@ MODULE pw_restart
                           qexml_read_planewaves, qexml_read_ions, qexml_read_spin, &
                           qexml_read_magnetization, qexml_read_xc, qexml_read_occ, qexml_read_bz, &
                           qexml_read_bands_info, qexml_read_bands_pw, qexml_read_symmetry, &
-                          qexml_read_efield, qexml_read_para, qexml_read_exx, qexml_read_esm
+                          qexml_read_efield, qexml_read_para, qexml_read_exx, qexml_read_esm, &
+                          qexml_read_epcdft
   !
   USE xml_io_base, ONLY : rho_binary,read_wfc, write_wfc, create_directory
   !
@@ -79,6 +81,7 @@ MODULE pw_restart
              lbz_read     = .FALSE., &
              lbs_read     = .FALSE., &
              lefield_read = .FALSE., &
+             lepcdft_read = .FALSE., &
              lwfc_read    = .FALSE., &
              lsymm_read   = .FALSE.
   !
@@ -137,7 +140,7 @@ MODULE pw_restart
                                        emaxpos, eopreg, eamp, & !TB
                                        monopole, zmon, block, block_1, &
                                        block_2, block_height, relaxz
-      USE io_rho_xml,           ONLY : write_rho
+      USE io_rho_xml,           ONLY : write_scf
       USE mp_world,             ONLY : nproc
       USE mp_images,            ONLY : nproc_image
       USE mp_pools,             ONLY : kunit, nproc_pool, me_pool, root_pool, &
@@ -381,6 +384,12 @@ MODULE pw_restart
                                   monopole, zmon, relaxz, block, block_1, block_2,&
                                   block_height ) 
          !
+!-------------------------------------------------------------------------------
+! ... EPCDFT
+!-------------------------------------------------------------------------------
+         !
+         CALL qexml_write_epcdft()
+         !         
 !
 !-------------------------------------------------------------------------------
 ! ... PLANE_WAVES
@@ -559,7 +568,7 @@ MODULE pw_restart
       !
       ! ... also writes rho%ns if lda+U and rho%bec if PAW
       !
-      IF ( lrho ) CALL write_rho( rho, nspin )
+      IF ( lrho ) CALL write_scf( rho, nspin )
 !-------------------------------------------------------------------------------
 ! ... END RESTART SECTIONS
 !-------------------------------------------------------------------------------
@@ -810,7 +819,7 @@ MODULE pw_restart
     SUBROUTINE pw_readfile( what, ierr )
       !------------------------------------------------------------------------
       !
-      USE io_rho_xml,    ONLY : read_rho
+      USE io_rho_xml,    ONLY : read_scf
       USE scf,           ONLY : rho
       USE lsda_mod,      ONLY : nspin
       USE mp_bands,      ONLY : intra_bgrp_comm
@@ -826,7 +835,7 @@ MODULE pw_restart
       LOGICAL            :: lcell, lpw, lions, lspin, linit_mag, &
                             lxc, locc, lbz, lbs, lwfc, lheader,          &
                             lsymm, lrho, lefield, ldim, &
-                            lef, lexx, lesm
+                            lef, lexx, lesm, lepcdft
       !
       INTEGER            :: tmp
       !
@@ -911,6 +920,7 @@ MODULE pw_restart
          lbs     = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
+         lepcdft = .TRUE.
          !
       CASE( 'all' )
          !
@@ -926,6 +936,7 @@ MODULE pw_restart
          lwfc    = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
+         lepcdft = .TRUE.
          lrho    = .TRUE.
          !
       CASE( 'reset' )
@@ -942,6 +953,7 @@ MODULE pw_restart
          lwfc_read    = .FALSE.
          lsymm_read   = .FALSE.
          lefield_read = .FALSE.
+         lepcdft_read = .FALSE.
          !
       CASE( 'ef' )
          !
@@ -1106,13 +1118,22 @@ MODULE pw_restart
          END IF
          !
       END IF
-
+      IF ( lepcdft ) THEN
+         !
+         CALL read_epcdft( ierr )
+         IF ( ierr > 0 ) THEN
+            errmsg='error reading epcdft in xml data file'
+            GOTO 100
+         END IF
+         !
+      END IF
+      
       IF ( lrho ) THEN
          !
          ! ... to read the charge-density we use the routine from io_rho_xml 
          ! ... it also reads ns for ldaU and becsum for PAW
          !
-         CALL read_rho( rho, nspin )
+         CALL read_scf( rho, nspin )
          !
       END IF
 
@@ -1703,6 +1724,39 @@ MODULE pw_restart
       !
     END SUBROUTINE read_efield
     !
+    !
+
+    SUBROUTINE read_epcdft( ierr )
+      !----------------------------------------------------------------------
+      !
+      USE epcdft
+      !
+      IMPLICIT NONE
+      !
+      INTEGER,          INTENT(OUT) :: ierr
+      LOGICAL                       :: found
+      !
+      ierr = 0
+      !
+      IF ( lepcdft_read ) RETURN
+      !
+      CALL qexml_read_epcdft(FOUND=found, IERR=ierr)
+      !
+      CALL mp_bcast( ierr, ionode_id, intra_image_comm )
+      !
+      IF ( ierr > 0 ) RETURN
+      !
+      IF ( (ionode).AND.(.NOT.found) ) THEN
+         !
+         do_epcdft  = .FALSE.
+         !
+      END IF
+      !
+      lepcdft_read = .TRUE.
+      !
+      RETURN
+      !
+    END SUBROUTINE read_epcdft
     !------------------------------------------------------------------------
     SUBROUTINE read_planewaves( ierr )
       !------------------------------------------------------------------------

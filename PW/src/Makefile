@@ -37,6 +37,7 @@ bp_strings.o \
 buffers.o \
 c_bands.o \
 c_phase_field.o \
+one_atom_wfc.o \
 orbm_kubo.o \
 ccgdiagg.o \
 cdiagh.o \
@@ -144,6 +145,7 @@ paw_init.o \
 paw_onecenter.o \
 paw_symmetry.o \
 plugin_print_energies.o \
+epcdft.o \
 plugin_scf_energy.o \
 plugin_scf_potential.o \
 plugin_init_ions.o \
@@ -194,6 +196,7 @@ save_in_cbands.o \
 save_in_electrons.o \
 scale_h.o \
 scf_mod.o \
+add_epcdft_efield.o \
 set_kplusq.o \
 set_kup_and_kdw.o \
 set_rhoc.o \

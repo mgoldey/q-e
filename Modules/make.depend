@@ -75,6 +75,7 @@ environment.o : mp_images.o
 environment.o : mp_pools.o
 environment.o : mp_world.o
 environment.o : version.o
+epcdft_module.o : kind.o
 erf.o : kind.o
 error_handler.o : io_files.o
 error_handler.o : io_global.o
@@ -230,15 +231,20 @@ pw_dot.o : mp.o
 pw_dot.o : mp_global.o
 pw_dot.o : recvec.o
 qes_libs.o : ../iotk/src/iotk_module.o
+qes_libs.o : epcdft_module.o
 qes_libs.o : qes_types.o
 qes_module.o : ../iotk/src/iotk_module.o
 qes_module.o : qes_libs.o
 qes_module.o : qes_types.o
 qes_types.o : kind.o
 qexml.o : ../iotk/src/iotk_module.o
+qexml.o : epcdft_module.o
 qexml.o : hdf5_qe.o
 qexml.o : io_files.o
+qexml.o : io_global.o
 qexml.o : kind.o
+qexml.o : mp.o
+qexml.o : mp_images.o
 qexml.o : mp_pools.o
 qexml.o : mp_world.o
 qexml.o : wrappers.o
@@ -247,6 +253,7 @@ qexsd.o : ../iotk/src/iotk_module.o
 qexsd.o : cell_base.o
 qexsd.o : clocks.o
 qexsd.o : constants.o
+qexsd.o : epcdft_module.o
 qexsd.o : input_parameters.o
 qexsd.o : ions_base.o
 qexsd.o : kind.o
@@ -267,6 +274,7 @@ qexsd_input.o : input_parameters.o
 qexsd_input.o : kind.o
 qexsd_input.o : qes_module.o
 qexsd_reader_module.o : ../iotk/src/iotk_module.o
+qexsd_reader_module.o : epcdft_module.o
 qexsd_reader_module.o : io_global.o
 qexsd_reader_module.o : kind.o
 qexsd_reader_module.o : parameters.o
@@ -290,6 +298,7 @@ random_numbers.o : kind.o
 read_cards.o : autopilot.o
 read_cards.o : bz_form.o
 read_cards.o : cell_base.o
+read_cards.o : epcdft_module.o
 read_cards.o : input_parameters.o
 read_cards.o : io_global.o
 read_cards.o : kind.o
@@ -363,6 +372,7 @@ read_xml.o : read_xml_cards.o
 read_xml.o : read_xml_fields.o
 read_xml_cards.o : ../iotk/src/iotk_module.o
 read_xml_cards.o : autopilot.o
+read_xml_cards.o : epcdft_module.o
 read_xml_cards.o : input_parameters.o
 read_xml_cards.o : io_global.o
 read_xml_cards.o : kind.o

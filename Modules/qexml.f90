@@ -70,13 +70,13 @@ MODULE qexml_module
   !
   PUBLIC :: qexml_write_header, qexml_write_control, qexml_write_status_cp, qexml_write_cell,  &
             qexml_write_moving_cell, qexml_write_ions, qexml_write_symmetry, qexml_write_efield, &
-            qexml_write_planewaves, qexml_write_spin, qexml_write_magnetization, &
+            qexml_write_planewaves, qexml_write_spin, qexml_write_magnetization, qexml_write_epcdft, &
             qexml_write_xc, qexml_write_exx, qexml_write_occ, qexml_write_bz, qexml_write_para, &
             qexml_write_bands_pw,qexml_write_bands_cp, qexml_write_bands_info, qexml_write_eig, &
             qexml_write_gk, qexml_write_wfc, qexml_write_rho, qexml_write_esm
   !
   PUBLIC :: qexml_read_header, qexml_read_status_cp, qexml_read_cell, qexml_read_moving_cell, qexml_read_ions,      &
-            qexml_read_symmetry, qexml_read_efield,                   &
+            qexml_read_symmetry, qexml_read_efield,  qexml_read_epcdft, &
             qexml_read_planewaves, qexml_read_spin, qexml_read_xc,    &
             qexml_read_occ, qexml_read_bz, qexml_read_phonon,         &
             qexml_read_bands_pw, qexml_read_bands_cp, qexml_read_bands_info,                  &
@@ -1057,6 +1057,40 @@ CONTAINS
     !
     !
     !------------------------------------------------------------------------
+    !
+    SUBROUTINE qexml_write_epcdft()
+      !
+      USE epcdft 
+      !
+      INTEGER iconstraint
+      !
+      CALL iotk_write_begin(ounit,"EPCDFT")
+      CALL iotk_write_dat( ounit, "HAS_EPCDFT", do_epcdft)
+      CALL iotk_write_dat( ounit, "ENERGY_SHIFT", epcdft_shift )
+      CALL iotk_write_dat( ounit, "CONV_EPCDFT", conv_epcdft)
+      CALL iotk_write_dat( ounit, "EPCDFT_DELTA_FLD", epcdft_delta_fld )
+      CALL iotk_write_dat( ounit, "NCONSTR_EPCDFT", nconstr_epcdft )
+      !
+      DO iconstraint = 1, nconstr_epcdft
+         !
+         CALL iotk_write_attr( attr, 'type', epcdft_type(iconstraint), FIRST = .true. )
+         CALL iotk_write_attr( attr, "A1", epcdft_locs(1,iconstraint) )
+         CALL iotk_write_attr( attr, "A2", epcdft_locs(2,iconstraint) )
+         CALL iotk_write_attr( attr, "D1", epcdft_locs(3,iconstraint) )
+         CALL iotk_write_attr( attr, "D2", epcdft_locs(4,iconstraint) )
+         CALL iotk_write_attr( attr, "VAL", epcdft_target(iconstraint) )
+         CALL iotk_write_attr( attr, "LAMBDA", epcdft_guess(iconstraint) )
+         CALL iotk_write_empty( ounit, "CONSTRAINT" // trim( iotk_index( iconstraint ) ), attr )
+         !
+      ENDDO
+      !
+      CALL iotk_write_end(ounit,"EPCDFT")
+      !
+    END SUBROUTINE qexml_write_epcdft
+    !
+    !
+    !------------------------------------------------------------------------
+
     SUBROUTINE qexml_write_planewaves( ecutwfc, ecutrho, npwx, gamma_only, &
                                        nr1, nr2, nr3,  ngm,  nr1s, nr2s, nr3s, ngms, &
                                        nr1b, nr2b, nr3b, igv, lgvec, cutoff_units )
@@ -3022,6 +3056,71 @@ CONTAINS
       IF ( present(block_height) )   block_height = block_height_
       !
     END SUBROUTINE qexml_read_efield
+
+    !
+    !
+    !
+    !------------------------------------------------------------------------
+    SUBROUTINE qexml_read_epcdft(found, ierr)
+      USE epcdft 
+      USE io_global,     ONLY : stdout,ionode, ionode_id
+      USE mp_images,     ONLY : intra_image_comm
+      USE mp,            ONLY : mp_bcast, mp_sum
+      !
+      INTEGER iconstraint
+      INTEGER, INTENT(out) :: ierr
+      LOGICAL,             INTENT(out) :: found
+      !
+      ierr=0
+      !
+      IF (ionode) THEN
+        CALL iotk_scan_begin(iunit,"EPCDFT", FOUND=found, IERR=ierr)
+        CALL iotk_scan_dat( iunit, "HAS_EPCDFT", do_epcdft, IERR=ierr)
+        CALL iotk_scan_dat( iunit, "ENERGY_SHIFT", epcdft_shift , IERR=ierr)
+        CALL iotk_scan_dat( iunit, "CONV_EPCDFT", conv_epcdft, IERR=ierr)
+        CALL iotk_scan_dat( iunit, "EPCDFT_DELTA_FLD", epcdft_delta_fld , IERR=ierr)
+        CALL iotk_scan_dat( iunit, "NCONSTR_EPCDFT", nconstr_epcdft , IERR=ierr)
+      ENDIF 
+      !
+      CALL mp_bcast(do_epcdft, ionode_id, intra_image_comm )
+      CALL mp_bcast(epcdft_shift, ionode_id, intra_image_comm )
+      CALL mp_bcast(conv_epcdft, ionode_id, intra_image_comm )
+      CALL mp_bcast(epcdft_delta_fld, ionode_id, intra_image_comm )
+      CALL mp_bcast(nconstr_epcdft, ionode_id, intra_image_comm )
+      !
+      CALl allocate_input_epcdft()
+      !
+      IF (ionode) THEN
+        DO iconstraint = 1, nconstr_epcdft
+           !
+           CALL iotk_scan_empty( iunit, "CONSTRAINT"// trim( iotk_index( iconstraint ) ), ATTR=attr,IERR=ierr)
+           CALL iotk_scan_attr( attr, 'type', epcdft_type(iconstraint) , IERR=ierr)
+           CALL iotk_scan_attr( attr, "A1", epcdft_locs(1,iconstraint) , IERR=ierr)
+           CALL iotk_scan_attr( attr, "A2", epcdft_locs(2,iconstraint) , IERR=ierr)
+           CALL iotk_scan_attr( attr, "D1", epcdft_locs(3,iconstraint) , IERR=ierr)
+           CALL iotk_scan_attr( attr, "D2", epcdft_locs(4,iconstraint) , IERR=ierr)
+           CALL iotk_scan_attr( attr, "VAL", epcdft_target(iconstraint) , IERR=ierr)
+           CALL iotk_scan_attr( attr, "LAMBDA", epcdft_guess(iconstraint) , IERR=ierr)
+           !
+        ENDDO
+        !
+        CALL iotk_scan_end(iunit,"EPCDFT")
+        !
+      ENDIF
+      !
+      DO iconstraint=1,nconstr_epcdft
+        IF (ionode)  epcdft_type(iconstraint)=TRIM(epcdft_type(iconstraint))
+        CALL mp_bcast(epcdft_type(iconstraint), ionode_id, intra_image_comm )
+        CALL mp_bcast(epcdft_locs(1,iconstraint), ionode_id, intra_image_comm )
+        CALL mp_bcast(epcdft_locs(2,iconstraint), ionode_id, intra_image_comm )
+        CALL mp_bcast(epcdft_locs(3,iconstraint), ionode_id, intra_image_comm )
+        CALL mp_bcast(epcdft_locs(4,iconstraint), ionode_id, intra_image_comm )
+        CALL mp_bcast(epcdft_target(iconstraint), ionode_id, intra_image_comm )
+        CALL mp_bcast(epcdft_guess(iconstraint), ionode_id, intra_image_comm )
+      END DO  
+      !
+    END SUBROUTINE qexml_read_epcdft
+    !
     !
     !
     !------------------------------------------------------------------------

@@ -52,6 +52,7 @@ SUBROUTINE forces()
   USE xdm_module,    ONLY : force_xdm
   USE tsvdw_module,  ONLY : FtsvdW
   USE esm,           ONLY : do_comp_esm, esm_bc, esm_force_ew
+  USE epcdft,        ONLY : do_epcdft, conv_epcdft
   USE qmmm,          ONLY : qmmm_mode
   !
   IMPLICIT NONE
@@ -62,6 +63,7 @@ SUBROUTINE forces()
                            forceion(:,:), &
                            force_disp(:,:),&
                            force_disp_xdm(:,:),&
+                           force_epcdft(:,:),&
                            force_mt(:,:), &
                            forcescc(:,:), &
                            forces_bp_efield(:,:), &
@@ -131,6 +133,23 @@ SUBROUTINE forces()
      force_disp_xdm = 0._dp
      force_disp_xdm = force_xdm(nat)
   end if
+
+  IF (do_epcdft) THEN
+    ALLOCATE (force_epcdft(3,nat))
+    force_epcdft=0._dp
+    CALL EPCDFT_FORCE(force_epcdft,rho%of_r)
+
+    ! REMOVE NET FORCES  - FIX FOR IMAGE CHARGE CODE IF GRADIENT IS DESIRED
+    DO ipol=1,3
+      sumfor = 0.D0
+      DO na = 1, nat
+        sumfor=sumfor+force_epcdft(ipol,na)
+      ENDDO 
+      DO na = 1, nat
+        force_epcdft(ipol,na) = force_epcdft(ipol,na) - sumfor / DBLE ( nat )
+      END DO
+    END DO
+  ENDIF
      
   !
   ! ... The SCF contribution
@@ -192,6 +211,7 @@ SUBROUTINE forces()
         IF ( tefield ) force(ipol,na) = force(ipol,na) + forcefield(ipol,na)
         IF ( monopole ) force(ipol,na) = force(ipol,na) + forcemono(ipol,na) ! TB
         IF (lelfield)  force(ipol,na) = force(ipol,na) + forces_bp_efield(ipol,na)
+        IF (do_epcdft) force(ipol,na) = force(ipol,na) + force_epcdft(ipol,na)
         IF (do_comp_mt)force(ipol,na) = force(ipol,na) + force_mt(ipol,na) 
 
         sumfor = sumfor + force(ipol,na)
@@ -308,6 +328,16 @@ SUBROUTINE forces()
            WRITE( stdout, 9035) na, ityp(na), (forcemono(ipol,na), ipol = 1, 3)
         END DO
      END IF
+
+     !
+     ! EPCDFT forces
+     !
+    IF ( do_epcdft ) THEN
+        WRITE( stdout, '(5x,"The CDFT correction term to forces")')
+        DO na = 1, nat
+           WRITE( stdout, 9035) na, ityp(na), ( force_epcdft(ipol,na), ipol = 1, 3 )
+        END DO
+     END IF
      !
   END IF
   !
@@ -351,9 +381,21 @@ SUBROUTINE forces()
      !
   END IF
   !
+  IF ( do_epcdft .AND. iverbosity > 0 ) THEN
+     !
+     sum_mm = 0.D0
+     DO na = 1, nat
+        sum_mm = sum_mm + &
+                 force_epcdft(1,na)**2 + force_epcdft(2,na)**2 + force_epcdft(3,na)**2
+     END DO
+     sum_mm = SQRT( sum_mm )
+     !
+  END IF
+  !
   DEALLOCATE( forcenl, forcelc, forcecc, forceh, forceion, forcescc )
   IF ( llondon )  DEALLOCATE ( force_disp )
   IF ( lxdm ) DEALLOCATE( force_disp_xdm ) 
+  IF ( do_epcdft ) DEALLOCATE( force_epcdft ) 
   IF ( lelfield ) DEALLOCATE ( forces_bp_efield )
   !
   lforce = .TRUE.

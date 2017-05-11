@@ -146,6 +146,7 @@ CONTAINS
     !
     USE mp,        ONLY : mp_bcast
     USE mp_images, ONLY : intra_image_comm
+    USE epcdft
     !
     IMPLICIT NONE
     !
@@ -215,6 +216,21 @@ CONTAINS
        CALL mp_bcast( constr_target_inp, ionode_id, intra_image_comm )
        CALL mp_bcast( constr_target_set, ionode_id, intra_image_comm )
        CALL mp_bcast( constr_inp, ionode_id, intra_image_comm )
+       !
+    CASE ( 'EPCDFT' )
+       CALL mp_bcast( nconstr_epcdft, ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_tol    , ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_update_intrvl, ionode_id, intra_image_comm )
+       IF ( .not.ionode ) &
+       &          CALL allocate_input_epcdft()
+       CALL mp_bcast( epcdft_type   , ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_target , ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_guess  , ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_locs   , ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_surface, ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_surface_tol, ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_surface_cm_start, ionode_id, intra_image_comm )
+       CALL mp_bcast( epcdft_surface_cm_end, ionode_id, intra_image_comm )
        !
     CASE ( 'K_POINTS' )
        CALL mp_bcast( k_points, ionode_id, intra_image_comm )
