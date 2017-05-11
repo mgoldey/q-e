@@ -1369,6 +1369,7 @@ MODULE input_parameters
         LOGICAL   :: tcell = .false.
         LOGICAL   :: tionvel = .false.
         LOGICAL   :: tconstr = .false.
+        LOGICAL   :: tepcdft = .false.
         LOGICAL   :: tksout = .false.
         LOGICAL   :: ttemplate = .false.
         LOGICAL   :: twannier = .false.

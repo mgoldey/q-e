@@ -26,6 +26,9 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
   USE cell_base,        ONLY : alat
   USE control_flags,    ONLY : ts_vdw
   USE tsvdw_module,     ONLY : tsvdw_calculate, UtsvdW
+  USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field, epcdft_surface_shift,&
+                        epcdft_surface, epcdft_surface_field
+
   !
   IMPLICIT NONE
   !
@@ -48,6 +51,12 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
     ! electric field energy - inout due to the screwed logic of add_efield
   ! ! 
   INTEGER :: is, ir
+  REAL(DP) :: x0(3) ! center of charge of system
+  REAL(DP) :: qq ! total charge
+  REAL(DP) :: dipole(3)!, quadrupole(3) ! total dips
+
+  logical :: first=.true.
+  SAVE first
   !
   CALL start_clock( 'v_of_rho' )
   !
@@ -82,6 +91,59 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
   DO is = 1, nspin_lsda
      CALL add_efield(v%of_r(1,is), etotefield, rho%of_r, .false. )
   END DO
+
+  !
+  ! allocate and add epcdft and surface field
+  !
+  IF(do_epcdft)THEN
+    !
+    ! all epcdft routines assume epcdft_field is (dfftp%nnr, nspin) 
+    ! if this function is called with diff bounds then throw error
+    x0 = 0.D0
+    qq = 0.D0
+    dipole = 0.D0
+    !
+    IF (first .or. .not. allocated(epcdft_field)) THEN
+      !
+      reset_field=.true.
+      !
+      IF(.not. allocated(epcdft_field)) allocate(epcdft_field(dfftp%nnr,2))
+      !
+      IF(epcdft_surface)THEN
+        IF( .not. allocated(epcdft_surface_field) ) ALLOCATE(epcdft_surface_field(dfftp%nnr,2))
+        IF(first) CALL print_epcdft_surface_energy_and_warning ( )
+      ENDIF
+      !
+    END IF ! END FIRST
+    !
+    first=.false.
+    !
+    IF (reset_field) THEN
+      !
+      ! cdft field
+      !
+      epcdft_field=0.0D0
+      CALL add_epcdft_efield(epcdft_field,.TRUE.)
+      reset_field=.false.
+      !
+      ! surface field
+      !
+      ! field passed to calc_epcdft_surface_field is zeroed
+      !
+      IF(epcdft_surface) CALL calc_epcdft_surface_field( epcdft_surface_field, x0, qq, dipole )
+      !
+    ENDIF !end if reset field
+    !
+    ! add epcdft and surface field to potential
+    !
+    v%of_r=v%of_r+epcdft_field
+    !
+    IF(epcdft_surface) v%of_r=v%of_r+epcdft_surface_field
+    !
+
+  ENDIF! end if epcdft
+
+
   !
   ! ... add Tkatchenko-Scheffler potential (factor 2: Ha -> Ry)
   ! 

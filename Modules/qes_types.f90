@@ -323,6 +323,25 @@ TYPE :: opt_conv_type
    !
 END TYPE opt_conv_type
 
+TYPE :: epcdft_params_type
+   !
+  CHARACTER(len=100) :: tagname
+  LOGICAL :: &
+       conv_epcdft =.false.,     &      ! did it converge?
+       epcdft_surface=.false.           ! are we using image charges?
+  LOGICAL  :: lread = .false.
+  LOGICAL  :: lwrite = .false.
+  !
+  INTEGER  :: nconstr_epcdft    = 0                      ! number of constrains
+  ! REAL(DP), ALLOCATABLE :: convergence_error(:)          ! error remaining
+  CHARACTER(len=20), ALLOCATABLE :: epcdft_type(:)       ! type of constraint
+  INTEGER,           ALLOCATABLE :: epcdft_locs(:,:)     ! atoms start end (start end) ()-if delta
+  REAL(DP),          ALLOCATABLE :: epcdft_target(:)     ! target values of constraints
+  REAL(DP),          ALLOCATABLE :: epcdft_strengths(:)  ! strength of potential
+  REAL(DP) :: epcdft_shift =0.d0
+  !
+END TYPE epcdft_params_type
+
 TYPE :: scf_conv_type
    !
    CHARACTER(len=100) :: tagname
@@ -387,7 +406,9 @@ TYPE :: convergence_info_type
    !
    TYPE(scf_conv_type) :: scf_conv
    LOGICAL  :: opt_conv_ispresent
+   LOGICAL  :: epcdft_ispresent
    TYPE(opt_conv_type) :: opt_conv
+   TYPE(epcdft_params_type) :: epcdft_params
    !
 END TYPE convergence_info_type
 

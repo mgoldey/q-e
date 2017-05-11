@@ -932,9 +932,9 @@ MODULE pw_restart_new
       !
       CHARACTER(LEN=256) :: dirname
       LOGICAL            :: lcell, lpw, lions, lspin, linit_mag, &
-                            lxc, locc, lbz, lbs, lwfc, lheader,          &
-                            lsymm, lrho, lefield, ldim, &
-                            lef, lexx, lesm
+                            lxc, locc, lbz, lbs, lwfc, lheader,  &
+                            lsymm, lrho, lefield, ldim,          &
+                            lef, lexx, lesm, lepcdft
       !
       LOGICAL            :: need_qexml, found, electric_field_ispresent
       INTEGER            :: tmp, iotk_err 
@@ -964,6 +964,7 @@ MODULE pw_restart_new
       lef     = .FALSE.
       lexx    = .FALSE.
       lesm    = .FALSE.
+      lepcdft = .FALSE.
       lheader = .FALSE.
       !
      
@@ -1018,6 +1019,7 @@ MODULE pw_restart_new
          lbs     = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
+         lepcdft = .TRUE.
          need_qexml = .TRUE.
          !
       CASE( 'all' )
@@ -1035,6 +1037,7 @@ MODULE pw_restart_new
          lwfc    = .TRUE.
          lsymm   = .TRUE.
          lefield = .TRUE.
+         lepcdft = .TRUE.
          lrho    = .TRUE.
          need_qexml = .TRUE.
          !

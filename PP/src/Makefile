@@ -46,7 +46,15 @@ work_function.o \
 write_p_avg.o \
 write_proj.o \
 write_io_header.o \
-write_hamiltonians.o 
+write_hamiltonians.o  \
+epcdft_mod.o \
+epcdft_print.o \
+epcdft_get_diabatic.o \
+epcdft_get_w.o \
+epcdft_check_w.o \
+epcdft_get_s.o \
+epcdft_get_h.o \
+epcdft_setup.o
 
 PWOBJS = ../../PW/src/libpw.a
 QEOBJS = ../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a
@@ -60,7 +68,7 @@ all : tldeps average.x bands.x dos.x epsilon.x initial_state.x fs.x \
       pawplot.x sumpdos.x pw2wannier90.x pw_export.x pw2gw.x \
       wannier_ham.x wannier_plot.x molecularpdos.x \
       pw2bgw.x bgw2pw.x wfck2r.x importexport_binary.x \
-      fermi_velocity.x fermi_proj.x
+      fermi_velocity.x fermi_proj.x epcdft_coupling.x
 
 
 libpp.a : $(PPOBJS) 
@@ -146,6 +154,11 @@ pw2wannier90.x : pw2wannier90.o libpp.a $(MODULES) $(LIBOBJS)
 wfck2r.x : wfck2r.o libpp.a $(MODULES) $(LIBOBJS) 
 	$(LD) $(LDFLAGS) -o $@ \
 		wfck2r.o libpp.a $(MODULES) $(LIBOBJS)  $(LIBS)
+	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
+
+epcdft_coupling.x : epcdft_coupling.o libpp.a $(PHOBJS) $(MODULES) $(LIBOBJS) 
+	$(LD) $(LDFLAGS) -o $@ \
+		epcdft_coupling.o libpp.a $(PHOBJS) $(MODULES) $(LIBOBJS)  $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 
 initial_state.x : initial_state.o libpp.a $(MODULES) $(LIBOBJS)

@@ -26,6 +26,7 @@ SUBROUTINE read_file()
   USE paw_onecenter,        ONLY : paw_potential
   USE uspp,                 ONLY : becsum
   USE scf,                  ONLY : rho
+  USE epcdft,               ONLY : do_epcdft
   USE realus,               ONLY : betapointlist, &
                                    init_realspace_vars,real_space
   USE dfunct,               ONLY : newd
@@ -118,6 +119,7 @@ SUBROUTINE read_xml_file_internal(withbs)
   USE wvfct,                ONLY : nbnd, nbndx, et, wg
   USE symm_base,            ONLY : irt, d1, d2, d3, checkallsym, nsym
   USE extfield,             ONLY : forcefield, tefield, monopole, forcemono
+  USE epcdft,               ONLY : do_epcdft
   USE cellmd,               ONLY : cell_factor, lmovecell
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
@@ -134,7 +136,7 @@ SUBROUTINE read_xml_file_internal(withbs)
   USE io_files,             ONLY : tmp_dir, prefix, iunpun, nwordwfc, iunwfc
   USE noncollin_module,     ONLY : noncolin, npol, nspin_lsda, nspin_mag, nspin_gga
   USE pw_restart,           ONLY : pw_readfile, pp_check_file
-  USE io_rho_xml,           ONLY : read_rho
+  USE io_rho_xml,           ONLY : read_scf
   USE read_pseudo_mod,      ONLY : readpp
   USE uspp,                 ONLY : becsum
   USE uspp_param,           ONLY : upf
@@ -314,7 +316,7 @@ SUBROUTINE read_xml_file_internal(withbs)
   !
   ! ... read the charge density
   !
-  CALL read_rho( rho, nspin )
+  CALL read_scf( rho, nspin )
   !
   ! ... re-calculate the local part of the pseudopotential vltot
   ! ... and the core correction charge (if any) - This is done here

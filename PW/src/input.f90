@@ -90,6 +90,9 @@ SUBROUTINE iosys()
                             forcefield, &
                             forcemono
   !
+  !
+  USE epcdft, ONLY : do_epcdft_ => do_epcdft 
+  !
   USE io_files,      ONLY : input_drho, output_drho, &
                             psfile, tmp_dir, wfc_dir, &
                             prefix_     => prefix, &
@@ -303,6 +306,7 @@ SUBROUTINE iosys()
   !
   USE input_parameters,      ONLY : deallocate_input_parameters
   USE wyckoff,               ONLY : nattot, sup_spacegroup
+  USE epcdft,                ONLY : do_epcdft
   USE qexsd_module,          ONLY : qexsd_input_obj
   USE qes_types_module,      ONLY: input_type
   ! 

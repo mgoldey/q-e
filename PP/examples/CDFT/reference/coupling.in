@@ -1,0 +1,17 @@
+&INPUTPP
+  prefix       = "left",
+  prefix2       = "right",
+  outdir       = "./out",
+  outdir2       = "./out",
+  occup1       = 12
+  occup2       = 12
+  occdown1     = 11
+  occdown2     = 11
+  debug        = .true.
+  eig_of_w     = .false.
+  s_spin       = .true.
+  free1 = -221.00740995
+  free2 = -221.00740414
+  cor1 =  0.32068060 
+  cor2 =  0.32070669
+/

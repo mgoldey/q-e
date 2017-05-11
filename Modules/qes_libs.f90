@@ -1851,14 +1851,18 @@ SUBROUTINE qes_write_convergence_info(iun, obj)
       !
       IF(obj%opt_conv_ispresent) THEN
          CALL qes_write_opt_conv(iun, obj%opt_conv)
-         !
+      ENDIF
+      !
+      IF(obj%epcdft_ispresent) THEN
+         CALL qes_write_epcdft_params(iun,obj%epcdft_params)
       ENDIF
       !
    CALL iotk_write_end(iun, TRIM(obj%tagname))
    !
 END SUBROUTINE qes_write_convergence_info
 
-SUBROUTINE qes_init_convergence_info(obj, tagname, scf_conv, opt_conv_ispresent, opt_conv)
+SUBROUTINE qes_init_convergence_info(obj, tagname, scf_conv, opt_conv_ispresent, opt_conv, epcdft_params)
+   USE epcdft, only : do_epcdft
    IMPLICIT NONE
 
    TYPE(convergence_info_type) :: obj
@@ -1867,6 +1871,8 @@ SUBROUTINE qes_init_convergence_info(obj, tagname, scf_conv, opt_conv_ispresent,
    TYPE(scf_conv_type) :: scf_conv
    LOGICAL  :: opt_conv_ispresent
    TYPE(opt_conv_type) :: opt_conv
+   LOGICAL  :: epcdft_ispresent
+   TYPE(epcdft_params_type) :: epcdft_params
 
    obj%tagname = TRIM(tagname)
    obj%lwrite   = .TRUE.
@@ -1876,8 +1882,127 @@ SUBROUTINE qes_init_convergence_info(obj, tagname, scf_conv, opt_conv_ispresent,
    IF(obj%opt_conv_ispresent) THEN
       obj%opt_conv = opt_conv
    ENDIF
+   obj%epcdft_ispresent = do_epcdft
+   IF(obj%epcdft_ispresent) THEN
+      obj%epcdft_params = epcdft_params
+   ENDIF
 
 END SUBROUTINE qes_init_convergence_info
+
+
+SUBROUTINE qes_write_epcdft_params(iun, obj)
+   IMPLICIT NONE
+
+   INTEGER  :: iun
+   CHARACTER(len=1024) :: filename
+   TYPE(epcdft_params_type) :: obj
+   !
+   INTEGER  :: iconstraint
+
+   IF (.NOT. obj%lwrite) RETURN
+   attr = " "
+
+   CALL iotk_write_begin(iun, TRIM(obj%tagname), attr=TRIM(attr))
+   
+   CALL iotk_write_begin(iun, 'conv_epcdft')
+   write(iun,*) obj%conv_epcdft
+   CALL iotk_write_end(iun, 'conv_epcdft')
+
+   CALL iotk_write_begin(iun, 'epcdft_surface')
+   write(iun,*) obj%epcdft_surface
+   CALL iotk_write_end(iun, 'epcdft_surface')
+
+   CALL iotk_write_begin(iun, 'epcdft_shift')
+   write(iun,*) obj%epcdft_shift
+   CALL iotk_write_end(iun, 'epcdft_shift')
+
+   CALL iotk_write_begin(iun, 'nconstr_epcdft')
+   write(iun,*) obj%nconstr_epcdft
+   CALL iotk_write_end(iun, 'nconstr_epcdft')
+
+   call iotk_write_begin(iun, "constraints")
+   DO iconstraint = 1, obj%nconstr_epcdft
+      !
+      CALL iotk_write_attr( attr, 'constraint', iconstraint, first=.true.)
+      CALL iotk_write_attr( attr, 'type', TRIM(obj%epcdft_type(iconstraint)))
+      CALL iotk_write_attr( attr, "A1", obj%epcdft_locs(1,iconstraint) )
+      CALL iotk_write_attr( attr, "A2", obj%epcdft_locs(2,iconstraint) )
+      CALL iotk_write_attr( attr, "D1", obj%epcdft_locs(3,iconstraint) )
+      CALL iotk_write_attr( attr, "D2", obj%epcdft_locs(4,iconstraint) )
+      CALL iotk_write_attr( attr, "VAL", obj%epcdft_target(iconstraint) )
+      CALL iotk_write_attr( attr, "LAMBDA", obj%epcdft_strengths(iconstraint) )      
+      write(filename,'(A11,I1)') "constraint.",iconstraint
+      CALL iotk_write_begin(iun,trim(filename),attr=trim(attr),new_line=.false.)
+      CALL iotk_write_end(iun,trim(filename),indentation=.false.)
+      !
+   ENDDO
+   call iotk_write_end(iun, "constraints")
+
+   CALL iotk_write_end(iun, TRIM(obj%tagname))
+   CALL qes_reset_epcdft_params(obj)
+   !
+END SUBROUTINE qes_write_epcdft_params
+
+
+SUBROUTINE qes_init_epcdft_params(obj, tagname)
+   USE epcdft, only : conv_epcdft, epcdft_surface, &
+      epcdft_locs,nconstr_epcdft, epcdft_type,&
+      epcdft_target,epcdft_guess, epcdft_shift
+   IMPLICIT NONE
+
+   TYPE(epcdft_params_type) :: obj
+   CHARACTER(len=*) :: tagname
+   INTEGER :: icon,j
+
+   obj%tagname = TRIM(tagname)
+   obj%lwrite   = .TRUE.
+   obj%lread    = .TRUE.
+
+   obj%conv_epcdft=conv_epcdft
+   obj%epcdft_surface=epcdft_surface
+   obj%nconstr_epcdft=nconstr_epcdft
+   obj%epcdft_shift=epcdft_shift
+
+   IF ( allocated( obj%epcdft_type ) )   DEALLOCATE( obj%epcdft_type )
+   IF ( allocated( obj%epcdft_locs ) )   DEALLOCATE( obj%epcdft_locs )
+   IF ( allocated( obj%epcdft_target ) )  DEALLOCATE( obj%epcdft_target )
+   IF ( allocated( obj%epcdft_strengths ) ) DEALLOCATE( obj%epcdft_strengths )
+
+   ALLOCATE( obj%epcdft_type(nconstr_epcdft) )
+   ALLOCATE( obj%epcdft_locs(4,nconstr_epcdft) )
+   ALLOCATE( obj%epcdft_target(nconstr_epcdft) )
+   ALLOCATE( obj%epcdft_strengths(nconstr_epcdft) )
+   do icon=1,nconstr_epcdft
+      obj%epcdft_type=epcdft_type(icon)  
+      do j=1,4
+         obj%epcdft_locs(j,icon)=epcdft_locs(j,icon)
+      end do
+      obj%epcdft_target(icon)=epcdft_target(icon)
+      obj%epcdft_strengths(icon)=epcdft_guess(icon)
+   end do
+
+   RETURN
+   
+END SUBROUTINE qes_init_epcdft_params
+
+
+
+SUBROUTINE qes_reset_epcdft_params(obj)
+   IMPLICIT NONE
+   TYPE(epcdft_params_type) :: obj
+   INTEGER  :: i
+
+   obj%tagname = ""
+   DEALLOCATE(obj%epcdft_type)
+   DEALLOCATE(obj%epcdft_locs)
+   DEALLOCATE(obj%epcdft_target)
+   DEALLOCATE(obj%epcdft_strengths)
+
+   RETURN
+
+END SUBROUTINE qes_reset_epcdft_params
+
+
 
 SUBROUTINE qes_reset_convergence_info(obj)
    IMPLICIT NONE

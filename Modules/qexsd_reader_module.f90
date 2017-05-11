@@ -2115,6 +2115,70 @@ IF ( ierr /= 0 ) RETURN
 ! 
 CALL qes_init_opt_conv( obj, "opt_conv", nopt_steps_, grad_norm_)
 END SUBROUTINE qexsd_get_opt_conv
+
+
+SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent ) 
+   USE epcdft, only : do_epcdft, conv_epcdft, epcdft_surface, &
+   epcdft_locs,nconstr_epcdft, epcdft_type,&
+   epcdft_target,epcdft_guess, epcdft_shift
+   IMPLICIT NONE
+   ! 
+   INTEGER, INTENT(IN)                          :: iunit
+   TYPE( epcdft_params_type ),INTENT(OUT)       :: obj
+   LOGICAL, INTENT ( OUT )                      :: ispresent
+   !
+   INTEGER                                      :: ierr, iconstraint
+   CHARACTER(iotk_attlenx)                      :: attr
+   CHARACTER(len=1024)                          :: filename
+   CHARACTER(LEN=4096)                          :: empty_str
+   !
+   ispresent = .FALSE. 
+   CALL iotk_scan_begin ( iunit, "epcdft_params", IERR = ierr, FOUND = ispresent ) 
+   IF ( ierr /= 0 ) RETURN 
+   IF ( .NOT. ispresent ) RETURN
+   !
+   do_epcdft=.true.
+   
+   CALL iotk_scan_dat ( iunit, "conv_epcdft", conv_epcdft, IERR = ierr) 
+   IF ( ierr /= 0 ) RETURN 
+
+   CALL iotk_scan_dat ( iunit, "epcdft_surface", epcdft_surface, IERR = ierr) 
+   IF ( ierr /= 0 ) RETURN 
+
+   CALL iotk_scan_dat ( iunit, "epcdft_shift", epcdft_shift, IERR = ierr) 
+   IF ( ierr /= 0 ) RETURN 
+
+   CALL iotk_scan_dat ( iunit, "nconstr_epcdft", nconstr_epcdft, IERR = ierr) 
+   IF ( ierr /= 0 ) RETURN 
+
+   DO iconstraint = 1, nconstr_epcdft
+      write(filename,'(A11,I1)') "constraint.",iconstraint
+      CALL iotk_scan_dat (iunit, filename,dat=empty_str,attr=attr,IERR=ierr,found=ispresent)
+      IF ( ierr /= 0) RETURN 
+
+      CALL iotk_scan_attr( attr, 'constraint', iconstraint, IERR = ierr ) 
+      IF ( ierr /= 0) RETURN 
+      CALL iotk_scan_attr( attr, 'type', obj%epcdft_type(iconstraint),  IERR = ierr ) 
+      IF ( ierr /= 0) RETURN 
+      obj%epcdft_type(iconstraint)=TRIM(obj%epcdft_type(iconstraint))
+      CALL iotk_scan_attr( attr, "A1", obj%epcdft_locs(1,iconstraint) ,  IERR = ierr ) 
+      IF ( ierr /= 0) RETURN 
+      CALL iotk_scan_attr( attr, "A2", obj%epcdft_locs(2,iconstraint) ,  IERR = ierr ) 
+      IF ( ierr /= 0) RETURN 
+      CALL iotk_scan_attr( attr, "D1", obj%epcdft_locs(3,iconstraint) ,  IERR = ierr ) 
+      IF ( ierr /= 0) RETURN 
+      CALL iotk_scan_attr( attr, "D2", obj%epcdft_locs(4,iconstraint) ,  IERR = ierr ) 
+      IF ( ierr /= 0) RETURN 
+      CALL iotk_scan_attr( attr, "VAL", obj%epcdft_target(iconstraint) ,  IERR = ierr ) 
+      IF ( ierr /= 0) RETURN 
+      CALL iotk_scan_attr( attr, "LAMBDA", obj%epcdft_strengths(iconstraint) ,  IERR = ierr )
+      IF ( ierr /= 0) RETURN 
+   end do
+   
+   CALL qes_init_epcdft_params( obj, "epcdft_params")
+END SUBROUTINE qexsd_get_epcdft_params
+
+
 !---------------------------------------------------------------------------------------------
 SUBROUTINE qexsd_get_convergence_info( iunit, obj, ispresent ) 
 !----------------------------------------------------------------------------------------------
@@ -2126,9 +2190,11 @@ TYPE( convergence_info_type ),INTENT(OUT)    :: obj
 LOGICAL, INTENT ( OUT )                      :: ispresent
 !
 INTEGER                                      :: ierr
-LOGICAL                                      :: found, opt_conv_ispresent  
+LOGICAL                                      :: found, opt_conv_ispresent
+LOGICAL                                      :: epcdft_ispresent 
 TYPE ( scf_conv_type )                       :: scf_conv_obj
 TYPE ( opt_conv_type )                       :: opt_conv_obj
+TYPE ( epcdft_params_type )                  :: epcdft_params_obj
 CHARACTER(iotk_attlenx)                      :: attr
 
 !
@@ -2140,13 +2206,18 @@ CALL qexsd_get_scf_conv( iunit, scf_conv_obj, found )
 IF ( .NOT. found ) RETURN
 ! 
 CALL qexsd_get_opt_conv( iunit, opt_conv_obj, opt_conv_ispresent ) 
+CALL qexsd_get_epcdft_params( iunit, epcdft_params_obj, epcdft_ispresent ) 
+
 CALL iotk_scan_end( iunit, "convergence_info", IERR = ierr ) 
 IF ( ierr /= 0 ) RETURN
 ! 
 CALL  qes_init_convergence_info( obj, "convergence_info", scf_conv_obj, opt_conv_ispresent, &
-                                 opt_conv_obj)
+                                 opt_conv_obj, epcdft_params_obj)
 CALL qes_reset_scf_conv( scf_conv_obj) 
 CALL qes_reset_opt_conv ( opt_conv_obj ) 
+IF (epcdft_ispresent) THEN
+  call qes_reset_epcdft_params(epcdft_params_obj)
+ENDIF
 !  
 END SUBROUTINE qexsd_get_convergence_info
 !
