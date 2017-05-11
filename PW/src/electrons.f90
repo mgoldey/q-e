@@ -642,6 +642,12 @@ SUBROUTINE electrons_scf ( printout, exxen )
               iter = 0
             ENDIF 
             !
+          ELSE
+            !
+            ! Hybrids are on and this was the first call to CDFT
+            !
+            first_epcdft = .false.
+            !
           ENDIF
         ENDIF        
         if (reset_field) iter = 0
