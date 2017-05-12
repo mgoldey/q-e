@@ -2120,7 +2120,7 @@ END SUBROUTINE qexsd_get_opt_conv
 SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent ) 
    USE epcdft, only : do_epcdft, conv_epcdft, epcdft_surface, &
    epcdft_locs,nconstr_epcdft, epcdft_type,&
-   epcdft_target,epcdft_guess, epcdft_shift
+   epcdft_target,epcdft_guess, epcdft_shift,, allocate_input_epcdft
    IMPLICIT NONE
    ! 
    INTEGER, INTENT(IN)                          :: iunit
@@ -2151,10 +2151,7 @@ SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent )
    CALL iotk_scan_dat ( iunit, "nconstr_epcdft", nconstr_epcdft, IERR = ierr) 
    IF ( ierr /= 0 ) RETURN 
    !
-   ALLOCATE( epcdft_type(nconstr_epcdft) )
-   ALLOCATE( epcdft_locs(4,nconstr_epcdft) )
-   ALLOCATE( epcdft_target(nconstr_epcdft) )
-   ALLOCATE( epcdft_guess(nconstr_epcdft) )
+   CALL allocate_input_epcdft()
    !
    CALL iotk_scan_begin ( iunit, TRIM("constraints"), IERR = ierr, FOUND = ispresent ) 
    IF ( ierr /= 0) RETURN 
