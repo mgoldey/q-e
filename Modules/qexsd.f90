@@ -335,7 +335,7 @@ CONTAINS
     !
     !------------------------------------------------------------------------
     SUBROUTINE qexsd_init_convergence_info(obj, n_scf_steps, scf_error, &
-                                           opt_conv_ispresent, n_opt_steps, grad_norm )
+           opt_conv_ispresent, n_opt_steps, grad_norm)
       !------------------------------------------------------------------------
       USE epcdft, only : do_epcdft
       IMPLICIT NONE
