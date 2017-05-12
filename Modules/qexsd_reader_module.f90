@@ -2138,7 +2138,7 @@ SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent )
    IF ( .NOT. ispresent ) RETURN
    !
    do_epcdft=.true.
-   
+   !
    CALL iotk_scan_dat ( iunit, "conv_epcdft", conv_epcdft, IERR = ierr) 
    IF ( ierr /= 0 ) RETURN 
 
@@ -2150,32 +2150,44 @@ SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent )
 
    CALL iotk_scan_dat ( iunit, "nconstr_epcdft", nconstr_epcdft, IERR = ierr) 
    IF ( ierr /= 0 ) RETURN 
+   !
+   ALLOCATE( epcdft_type(nconstr_epcdft) )
+   ALLOCATE( epcdft_locs(4,nconstr_epcdft) )
+   ALLOCATE( epcdft_target(nconstr_epcdft) )
+   ALLOCATE( epcdft_guess(nconstr_epcdft) )
+   !
+   CALL iotk_scan_begin ( iunit, TRIM("constraints"), IERR = ierr, FOUND = ispresent ) 
+   IF ( ierr /= 0) RETURN 
 
    DO iconstraint = 1, nconstr_epcdft
-      write(filename,'(A11,I1)') "constraint.",iconstraint
-      CALL iotk_scan_dat (iunit, filename,dat=empty_str,attr=attr,IERR=ierr,found=ispresent)
+      CALL iotk_scan_begin ( iunit, TRIM("constraint"), IERR = ierr, FOUND = ispresent ) 
       IF ( ierr /= 0) RETURN 
-
-      CALL iotk_scan_attr( attr, 'constraint', iconstraint, IERR = ierr ) 
+      CALL iotk_scan_dat( iunit, 'index', tmp, IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
-      CALL iotk_scan_attr( attr, 'type', obj%epcdft_type(iconstraint),  IERR = ierr ) 
+      CALL iotk_scan_dat( iunit, 'type', epcdft_type(iconstraint), IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
-      obj%epcdft_type(iconstraint)=TRIM(obj%epcdft_type(iconstraint))
-      CALL iotk_scan_attr( attr, "A1", obj%epcdft_locs(1,iconstraint) ,  IERR = ierr ) 
+      CALL iotk_scan_dat( iunit, 'A1', epcdft_locs(1,iconstraint), IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
-      CALL iotk_scan_attr( attr, "A2", obj%epcdft_locs(2,iconstraint) ,  IERR = ierr ) 
+      CALL iotk_scan_dat( iunit, 'A2', epcdft_locs(2,iconstraint), IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
-      CALL iotk_scan_attr( attr, "D1", obj%epcdft_locs(3,iconstraint) ,  IERR = ierr ) 
+      CALL iotk_scan_dat( iunit, 'D1', epcdft_locs(3,iconstraint), IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
-      CALL iotk_scan_attr( attr, "D2", obj%epcdft_locs(4,iconstraint) ,  IERR = ierr ) 
+      CALL iotk_scan_dat( iunit, 'D2', epcdft_locs(4,iconstraint), IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
-      CALL iotk_scan_attr( attr, "VAL", obj%epcdft_target(iconstraint) ,  IERR = ierr ) 
+      CALL iotk_scan_dat( iunit, 'target', epcdft_target(iconstraint), IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
-      CALL iotk_scan_attr( attr, "LAMBDA", obj%epcdft_strengths(iconstraint) ,  IERR = ierr )
+      CALL iotk_scan_dat( iunit, 'strength', epcdft_guess(iconstraint), IERR = ierr ) 
+      IF ( ierr /= 0) RETURN 
+      CALL iotk_scan_end ( iunit, TRIM("constraint"), IERR = ierr) 
       IF ( ierr /= 0) RETURN 
    end do
-   
-   CALL qes_init_epcdft_params( obj, "epcdft_params")
+   CALL iotk_scan_end ( iunit, TRIM('constraints'), IERR = ierr ) 
+   IF ( ierr /= 0) RETURN 
+   !
+   CALL iotk_scan_end ( iunit, 'epcdft_params', IERR = ierr) 
+   IF ( ierr /= 0) RETURN 
+   CALL qes_init_epcdft_params( obj, 'epcdft_params')
+   !
 END SUBROUTINE qexsd_get_epcdft_params
 
 
