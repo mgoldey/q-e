@@ -2127,7 +2127,7 @@ SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent )
    TYPE( epcdft_params_type ),INTENT(OUT)       :: obj
    LOGICAL, INTENT ( OUT )                      :: ispresent
    !
-   INTEGER                                      :: ierr, iconstraint
+   INTEGER                                      :: ierr, iconstraint,tmp
    CHARACTER(iotk_attlenx)                      :: attr
    CHARACTER(len=1024)                          :: filename
    CHARACTER(LEN=4096)                          :: empty_str
