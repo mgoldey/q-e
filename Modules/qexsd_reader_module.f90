@@ -2120,7 +2120,7 @@ END SUBROUTINE qexsd_get_opt_conv
 SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent ) 
    USE epcdft, only : do_epcdft, conv_epcdft, epcdft_surface, &
    epcdft_locs,nconstr_epcdft, epcdft_type,&
-   epcdft_target,epcdft_guess, epcdft_shift,, allocate_input_epcdft
+   epcdft_target,epcdft_guess, epcdft_shift, allocate_input_epcdft
    IMPLICIT NONE
    ! 
    INTEGER, INTENT(IN)                          :: iunit
