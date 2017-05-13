@@ -1857,7 +1857,8 @@ MODULE pw_restart_new
        ELSE IF (band_structure%starting_k_points%nk_ispresent .AND. &
                 band_structure%starting_k_points%k_point_ispresent ) THEN 
            nks_start = band_structure%starting_k_points%nk
-           ALLOCATE (xk_start(3,nks_start), wk_start(nks_start))
+           IF (.NOT. ALLOCATED(xk_start)) ALLOCATE(xk_start(3,nks_start))
+           IF (.NOT. ALLOCATED(wk_start)) ALLOCATE(wk_start(nks_start))
            DO ik =1, nks_start
                xk_start(:,ik) = band_structure%starting_k_points%k_point(ik)%k_point(:) 
                IF ( band_structure%starting_k_points%k_point(ik)%weight_ispresent) THEN 
