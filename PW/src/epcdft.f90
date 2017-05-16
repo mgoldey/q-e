@@ -9,6 +9,8 @@
 !   Nicholas P. Brawand (nicholasbrawand@gmail.com)
 !   Matthew B. Goldey (matthew.goldey@gmail.com)
 !
+! DOI: 10.1021/acs.chemmater.6b04631 and 10.1021/acs.jctc.7b00088
+!
 !----------------------------------------------------------------------------
 SUBROUTINE epcdft_controller(dr2)
   !----------------------------------------------------------------------------
