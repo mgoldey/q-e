@@ -13,7 +13,7 @@
 SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !--------------------------------------------------------------------------
   !
-  !   This routine adds the constraining potential for cdft. 
+  !   This routine adds the constraining potential to vpoten for cdft. 
   !
   USE kinds,            ONLY : DP
   USE epcdft,           ONLY : do_epcdft, epcdft_surface
@@ -29,8 +29,8 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !
   ! I/O variables
   !
-  REAL(DP),INTENT(INOUT) :: vpoten(dfftp%nnr,nspin)! ef is added to this potential
-  LOGICAL,INTENT(IN)     :: iflag            ! set to true to force recalculation of field
+  REAL(DP),INTENT(INOUT) :: vpoten(dfftp%nnr,nspin) ! ef is added to this potential
+  LOGICAL,INTENT(IN)     :: iflag ! set to true to force recalculation of field
   !
   ! local variables
   !
@@ -71,11 +71,7 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !
   CALL init_at_1
   !
-  ! efield only needs to be added on the first iteration (of each SCF call)
-  ! note that for relax calculations it has to be added
-  ! again on subsequent relax steps. 
-  !
-  ! calculate hirshfeld potential array
+  ! calculate hirshfeld potential
   !
   IF (hirshfeld) THEN 
     !
@@ -1185,8 +1181,11 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 	
 
   CONTAINS
+	  !
 	SUBROUTINE write_cube_r ( iu, fname, wfc_distr )
 	  ! -----------------------------------------------------------------
+	  !
+	  ! For debugging
 	  !
 	  USE pwcom,                 ONLY : npw,npwx
 	  USE kinds,                 ONLY : DP
@@ -1275,8 +1274,9 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 	  !
 	END SUBROUTINE
 	!
-
 	SUBROUTINE actual_write_cube(func,nr1,nr2,nr3,ounit) 
+	  !
+	  ! For debugging
 	  !
 	  USE kinds,  ONLY : DP
 	  !
