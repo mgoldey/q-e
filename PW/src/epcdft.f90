@@ -97,8 +97,10 @@ SUBROUTINE epcdft_controller(dr2)
   !
   ictr=ictr+1
   IF ((.NOT. conv_elec) .AND. (mod( ictr, epcdft_update_intrvl ) .NE. 0) ) RETURN
-
-  step_factor=EXP(-SQRT(ABS(dr2)/1e-7)) ! fancy scaling of maximum step size based on SCF convergence
+  !
+  ! fancy scaling of maximum step size based on SCF convergence
+  !
+  step_factor=EXP(-SQRT(ABS(dr2)/1e-7))
   if (step_factor*MIN(0.001D0,epcdft_delta_fld) .lt. 1e-7) THEN 
     ictr=ictr-1
     write(*,*) "dr2 is ",dr2, " and thus too large to take any step"
@@ -108,8 +110,6 @@ SUBROUTINE epcdft_controller(dr2)
   ! restart the counter but dont start at 0 or you will need to reallocate
   !
   ictr = 1
-  !
-  ! calc is converged lets compute and print the correction
   !
   ! first setup vars
   !
