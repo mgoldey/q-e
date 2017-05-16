@@ -72,7 +72,7 @@ input_description -distribution {Quantum Espresso} -package PWscf -program pw.x 
            f_inp2(11) f_inp2(12) ... f_inp2(nbnd) ] ]
 
         [ @b EPCDFT
-          numconstr   { cdft_constr_tol   } { field_step   } { update_frequency   }
+          numconstr   { cdft_constr_tol   } { potential_step   } { update_frequency   }
           cdft_constr_type(1) cdft_constr(1)(1) cdft_constr(2)(1) [ cdft_constr(3)(1) cdft_constr(4)(1) ] cdft_constr_target(1) cdft_constr_guess(1)
           ...
           cdft_constr_type(numconstr) cdft_constr(1)(numconstr) cdft_constr(2)(numconstr) [ constr(3)(numconstr) cdft_constr(4)(numconstr) ] cdft_constr_target(numconstr) cdft_constr_guess(numconstr)]
@@ -2829,7 +2829,9 @@ input_description -distribution {Quantum Espresso} -package PWscf -program pw.x 
     #
     card EPCDFT {      
         label { 
-            Optional card, only needed for performing Constrained DFT calculations.
+            Optional card, only needed for performing Constrained DFT calculations. 
+            [for details, see J. Chem. Theory Comput., In Press. doi:10.1021/acs.jctc.7b00088 and
+            Chem. Mater., 2017, 29 (3), 1255-1262 doi:10.1021/acs.chemmater.6b04631]
         }
 
         syntax {
@@ -2842,20 +2844,20 @@ input_description -distribution {Quantum Espresso} -package PWscf -program pw.x 
                 optional {
                     var cdft_constr_tol -type REAL {
                         default {1.E-4_DP}
-                        info { Tolerance for satisfying the constraint in units of electrons. Decrease if the overlap given by epcdft_coupling.x appears spuriously high.}
+                        info { Tolerance for satisfying the constraint in units of electrons. Decrease the tolerance if the overlap given by epcdft_coupling.x appears spuriously high.}
                     }
                 }
 
                 optional {
-                    var field_step -type REAL {
+                    var potential_step -type REAL {
                         default {1.E-1_DP}
-                        info { Maximum change in field (Rydberg atomic units). Decrease this if these changes result in large changes in the wavefunction.}
+                        info { Maximum change in potential strength (Rydberg atomic units of voltage). Decrease this maximum step size if the potential strength oscillates in calculations.}
                     }
                 }
                 optional {
                     var update_frequency -type INTEGER {
                         default { 40 }
-                        info { Maximum number of SCF steps until the constraint is updated. Increase this if unconverged wavefunctions result in poor guesses for constraint values. }
+                        info { Maximum number of SCF steps until the constraint is updated. Increase this parameter if unconverged wavefunctions result in poor guesses for constraint values. }
                     }
                 }
             }
@@ -2870,13 +2872,13 @@ input_description -distribution {Quantum Espresso} -package PWscf -program pw.x 
                                 constraint on the difference of total charge [electron+nuclear] between donor and acceptor regions
                             }
                             opt -val 'charge' {
-                                constraint on the total charge [electron+nuclear] in the acceptor region. Note: not tested.
+                                constraint on the total charge [electron+nuclear] in the acceptor region. Note:  this feature is under development and may exhibit unexpected behavior.
                             }
                             opt -val 'delta_spin' {
-                                constraint on the difference of the total integrated spin density between donor and acceptor regions. Note: not tested.
+                                constraint on the difference of the total integrated spin density between donor and acceptor regions. Note:  this feature is under development and may exhibit unexpected behavior.
                             }
                             opt -val 'spin' {
-                                constraint on the integrated spin density in the acceptor region. Note: not tested.
+                                constraint on the integrated spin density in the acceptor region. Note:  this feature is under development and may exhibit unexpected behavior.
                             }
                         }                       
                     }
