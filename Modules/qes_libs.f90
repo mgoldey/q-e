@@ -1990,7 +1990,7 @@ SUBROUTINE qes_init_epcdft_params(obj, tagname)
    ALLOCATE( obj%epcdft_target(nconstr_epcdft) )
    ALLOCATE( obj%epcdft_strengths(nconstr_epcdft) )
    do icon=1,nconstr_epcdft
-      obj%epcdft_type=epcdft_type(icon)  
+      obj%epcdft_type(icon)=epcdft_type(icon)  
       do j=1,4
          obj%epcdft_locs(j,icon)=epcdft_locs(j,icon)
       end do

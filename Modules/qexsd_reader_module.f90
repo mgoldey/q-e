@@ -2163,6 +2163,7 @@ SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent )
       IF ( ierr /= 0) RETURN 
       CALL iotk_scan_dat( iunit, 'type', epcdft_type(iconstraint), IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
+      epcdft_type(iconstraint) = TRIM(ADJUSTL(epcdft_type(iconstraint)))
       CALL iotk_scan_dat( iunit, 'A1', epcdft_locs(1,iconstraint), IERR = ierr ) 
       IF ( ierr /= 0) RETURN 
       CALL iotk_scan_dat( iunit, 'A2', epcdft_locs(2,iconstraint), IERR = ierr ) 
