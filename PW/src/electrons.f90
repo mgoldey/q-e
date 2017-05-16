@@ -72,7 +72,6 @@ SUBROUTINE electrons()
   LOGICAL :: first, exst
   REAL(DP) :: etot_cmp_paw(nat,2,2)
   !
-  !
   exxen = 0.0d0
   iter = 0
   first = .true.

@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2003-2010 Quantum ESPRESSO group
+! Copyright (C) 2003-2017 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -13,7 +13,7 @@
 SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !--------------------------------------------------------------------------
   !
-  !   This routine adds the constraining potential to vpoten for cdft. 
+  !   This routine adds the constraining potential for cdft. 
   !
   USE kinds,            ONLY : DP
   USE epcdft,           ONLY : do_epcdft, epcdft_surface
@@ -355,9 +355,11 @@ END SUBROUTINE print_epcdft_surface_energy_and_warning
 SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   !--------------------------------------------------------------------------
   ! 
-  !  Gamma only
+  !  Gamma point only for now ! If you extend this to k-points, make sure 
+  !  to clearly define how many excess charges and what sizes of supercells
+  !  are needed
   !
-  !  calculate hirshfeld potential and put into v following :
+  !  Calculates hirshfeld potential and put into "v" following :
   !
   !     J. Chem. Phys. 133, 244105 (2010); http://dx.doi.org/10.1063/1.3507878 
   !     eqs. 6 & 7
@@ -730,8 +732,6 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
   INTEGER :: nt, nb, l, m, nwfcm ,nwfc,icon
   COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g
-!   COMPLEX(DP), ALLOCATABLE :: total_wfcatomg (:) ! atomic wfcs in g
-!   COMPLEX(DP), ALLOCATABLE :: shifted_wfcatomg (:) ! atomic wfcs in g
   COMPLEX(DP), ALLOCATABLE :: wfcatomr (:) ! atomic wfcs in r
   COMPLEX(DP), ALLOCATABLE :: total_atom_rho_r (:) ! atomic wfcs in r - collected
   COMPLEX(DP), ALLOCATABLE :: shifted_atom1 (:,:) ! atomic wfcs in r -shifted and collected
@@ -742,7 +742,6 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   REAL(DP) :: dx ! finite shift in direction
   REAL(DP) :: force_idir ! force in given direction
   COMPLEX(DP) :: v(dfftp%nnr,2) ! hirshfeld weighting function
-!   COMPLEX(DP) :: v2(dfftp%nnr) ! hirshfeld weighting function * rho
   COMPLEX(DP) :: vtop(dfftp%nnr,2) ! top of the hirshfeld potential fraction
   COMPLEX(DP) :: vbot(dfftp%nnr) ! bottom of the hirshfeld potential fraction
 
@@ -777,7 +776,6 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   vtop = 0.D0
   vbot = 0.D0
   v = 0.D0
-!   sv = 0.D0
   psic = 0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   cutoff = 1.D-6
@@ -861,12 +859,14 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
             !
             total_atom_rho_r(:) = total_atom_rho_r(:) + orboc * wfcatomr(:)
             !
-            ! if (na < 10) then
-            !   write(filename,"(A6,I1,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
-            ! else
-            !   write(filename,"(A6,I2,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
-            ! ENDIF
-            ! CALL write_cube_r ( 84332, filename,  REAL(wfcatomr,KIND=DP))
+            if (write_debug_cubes) THEN
+	            if (na < 10) then
+	              write(filename,"(A6,I1,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
+	            else
+	              write(filename,"(A6,I2,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
+	            ENDIF
+	            CALL write_cube_r ( 84332, filename,  REAL(wfcatomr,KIND=DP))
+	        ENDIF ! write_debug_cube
             !
           ENDDO ! m
         ENDIF ! end if occupied
@@ -958,9 +958,9 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
 
     DO na = 1, nat ! for each atom
-      ! THIS DOES GATHER THE RIGHT ATOM 
+      !
       ALLOCATE( wfcatomg(npwx, nwfc) )
-
+      !
       if (do_analytical_gradient) THEN 
         total_atom_rho_r=0.D0
         nt = ityp (na) ! get atom type
@@ -996,24 +996,19 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
               !
               total_atom_rho_r(:) = total_atom_rho_r(:) + orboc * wfcatomr(:)
               !
-              ! if (na < 10) then
-              !   write(filename,"(A8,I1,A1,I1,A1,I1)") "atomic_0",na,"_",l,"_",m
-              ! else
-              !   write(filename,"(A7,I2,A1,I1,A1,I1)") "atomic_",na,"_",l,"_",m
-              ! ENDIF
-              ! CALL write_cube_r ( 84332, filename,  REAL(wfcatomr,KIND=DP))
-              !
             ENDDO ! m
           ENDIF ! end if occupied
         ENDDO ! nb 
         total_atom_rho_r(:)=total_atom_rho_r(:)*normfac
 
-        if (na < 10) then
-          write(filename,"(A8,I1)") "atomic_0",na
-        else
-          write(filename,"(A7,I2)") "atomic_",na
-        ENDIF
-        CALL write_cube_r ( 9519395, filename, REAL(total_atom_rho_r(:) ))
+        if (write_debug_cubes) THEN 
+	        if (na < 10) then
+	          write(filename,"(A8,I1)") "atomic_0",na
+	        else
+	          write(filename,"(A7,I2)") "atomic_",na
+	        ENDIF
+	        CALL write_cube_r ( 9519395, filename, REAL(total_atom_rho_r(:) ))
+	    ENDIF ! write_debug_cubes
 
         shifted_atom1=0.D0!       
         CALL gradient(dfftp%nnr,total_atom_rho_r,ngm,g,nl,shifted_atom1)

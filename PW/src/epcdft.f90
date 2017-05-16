@@ -1,5 +1,5 @@
 !
-! Copyright (C) 2003-2010 Quantum ESPRESSO group
+! Copyright (C) 2003-2017 Quantum ESPRESSO group
 ! This file is distributed under the terms of the
 ! GNU General Public License. See the file `License'
 ! in the root directory of the present distribution,
@@ -18,7 +18,7 @@ SUBROUTINE epcdft_controller(dr2)
   !   CDFT
   !
   !   This routine calculates the correction to the total energy
-  !   due to the constraining potential from cdft and prints it. 
+  !   due to the constraining potential from cdft.
   !   It also evaluates the charge difference between the donor
   !   and acceptor. If this number is not equal to that of the 
   !   target charge within epcdft_tol, the amplitude of the well
@@ -103,7 +103,6 @@ SUBROUTINE epcdft_controller(dr2)
   step_factor=EXP(-SQRT(ABS(dr2)/1e-7))
   if (step_factor*MIN(0.001D0,epcdft_delta_fld) .lt. 1e-7) THEN 
     ictr=ictr-1
-    write(*,*) "dr2 is ",dr2, " and thus too large to take any step"
     RETURN ! SKIP IF NOT GOING TO TAKE ANY SIGNIFICANT STEP
   ENDIF
   !
