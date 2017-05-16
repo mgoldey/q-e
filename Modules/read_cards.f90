@@ -1556,26 +1556,30 @@ CONTAINS
          !
       ENDIF
       !
+      ! start printing sections
+      !
       !WRITE(stdout,*) "Reading EPCDFT CARD. Printing based upon belief that input should be reproducable from output."
       !WRITE(stdout,'(5x,a,i4,a,f12.6,a,f4.2)') &
       !   'Reading',nconstr_epcdft,' constraint(s); tolerance:', epcdft_tol, ' max change in field ',epcdft_delta_fld 
       !WRITE(stdout,'(5x,a,i4)') 'epcdft_update_intrvl:', epcdft_update_intrvl
       !WRITE(stdout,'(5x,a,L2)') 'epcdft with surface:', epcdft_surface
       !
-      IF(epcdft_surface)THEN
-        !
-        IF(epcdft_surface_cm_start .eq. 0 .and. epcdft_surface_cm_end .eq. 0)THEN
-          !
-          WRITE(stdout,'(5x,a)') 'center of charge for surface calc unsing center of positive charge'
-          !
-        ELSE
-          !
-          WRITE(stdout,'(5x,a,2x,i4,2x,i4)') 'center of charge for surface calc unsing atom start, end:', &
-                  epcdft_surface_cm_start, epcdft_surface_cm_end
-          !
-        ENDIF
-        !
-      ENDIF
+      !IF(epcdft_surface)THEN
+      !  !
+      !  IF(epcdft_surface_cm_start .eq. 0 .and. epcdft_surface_cm_end .eq. 0)THEN
+      !    !
+      !    WRITE(stdout,'(5x,a)') 'center of charge for surface calc unsing center of positive charge'
+      !    !
+      !  ELSE
+      !    !
+      !    WRITE(stdout,'(5x,a,2x,i4,2x,i4)') 'center of charge for surface calc unsing atom start, end:', &
+      !            epcdft_surface_cm_start, epcdft_surface_cm_end
+      !    !
+      !  ENDIF
+      !  !
+      !ENDIF
+      !
+      ! end printing sections
       !
       CALL allocate_input_epcdft()
       !
@@ -1645,17 +1649,21 @@ CONTAINS
             !
          END SELECT
          !
-         WRITE(stdout,'(5x,a15,a15,a4,a4,a4,a4,a7,a7)') &
-            "constraint", "type", "A","A","D","D","T","L"
+         ! start printing sections
+         !
+         !WRITE(stdout,'(5x,a15,a15,a4,a4,a4,a4,a7,a7)') &
+         !   "constraint", "type", "A","A","D","D","T","L"
 
-         WRITE(stdout,'(5x,i15,a2,a13,i4,i4,i4,i4,f7.4,e17.8)') i, "  ", &
-             epcdft_type(i), &
-             epcdft_locs(1,i) , &
-             epcdft_locs(2,i), &
-             epcdft_locs(3,i), &
-             epcdft_locs(4,i), &
-             epcdft_target(i), &
-             epcdft_guess(i)
+         !WRITE(stdout,'(5x,i15,a2,a13,i4,i4,i4,i4,f7.4,e17.8)') i, "  ", &
+         !    epcdft_type(i), &
+         !    epcdft_locs(1,i) , &
+         !    epcdft_locs(2,i), &
+         !    epcdft_locs(3,i), &
+         !    epcdft_locs(4,i), &
+         !    epcdft_target(i), &
+         !    epcdft_guess(i)
+         !
+         ! end printing sections
          !
       END DO
       !
