@@ -91,14 +91,11 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
   DO is = 1, nspin_lsda
      CALL add_efield(v%of_r(1,is), etotefield, rho%of_r, .false. )
   END DO
-
   !
   ! allocate and add epcdft and surface field
   !
   IF(do_epcdft)THEN
     !
-    ! all epcdft routines assume epcdft_field is (dfftp%nnr, nspin) 
-    ! if this function is called with diff bounds then throw error
     x0 = 0.D0
     qq = 0.D0
     dipole = 0.D0
@@ -114,7 +111,7 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
         IF(first) CALL print_epcdft_surface_energy_and_warning ( )
       ENDIF
       !
-    END IF ! END FIRST
+    ENDIF
     !
     first=.false.
     !
@@ -132,7 +129,7 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
       !
       IF(epcdft_surface) CALL calc_epcdft_surface_field( epcdft_surface_field, x0, qq, dipole )
       !
-    ENDIF !end if reset field
+    ENDIF
     !
     ! add epcdft and surface field to potential
     !
@@ -140,10 +137,7 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
     !
     IF(epcdft_surface) v%of_r=v%of_r+epcdft_surface_field
     !
-
-  ENDIF! end if epcdft
-
-
+  ENDIF ! end if epcdft
   !
   ! ... add Tkatchenko-Scheffler potential (factor 2: Ha -> Ry)
   ! 
