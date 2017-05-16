@@ -58,7 +58,11 @@ SUBROUTINE epcdft_print
     WRITE(stdout,*)""
     WRITE(stdout,1)
     WRITE(stdout,*)""
-    WRITE(stdout,*)"    N.P. Brawand and M.B. Goldey, M. Voros, and G. Galli submitted (2016)"
+    WRITE(stdout,*)"    Thank you for using CDFT!"
+    WRITE(stdout,*)""
+    WRITE(stdout,*)"    Please cite: "
+    WRITE(stdout,*)"        DOI: 10.1021/acs.chemmater.6b04631 and 10.1021/acs.jctc.7b00088"
+    WRITE(stdout,*)"    "
     WRITE(stdout,*)""
     !
   ENDIF
