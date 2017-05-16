@@ -26,7 +26,6 @@ SUBROUTINE read_file()
   USE paw_onecenter,        ONLY : paw_potential
   USE uspp,                 ONLY : becsum
   USE scf,                  ONLY : rho
-  USE epcdft,               ONLY : do_epcdft
   USE realus,               ONLY : betapointlist, &
                                    init_realspace_vars,real_space
   USE dfunct,               ONLY : newd
@@ -119,7 +118,6 @@ SUBROUTINE read_xml_file_internal(withbs)
   USE wvfct,                ONLY : nbnd, nbndx, et, wg
   USE symm_base,            ONLY : irt, d1, d2, d3, checkallsym, nsym
   USE extfield,             ONLY : forcefield, tefield, monopole, forcemono
-  USE epcdft,               ONLY : do_epcdft
   USE cellmd,               ONLY : cell_factor, lmovecell
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
