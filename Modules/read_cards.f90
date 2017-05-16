@@ -1555,12 +1555,12 @@ CONTAINS
          CALL errore( 'card_epcdft', 'too many fields in initial line', nfield )
          !
       ENDIF
-
-      WRITE(stdout,*) "Reading EPCDFT CARD. Printing based upon belief that input should be reproducable from output."
-      WRITE(stdout,'(5x,a,i4,a,f12.6,a,f4.2)') &
-         'Reading',nconstr_epcdft,' constraint(s); tolerance:', epcdft_tol, ' max change in field ',epcdft_delta_fld 
-      WRITE(stdout,'(5x,a,i4)') 'epcdft_update_intrvl:', epcdft_update_intrvl
-      WRITE(stdout,'(5x,a,L2)') 'epcdft with surface:', epcdft_surface
+      !
+      !WRITE(stdout,*) "Reading EPCDFT CARD. Printing based upon belief that input should be reproducable from output."
+      !WRITE(stdout,'(5x,a,i4,a,f12.6,a,f4.2)') &
+      !   'Reading',nconstr_epcdft,' constraint(s); tolerance:', epcdft_tol, ' max change in field ',epcdft_delta_fld 
+      !WRITE(stdout,'(5x,a,i4)') 'epcdft_update_intrvl:', epcdft_update_intrvl
+      !WRITE(stdout,'(5x,a,L2)') 'epcdft with surface:', epcdft_surface
       !
       IF(epcdft_surface)THEN
         !
