@@ -649,9 +649,11 @@ SUBROUTINE electrons_scf ( printout, exxen )
             first_epcdft = .false.
             !
           ENDIF
+            !
         ENDIF        
-        if (reset_field) iter = 0
-
+        !
+        IF (reset_field) iter = 0
+        !
         IF ( .NOT. conv_elec ) THEN
            !
            ! ... no convergence yet: calculate new potential from mixed
