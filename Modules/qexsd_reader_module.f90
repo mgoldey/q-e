@@ -2118,7 +2118,7 @@ END SUBROUTINE qexsd_get_opt_conv
 
 
 SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent ) 
-   USE epcdft, only : do_epcdft, conv_epcdft, epcdft_surface, &
+   USE epcdft, only : do_epcdft, conv_epcdft,  &
    epcdft_locs,nconstr_epcdft, epcdft_type,&
    epcdft_target,epcdft_guess, epcdft_shift, allocate_input_epcdft
    IMPLICIT NONE
@@ -2140,9 +2140,6 @@ SUBROUTINE qexsd_get_epcdft_params( iunit, obj, ispresent )
    do_epcdft=.true.
    !
    CALL iotk_scan_dat ( iunit, "conv_epcdft", conv_epcdft, IERR = ierr) 
-   IF ( ierr /= 0 ) RETURN 
-
-   CALL iotk_scan_dat ( iunit, "epcdft_surface", epcdft_surface, IERR = ierr) 
    IF ( ierr /= 0 ) RETURN 
 
    CALL iotk_scan_dat ( iunit, "epcdft_shift", epcdft_shift, IERR = ierr) 

@@ -1914,10 +1914,6 @@ SUBROUTINE qes_write_epcdft_params(iun, obj)
    write(iun,*) obj%conv_epcdft
    CALL iotk_write_end(iun, 'conv_epcdft')
    !
-   CALL iotk_write_begin(iun, 'epcdft_surface')
-   write(iun,*) obj%epcdft_surface
-   CALL iotk_write_end(iun, 'epcdft_surface')
-   !
    CALL iotk_write_begin(iun, 'epcdft_shift')
    write(iun,*) obj%epcdft_shift
    CALL iotk_write_end(iun, 'epcdft_shift')
@@ -1969,7 +1965,7 @@ END SUBROUTINE qes_write_epcdft_params
 
 SUBROUTINE qes_init_epcdft_params(obj, tagname)
    !
-   USE epcdft, only : conv_epcdft, epcdft_surface, &
+   USE epcdft, only : conv_epcdft, &
       epcdft_locs,nconstr_epcdft, epcdft_type,&
       epcdft_target,epcdft_guess, epcdft_shift
    !
@@ -1984,7 +1980,6 @@ SUBROUTINE qes_init_epcdft_params(obj, tagname)
    obj%lread    = .TRUE.
    !
    obj%conv_epcdft=conv_epcdft
-   obj%epcdft_surface=epcdft_surface
    obj%nconstr_epcdft=nconstr_epcdft
    obj%epcdft_shift=epcdft_shift
    !

@@ -227,10 +227,6 @@ CONTAINS
        CALL mp_bcast( epcdft_target , ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_guess  , ionode_id, intra_image_comm )
        CALL mp_bcast( epcdft_locs   , ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_surface, ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_surface_tol, ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_surface_cm_start, ionode_id, intra_image_comm )
-       CALL mp_bcast( epcdft_surface_cm_end, ionode_id, intra_image_comm )
        !
     CASE ( 'K_POINTS' )
        CALL mp_bcast( k_points, ionode_id, intra_image_comm )

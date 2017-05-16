@@ -26,8 +26,7 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
   USE cell_base,        ONLY : alat
   USE control_flags,    ONLY : ts_vdw
   USE tsvdw_module,     ONLY : tsvdw_calculate, UtsvdW
-  USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field, epcdft_surface_shift,&
-                        epcdft_surface, epcdft_surface_field
+  USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field
 
   !
   IMPLICIT NONE
@@ -92,7 +91,7 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
      CALL add_efield(v%of_r(1,is), etotefield, rho%of_r, .false. )
   END DO
   !
-  ! allocate and add epcdft and surface field
+  ! allocate and add epcdft 
   !
   IF(do_epcdft)THEN
     !
@@ -106,11 +105,6 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
       !
       IF(.not. allocated(epcdft_field)) allocate(epcdft_field(dfftp%nnr,2))
       !
-      IF(epcdft_surface)THEN
-        IF( .not. allocated(epcdft_surface_field) ) ALLOCATE(epcdft_surface_field(dfftp%nnr,2))
-        IF(first) CALL print_epcdft_surface_energy_and_warning ( )
-      ENDIF
-      !
     ENDIF
     !
     first=.false.
@@ -123,19 +117,11 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
       CALL add_epcdft_efield(epcdft_field,.TRUE.)
       reset_field=.false.
       !
-      ! surface field
-      !
-      ! field passed to calc_epcdft_surface_field is zeroed
-      !
-      IF(epcdft_surface) CALL calc_epcdft_surface_field( epcdft_surface_field, x0, qq, dipole )
-      !
     ENDIF
     !
-    ! add epcdft and surface field to potential
+    ! add epcdft to potential
     !
     v%of_r=v%of_r+epcdft_field
-    !
-    IF(epcdft_surface) v%of_r=v%of_r+epcdft_surface_field
     !
   ENDIF ! end if epcdft
   !

@@ -327,8 +327,7 @@ TYPE :: epcdft_params_type
    !
   CHARACTER(len=100) :: tagname
   LOGICAL :: &
-       conv_epcdft =.false.,     &      ! did it converge?
-       epcdft_surface=.false.           ! are we using image charges?
+       conv_epcdft =.false.  ! did it converge?
   LOGICAL  :: lread = .false.
   LOGICAL  :: lwrite = .false.
   !

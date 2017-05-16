@@ -1512,7 +1512,6 @@ CONTAINS
       INTEGER            :: i, nfield
       !
       do_epcdft=.true.
-      epcdft_surface=.false. ! false unless nfield>4 and set to true in input
       !
       IF ( tepcdft ) CALL errore( 'card_epcdft', 'two occurrences', 2 )
       !
@@ -1536,19 +1535,6 @@ CONTAINS
       ELSEIF ( nfield == 4) THEN 
          !
          READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, epcdft_update_intrvl
-         !
-      ELSEIF ( nfield == 6) THEN 
-         !
-         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, &
-                               epcdft_update_intrvl, &
-                               epcdft_surface, epcdft_surface_tol
-         !
-      ELSEIF ( nfield == 8) THEN 
-         !
-         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, &
-                               epcdft_update_intrvl, &
-                               epcdft_surface, epcdft_surface_tol, &
-                               epcdft_surface_cm_start, epcdft_surface_cm_end
          !
       ELSE
          !

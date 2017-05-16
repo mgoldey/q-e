@@ -24,8 +24,7 @@ SAVE
   LOGICAL :: &
        do_epcdft,       &      ! if .TRUE. do CDFT
        conv_epcdft,     &      ! localization condition flag
-       reset_field=.false., &  ! reset field (so we don't do this every time)
-       epcdft_surface=.false.  ! simulate image charges from metal surface in xy plane
+       reset_field=.false.  ! reset field (so we don't do this every time)
   !
   INTEGER :: epcdft_fields = 4 ! max number of fields that is allowed to
                                ! define a constraint
@@ -33,24 +32,17 @@ SAVE
   INTEGER :: epcdft_update_intrvl = 40  ! update the potential every this many steps and 
                                         ! after electrons reach scf use with care
   !
-  INTEGER :: epcdft_surface_cm_start = 0  ! starting atom for image charge center  (for epcdft_surface=true)
-  INTEGER :: epcdft_surface_cm_end = 0    ! end atom 
-  !                                       ! If both are zero then use cm(center of charge) of all nucs
-  !
   INTEGER  :: nconstr_epcdft    = 0
   REAL(DP) :: epcdft_delta_fld =1.E-1_DP
   REAL(DP) :: epcdft_tol = 1.E-4_DP
-  REAL(DP) :: epcdft_surface_tol = 1.E-4_DP
   !
   REAL(DP) :: epcdft_shift            ! energy shift from all fields
-  REAL(DP) :: epcdft_surface_shift=0  ! energy shift from surface field
   !
   CHARACTER(len=20), ALLOCATABLE :: epcdft_type(:)    ! type
   INTEGER,           ALLOCATABLE :: epcdft_locs(:,:)  ! atoms start end (start end) ()-if delta
   REAL(DP),          ALLOCATABLE :: epcdft_guess(:)   !  guess values of constraints
   REAL(DP),          ALLOCATABLE :: epcdft_target(:)  ! target values of constraints
   REAL(DP),          ALLOCATABLE :: epcdft_field(:,:) ! constraint field
-  REAL(DP),          ALLOCATABLE :: epcdft_surface_field(:,:) ! surface field
   !
 CONTAINS
   !
