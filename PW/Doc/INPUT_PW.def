@@ -2869,7 +2869,7 @@ input_description -distribution {Quantum Espresso} -package PWscf -program pw.x 
                                 Type of constraint :
                             }
                             opt -val 'delta_charge' {
-                                constraint on the difference of total charge [electron+nuclear] between donor and acceptor regions
+                                constraint on the difference of total charge [electron+nuclear] between donor and acceptor regions.
                             }
                             opt -val 'charge' {
                                 constraint on the total charge [electron+nuclear] in the acceptor region. Note:  this feature is under development and may exhibit unexpected behavior.
