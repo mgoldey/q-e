@@ -133,7 +133,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   COMPLEX(DP) :: vtop(dfftp%nnr,nspin) ! top of the hirshfeld potential fraction
   COMPLEX(DP) :: vbot(dfftp%nnr) ! bottom of the hirshfeld potential fraction
   COMPLEX(DP) :: normfac
-  COMPLEX(DP) :: cutoff
+  REAL(DP) :: cutoff
   COMPLEX(DP) :: vbottot
   REAL(DP) :: dv
   CHARACTER(len=1024) :: filename
@@ -375,18 +375,25 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   vtop = normfac * vtop
   vbot = normfac * vbot
   !
-  vtop(:,1) = vtop(:,1) / vbot
-  vtop(:,2) = vtop(:,2) / vbot
+  ! Check if mag of vbot is less than cutoff
   !
   DO ir = 1, n
     !
-    IF (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
+    IF ( ABS(REAL( vbot(ir) )) .lt. cutoff ) THEN
+      !
+      ! vbot is less than cutoff, zero the output potential
+      !
       vtop(ir,1)=0.D0  
       vtop(ir,2)=0.D0  
+      !
+    ELSE
+      !
+      ! vbot is => cutoff
+      !
+      vtop(ir,1) = vtop(ir,1) / vbot(ir)
+      vtop(ir,2) = vtop(ir,2) / vbot(ir)
+      !
     ENDIF
-    !
-    IF (vtop(ir,1) /= vtop(ir,1))  vtop(ir,1)=0.D0
-    IF (vtop(ir,2) /= vtop(ir,2))  vtop(ir,2)=0.D0
     !
   ENDDO
   !
