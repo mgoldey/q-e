@@ -407,6 +407,9 @@ END SUBROUTINE calc_hirshfeld_v
 
 SUBROUTINE EPCDFT_FORCE(force,rho)
   !--------------------------------------------------------------------------
+  ! This contribution to the force computes the change in CDFT correction 
+  ! in order to calculate the derivative of the CDFT free energy.
+  !--------------------------------------------------------------------------
   ! 
   !  Gamma only
   USE kinds,         ONLY : DP
@@ -480,6 +483,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   REAL(DP) :: orboc ! occupation of orbital
   REAL(DP) :: dx ! finite shift in direction
   REAL(DP) :: force_idir ! force in given direction
+  REAL(DP) :: tot_hirsh_elec ! total number of electrons in hirshfeld partitioning
   COMPLEX(DP) :: v(dfftp%nnr,2) ! hirshfeld weighting function
   COMPLEX(DP) :: vtop(dfftp%nnr,2) ! top of the hirshfeld potential fraction
   COMPLEX(DP) :: vbot(dfftp%nnr) ! bottom of the hirshfeld potential fraction
@@ -515,6 +519,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   vtop = 0.D0
   vbot = 0.D0
   v = 0.D0
+  tot_hirsh_elec=0.D0
   psic = 0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   cutoff = 1.D-6
@@ -526,12 +531,13 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   !
   DO na = 1, nat ! for each atom
     nt = ityp (na) ! get atom type
+    tot_hirsh_elec=tot_hirsh_elec+upf(nt)%zp
     nwfc=sum(upf(nt)%oc(:))
     ALLOCATE( wfcatomg(npwx, nwfc) )
 
     CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
     orbi = 0 
-    DO nb = 1, upf(nt)%nwfc ! for each orbital
+    DO nb = 1, upf(nt)%nwfc ! for each orbital      
       if (upf(nt)%oc(nb) > 0.d0) then
         l = upf(nt)%lchi(nb) ! get l 
         DO m = 1, 2*l+1 ! mag num
@@ -559,7 +565,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   ! potential normalization
   vbottot = SUM(vbot) 
   CALL mp_sum( vbottot, intra_bgrp_comm )
-  normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP)*dv)
+  normfac=REAL(tot_hirsh_elec,KIND=DP)/(REAL(vbottot,KIND=DP)*dv)
   vbot(:) = normfac * vbot(:)
 
   DO icon=1,nconstr_epcdft
@@ -668,17 +674,15 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
     END DO !atom
 
     vtop = normfac * vtop 
-
-    v(:,1) = vtop(:,1) / vbot
-    v(:,2) = vtop(:,2) / vbot
+    
     DO ir = 1, n
       if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
         v(ir,1)=0.D0  
         v(ir,2)=0.D0  
+      ELSE
+        v(ir,1) = vtop(ir,1) / vbot(ir)
+        v(ir,2) = vtop(ir,2) / vbot(ir)
       ENDIF
-      ! NAN CHECK
-      if (v(ir,1) /= v(ir,1))  v(ir,1)=0.D0
-      if (v(ir,2) /= v(ir,2))  v(ir,2)=0.D0
     ENDDO
 
     if (write_debug_cubes) THEN
@@ -698,12 +702,13 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
     DO na = 1, nat ! for each atom
       !
+      nt = ityp (na) ! get atom type
+      nwfc=sum(upf(nt)%oc(:))
       ALLOCATE( wfcatomg(npwx, nwfc) )
       !
       if (do_analytical_gradient) THEN 
-        total_atom_rho_r=0.D0
-        nt = ityp (na) ! get atom type
-        nwfc=sum(upf(nt)%oc(:))
+        total_atom_rho_r=0.D0        
+        
         wfcatomg=0.D0
         CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
         orbi = 0 
@@ -747,7 +752,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 	          write(filename,"(A7,I2)") "atomic_",na
 	        ENDIF
 	        CALL write_cube_r ( 9519395, filename, REAL(total_atom_rho_r(:) ))
-	    ENDIF ! write_debug_cubes
+  	    ENDIF ! write_debug_cubes
 
         shifted_atom1=0.D0!       
         CALL gradient(dfftp%nnr,total_atom_rho_r,ngm,g,nl,shifted_atom1)
@@ -760,6 +765,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
         DO ipol=1,3        
           ! Negative displacement, stored in total_atom_rho_r
           shifted_atom1(ipol,:)=0.d0
+          shifted_atom2(ipol,:)=0.d0
           wfcatomg=0.D0
           CALL one_atom_shifted_wfc (1, wfcatomg, na, nwfc, ipol, -dx) 
           orbi = 0 
@@ -783,6 +789,9 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
               ENDDO ! m
             ENDIF
           ENDDO ! nb
+          vbottot = SUM(shifted_atom1(ipol,:)) 
+          CALL mp_sum( vbottot, intra_bgrp_comm )
+          normfac=REAL(upf(nt)%zp,KIND=DP)/(REAL(vbottot,KIND=DP)*dv)
           shifted_atom1(ipol,:)=shifted_atom1(ipol,:)*normfac
 
           if (write_debug_cubes) THEN
@@ -818,8 +827,11 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
                 shifted_atom2(ipol,:)=shifted_atom2(ipol,:)+ orboc * wfcatomr(:)
               ENDDO ! m
             ENDIF
-          ENDDO ! nb 
+          ENDDO ! for each orbital
 
+          vbottot = SUM(shifted_atom2(ipol,:)) 
+          CALL mp_sum( vbottot, intra_bgrp_comm )
+          normfac=REAL(upf(nt)%zp,KIND=DP)/(REAL(vbottot,KIND=DP)*dv)
           shifted_atom2(ipol,:)=shifted_atom2(ipol,:)*normfac
 
           if (write_debug_cubes) THEN
@@ -832,18 +844,17 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
           ENDIF
 
           ! shifted_atom now has drho_i/tot_rho in it, calculated using the two-point center formula
-          shifted_atom1(ipol,:)=(shifted_atom2(ipol,:) - shifted_atom1(ipol,:))/(2*dx*vbot(:))
-
-          ! CLEAN IT UP AS ONE CLEANS UP THE POTENTIAL SHAPE
           DO ir = 1, n
             if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
               shifted_atom1(ipol,ir)=0.D0  
+            ELSE
+              shifted_atom1(ipol,ir) = (shifted_atom2(ipol,ir) - shifted_atom1(ipol,ir))/vbot(ir)
+              shifted_atom1(ipol,ir) =  shifted_atom1(ipol,ir)/(2*dx)
             ENDIF
-            ! NAN CHECK
-            if (shifted_atom1(ipol,ir) /= shifted_atom1(ipol,ir))  shifted_atom1(ipol,ir)=0.D0
           ENDDO
+          !
         END DO ! ipol
-      ENDIF
+      ENDIF ! ANALYTICAL OR FINITE DIFFERENCE FORCES
 
       DO ipol=1,3 
         SELECT CASE( epcdft_type(icon) )
@@ -1057,4 +1068,5 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 	  2 FORMAT(5x,A32,':',1x,e23.16,1x,A6)
 	  !
 	END SUBROUTINE
+  !
 END SUBROUTINE EPCDFT_FORCE

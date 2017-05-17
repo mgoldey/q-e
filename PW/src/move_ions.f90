@@ -47,6 +47,7 @@ SUBROUTINE move_ions ( idone )
   USE io_global,              ONLY : ionode_id, ionode
   USE mp,                     ONLY : mp_bcast
   USE bfgs_module,            ONLY : bfgs, terminate_bfgs
+  USE epcdft,                 ONLY : do_epcdft, epcdft_shift
   USE basic_algebra_routines, ONLY : norm
   USE dynamics_module,        ONLY : verlet, terminate_verlet, proj_verlet
   USE dynamics_module,        ONLY : smart_MC, langevin_md
@@ -114,9 +115,17 @@ SUBROUTINE move_ions ( idone )
            epsp1 = epsp / ry_kbar
         END IF
         !
-        CALL bfgs( pos, h, etot, grad, fcell, fixion, tmp_dir, stdout, epse,&
+        if (do_epcdft) THEN
+          etot=etot-epcdft_shift ! need to follow "free" energy of CDFT
+          CALL bfgs( pos, h, etot, grad, fcell, fixion, tmp_dir, stdout, epse,&
                    epsf, epsp1,  energy_error, gradient_error, cell_error,  &
                    lmovecell, step_accepted, conv_ions, istep )
+          etot=etot+epcdft_shift ! correcting back to total energy without CDFT contributions 
+        ELSE
+          CALL bfgs( pos, h, etot, grad, fcell, fixion, tmp_dir, stdout, epse,&
+                   epsf, epsp1,  energy_error, gradient_error, cell_error,  &
+                   lmovecell, step_accepted, conv_ions, istep )
+        END IF
         !
         ! ... relax for FCP
         !

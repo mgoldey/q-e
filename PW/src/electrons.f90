@@ -1139,13 +1139,17 @@ SUBROUTINE electrons_scf ( printout, exxen )
        !-----------------------------------------------------------------------
        !
        USE constants, ONLY : eps8
-       USE epcdft,        ONLY : do_epcdft, epcdft_shift
-       INTEGER, INTENT (IN) :: printout
+       USE epcdft,        ONLY : do_epcdft, epcdft_shift,conv_epcdft
        !
-   
+       INTEGER, INTENT (IN) :: printout
+       !       
        IF ( printout == 0 ) RETURN
-       IF ( ( conv_elec .OR. MOD(iter,iprint) == 0 ) .AND. printout > 1 ) THEN
+       IF ( do_epcdft ) THEN
+        if (conv_epcdft .and. conv_elec) WRITE( stdout, 9086 ,advance="no") (etot-epcdft_shift)
+       ENDIF
+       IF ( ( conv_elec .OR. (MOD(iter,iprint) == 0 .and. .not. do_epcdft )) .AND. printout > 1 ) THEN
           !
+
           IF ( dr2 > eps8 ) THEN
              WRITE( stdout, 9081 ) etot, hwf_energy, dr2
           ELSE
@@ -1264,6 +1268,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
             /'     Harris-Foulkes estimate   =',0PF17.8,' Ry' &
             /'     estimated scf accuracy    <',1PE17.1,' Ry' )
 9085 FORMAT(/'     total all-electron energy =',0PF17.6,' Ry' )
+9086 FORMAT(/'     CDFT free energy          =',0PF17.8,' Ry' )
 
   END SUBROUTINE print_energies
   !
