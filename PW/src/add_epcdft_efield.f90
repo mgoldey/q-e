@@ -152,7 +152,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   !
   ! CUTOFF BASED ON TOTAL NUMBER OF ELECTRONS AND DIFFERENTIAL VOLUME
-  cutoff = 1.D-6*nelec/dv
+  cutoff = 1.D-6
   total_atom_rho_r = 0.D0
   !
   ! construct hirshfeld looping over all atomic states
@@ -511,7 +511,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   !
   ! CUTOFF BASED ON TOTAL NUMBER OF ELECTRONS AND DIFFERENTIAL VOLUME
-  cutoff = 1.D-6*nelec/dv
+  cutoff = 1.D-6
   !
   ! load atomic wfcs
   CALL gk_sort (xk (1, 1), ngm, g, ecutwfc / tpiba2, npw, igk_k(1,ik), g2kin)
