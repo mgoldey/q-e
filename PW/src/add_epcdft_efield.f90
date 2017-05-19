@@ -152,7 +152,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   v = 0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   !
-  ! CUTOFF BASED ON TOTAL NUMBER OF ELECTRONS AND DIFFERENTIAL VOLUME
+  ! CUTOFF FOR NUMERICAL STABILITY OF DIVISION ON A GRID
   cutoff = 1.D-6
   total_atom_rho_r = 0.D0
   !
@@ -511,7 +511,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   psic = 0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   !
-  ! CUTOFF BASED ON TOTAL NUMBER OF ELECTRONS AND DIFFERENTIAL VOLUME
+  ! CUTOFF FOR NUMERICAL STABILITY OF DIVISION ON A GRID
   cutoff = 1.D-6
   !
   ! load atomic wfcs
