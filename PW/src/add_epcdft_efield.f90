@@ -8,6 +8,7 @@
 ! Contributors to this file:
 !   Nicholas P. Brawand (nicholasbrawand@gmail.com)
 !   Matthew B. Goldey (matthew.goldey@gmail.com)
+!   Marton Voros (vormar@gmail.com)
 !
 !--------------------------------------------------------------------------
 SUBROUTINE add_epcdft_efield(vpoten,iflag)
@@ -689,14 +690,13 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
       ALLOCATE( wfcatomg(npwx, nwfc) )
       !
       if (do_analytical_gradient) THEN 
-        total_atom_rho_r=0.D0        
-        
+        !        
         wfcatomg=0.D0
         CALL one_atom_wfc (1, wfcatomg, na,nwfc) 
         orbi = 0 
         DO nb = 1, upf(nt)%nwfc ! for each orbital
-        !
-        IF (upf(nt)%oc(nb) > 0.d0) THEN ! if occupied
+          !
+          IF (upf(nt)%oc(nb) > 0.d0) THEN ! if occupied
             !
             l = upf(nt)%lchi(nb) ! get l 
             !
