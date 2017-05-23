@@ -117,7 +117,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   USE klist,         ONLY : nelec
   USE cell_base,     ONLY : omega
   USE wvfct,                ONLY : nbnd, npwx
-  USE epcdft
+  USE epcdft, ONLY : do_epcdft,epcdft_locs,epcdft_guess,nconstr_epcdft,epcdft_type,epcdft_tol
   !
   IMPLICIT NONE
   !
@@ -372,7 +372,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   vbottot = SUM(vbot)
   CALL mp_sum( vbottot, intra_bgrp_comm )
   normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP) *dv)
-  cutoff = 1.D-7/normfac
+  cutoff = epcdft_tol/(normfac*1e3)
   !
   ! Check if mag of vbot is less than cutoff
   !
@@ -444,7 +444,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   USE io_files,      ONLY : tmp_dir, prefix
 
   ! most important control variables are not in epcdft_mod
-  USE epcdft, ONLY : do_epcdft,epcdft_locs,epcdft_guess,nconstr_epcdft,epcdft_type
+  USE epcdft, ONLY : do_epcdft,epcdft_locs,epcdft_guess,nconstr_epcdft,epcdft_type,epcdft_tol
   !
   IMPLICIT NONE
   !
@@ -663,7 +663,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
     vbottot = SUM(vbot)
     CALL mp_sum( vbottot, intra_bgrp_comm )
     normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP) *dv)
-    cutoff = 1.D-7/normfac
+    cutoff = epcdft_tol/(normfac*1e3)
     
     DO ir = 1, n
       if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN

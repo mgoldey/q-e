@@ -351,6 +351,13 @@ SUBROUTINE epcdft_controller(dr2)
   ! the correction is - of the energy
   !
   epcdft_shift = -1.D0 * epcdft_shift
+  ! 
+  ! Report contribution to CDFT total energy
+  !
+  DO iconstraint=1,nconstr_epcdft
+    epcdft_shift=epcdft_shift-epcdft_guess(iconstraint)* epcdft_target(iconstraint)
+  ENDDO
+
   !
 END SUBROUTINE epcdft_controller
 !

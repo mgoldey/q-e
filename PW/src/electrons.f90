@@ -823,6 +823,9 @@ SUBROUTINE electrons_scf ( printout, exxen )
      ! called every step, this will allow cdft dynamic updating
      !
      IF(do_epcdft .and. .not. conv_epcdft) CALL epcdft_controller(dr2)
+	 IF ( do_epcdft ) THEN
+	    etot=etot+epcdft_shift
+	 ENDIF
      !
      !
      CALL print_energies ( printout )
@@ -1139,17 +1142,15 @@ SUBROUTINE electrons_scf ( printout, exxen )
        !-----------------------------------------------------------------------
        !
        USE constants, ONLY : eps8
-       USE epcdft,        ONLY : do_epcdft, epcdft_shift,conv_epcdft
+       USE epcdft,        ONLY : do_epcdft, epcdft_shift,conv_epcdft,nconstr_epcdft,epcdft_guess,epcdft_target
        !
        INTEGER, INTENT (IN) :: printout
+       REAL (DP) :: epcdft_corr=0.D0
+       INTEGER :: iconstraint
        !       
        IF ( printout == 0 ) RETURN
-       IF ( do_epcdft ) THEN
-        if (conv_epcdft .and. conv_elec) WRITE( stdout, 9086 ,advance="no") (etot-epcdft_shift)
-       ENDIF
        IF ( ( conv_elec .OR. (MOD(iter,iprint) == 0 .and. .not. do_epcdft )) .AND. printout > 1 ) THEN
           !
-
           IF ( dr2 > eps8 ) THEN
              WRITE( stdout, 9081 ) etot, hwf_energy, dr2
           ELSE
@@ -1166,7 +1167,14 @@ SUBROUTINE electrons_scf ( printout, exxen )
           IF ( textfor)  WRITE ( stdout , 9077 ) eext
           IF ( tefield )            WRITE( stdout, 9061 ) etotefield
           IF ( monopole )           WRITE( stdout, 9062 ) etotmonofield ! TB
-          IF ( do_epcdft )          WRITE( stdout, 9063 ) epcdft_shift
+          IF ( do_epcdft ) THEN
+		    WRITE( stdout, 9063 ) epcdft_shift
+		    DO iconstraint=1,nconstr_epcdft
+			  epcdft_corr=epcdft_corr+epcdft_guess(iconstraint)* epcdft_target(iconstraint)
+			ENDDO
+			write( stdout, 9086 ) epcdft_corr
+          ENDIF        
+
           IF ( lda_plus_u )         WRITE( stdout, 9065 ) eth
           IF ( ABS (descf) > eps8 ) WRITE( stdout, 9069 ) descf
           IF ( okpaw ) THEN
@@ -1237,7 +1245,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
             /'     ewald contribution        =',F17.8,' Ry' )
 9061 FORMAT( '     electric field correction =',F17.8,' Ry' )
 9062 FORMAT( '     monopole field correction =',F17.8,' Ry' ) 
-9063 FORMAT( '     CDFT correction           =',F17.8,' Ry' )
+9063 FORMAT( '     CDFT contribution         =',F17.8,' Ry' )
 9065 FORMAT( '     Hubbard energy            =',F17.8,' Ry' )
 9067 FORMAT( '     one-center paw contrib.   =',F17.8,' Ry' )
 9068 FORMAT( '      -> PAW hartree energy AE =',F17.8,' Ry' &
@@ -1268,7 +1276,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
             /'     Harris-Foulkes estimate   =',0PF17.8,' Ry' &
             /'     estimated scf accuracy    <',1PE17.1,' Ry' )
 9085 FORMAT(/'     total all-electron energy =',0PF17.6,' Ry' )
-9086 FORMAT(/'     CDFT free energy          =',0PF17.8,' Ry' )
+9086 FORMAT( '     CDFT correction           =',0PF17.8,' Ry' )
 
   END SUBROUTINE print_energies
   !
