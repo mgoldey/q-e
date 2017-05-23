@@ -133,6 +133,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   REAL(DP) :: orboc ! occupation of orbital
   COMPLEX(DP) :: vtop(dfftp%nnr,nspin) ! top of the hirshfeld potential fraction
   COMPLEX(DP) :: vbot(dfftp%nnr) ! bottom of the hirshfeld potential fraction
+  REAL(DP) :: normfac ! convert cutoff to units of electrons
   REAL(DP) :: cutoff
   COMPLEX(DP) :: vbottot
   REAL(DP) :: dv
@@ -152,8 +153,6 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   v = 0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   !
-  ! CUTOFF FOR NUMERICAL STABILITY OF DIVISION ON A GRID
-  cutoff = 1.D-6
   total_atom_rho_r = 0.D0
   !
   ! construct hirshfeld looping over all atomic states
@@ -368,6 +367,12 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
     total_atom_rho_r = 0.D0
     !
   ENDDO ! atom
+
+  ! CUTOFF FOR NUMERICAL STABILITY OF DIVISION ON A GRID
+  vbottot = SUM(vbot)
+  CALL mp_sum( vbottot, intra_bgrp_comm )
+  normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP) *dv)
+  cutoff = 1.D-7/normfac
   !
   ! Check if mag of vbot is less than cutoff
   !
@@ -472,6 +477,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   INTEGER :: orbi ! orbital index for wfcatom
   INTEGER :: nfuncs, lmax ! number of functions as derived from lmax
   REAL(DP) :: orboc ! occupation of orbital
+  REAL(DP) :: normfac ! convert cutoff to units of electrons
   REAL(DP) :: dx ! finite shift in direction
   REAL(DP) :: force_idir ! force in given direction
   COMPLEX(DP) :: v(dfftp%nnr,2) ! hirshfeld weighting function
@@ -480,7 +486,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
   LOGICAL :: write_debug_cubes=.false.
 
-  COMPLEX(DP) :: cutoff
+  REAL(DP) :: cutoff
   COMPLEX(DP) :: vbottot, val
   character(len=1024) :: filename
   LOGICAL :: hirshfeld=.true.
@@ -510,9 +516,6 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   v = 0.D0
   psic = 0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
-  !
-  ! CUTOFF FOR NUMERICAL STABILITY OF DIVISION ON A GRID
-  cutoff = 1.D-6
   !
   ! load atomic wfcs
   CALL gk_sort (xk (1, 1), ngm, g, ecutwfc / tpiba2, npw, igk_k(1,ik), g2kin)
@@ -655,6 +658,12 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
       END SELECT
       DEALLOCATE( wfcatomg )
     END DO !atom
+
+    ! CUTOFF FOR NUMERICAL STABILITY OF DIVISION ON A GRID
+    vbottot = SUM(vbot)
+    CALL mp_sum( vbottot, intra_bgrp_comm )
+    normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP) *dv)
+    cutoff = 1.D-7/normfac
     
     DO ir = 1, n
       if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
