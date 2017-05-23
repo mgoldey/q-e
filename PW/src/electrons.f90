@@ -823,7 +823,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
      ! called every step, this will allow cdft dynamic updating
      !
      IF(do_epcdft .and. .not. conv_epcdft) CALL epcdft_controller(dr2)
-	 IF ( do_epcdft ) THEN
+	 IF ( do_epcdft .and. conv_epcdft) THEN
 	    etot=etot+epcdft_shift
 	 ENDIF
      !
