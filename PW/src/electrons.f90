@@ -823,9 +823,6 @@ SUBROUTINE electrons_scf ( printout, exxen )
      ! called every step, this will allow cdft dynamic updating
      !
      IF(do_epcdft .and. .not. conv_epcdft) CALL epcdft_controller(dr2)
-	 IF ( do_epcdft .and. conv_epcdft) THEN
-	    etot=etot+epcdft_shift
-	 ENDIF
      !
      !
      CALL print_energies ( printout )
@@ -1145,12 +1142,20 @@ SUBROUTINE electrons_scf ( printout, exxen )
        USE epcdft,        ONLY : do_epcdft, epcdft_shift,conv_epcdft,nconstr_epcdft,epcdft_guess,epcdft_target
        !
        INTEGER, INTENT (IN) :: printout
-       REAL (DP) :: epcdft_corr=0.D0
+       REAL (DP) :: epcdft_contrib=0.D0
        INTEGER :: iconstraint
        !       
        IF ( printout == 0 ) RETURN
        IF ( ( conv_elec .OR. (MOD(iter,iprint) == 0 .and. .not. do_epcdft )) .AND. printout > 1 ) THEN
           !
+          IF ( do_epcdft ) THEN
+            DO iconstraint=1,nconstr_epcdft
+            epcdft_contrib=epcdft_contrib-epcdft_guess(iconstraint)* epcdft_target(iconstraint)
+            ENDDO
+            epcdft_contrib=epcdft_shift+epcdft_contrib
+            etot=etot+epcdft_contrib ! COMPUTE AND ADD CONTRIBUTION HERE
+          ENDIF
+
           IF ( dr2 > eps8 ) THEN
              WRITE( stdout, 9081 ) etot, hwf_energy, dr2
           ELSE
@@ -1168,11 +1173,8 @@ SUBROUTINE electrons_scf ( printout, exxen )
           IF ( tefield )            WRITE( stdout, 9061 ) etotefield
           IF ( monopole )           WRITE( stdout, 9062 ) etotmonofield ! TB
           IF ( do_epcdft ) THEN
-		    WRITE( stdout, 9063 ) epcdft_shift
-		    DO iconstraint=1,nconstr_epcdft
-			  epcdft_corr=epcdft_corr+epcdft_guess(iconstraint)* epcdft_target(iconstraint)
-			ENDDO
-			write( stdout, 9086 ) epcdft_corr
+      			write( stdout, 9063 ) epcdft_contrib  ! CONTRIBUTION FROM ERROR IN CDFT SELF-CONSISTENT EQUATIONS
+            WRITE( stdout, 9086 ) epcdft_shift ! SHIFT YIELDING "FREE" ENERGY 
           ENDIF        
 
           IF ( lda_plus_u )         WRITE( stdout, 9065 ) eth

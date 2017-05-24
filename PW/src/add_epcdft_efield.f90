@@ -98,6 +98,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   !     eqs. 6 & 7
   !
   USE kinds,                ONLY : DP
+  USE constants,            ONLY : eps12
   USE control_flags,        ONLY : gamma_only
   USE wvfct,                ONLY : npwx, g2kin
   USE klist,                ONLY : xk, nks, igk_k,ngk,init_igk
@@ -106,7 +107,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   USE cell_base,            ONLY : tpiba2
   USE uspp_param,           ONLY : upf
   USE lsda_mod,      ONLY : nspin
-  USE ions_base,  ONLY : nat, ntyp => nsp, ityp, tau
+  USE ions_base,  ONLY : nat, ntyp => nsp, ityp, tau,zv
   USE fft_base,             ONLY : dfftp, dffts
   USE gvect,                ONLY : nl, nlm
   USE gvecs,                ONLY : nls, nlsm
@@ -136,7 +137,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   REAL(DP) :: normfac ! convert cutoff to units of electrons
   REAL(DP) :: cutoff
   COMPLEX(DP) :: vbottot
-  REAL(DP) :: dv
+  REAL(DP) :: dv,tot_hirsh_charge
   CHARACTER(len=1024) :: filename
   !
   CALL init_igk ( npwx, ngm, g, gcutw ) 
@@ -151,6 +152,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   vtop = 0.D0
   vbot = 0.D0
   v = 0.D0
+  tot_hirsh_charge=0.D0
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   !
   total_atom_rho_r = 0.D0
@@ -160,6 +162,7 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   DO na = 1, nat ! for each atom
     !
     nt = ityp (na) ! get atom type
+    tot_hirsh_charge=tot_hirsh_charge+zv(nt)
     nwfc=sum(upf(nt)%oc(:))
     total_atom_rho_r=0.D0
     !
@@ -371,8 +374,8 @@ SUBROUTINE calc_hirshfeld_v( v,iconstraint)
   ! CUTOFF FOR NUMERICAL STABILITY OF DIVISION ON A GRID
   vbottot = SUM(vbot)
   CALL mp_sum( vbottot, intra_bgrp_comm )
-  normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP) *dv)
-  cutoff = epcdft_tol/(normfac*1e3)
+  normfac=REAL(tot_hirsh_charge,KIND=DP)/(REAL(vbottot,KIND=DP) *dv)
+  cutoff = eps12/normfac
   !
   ! Check if mag of vbot is less than cutoff
   !
@@ -411,7 +414,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   ! 
   !  Gamma only
   USE kinds,         ONLY : DP
-  USE constants,     ONLY : fpi, eps8, e2, au_debye
+  USE constants,     ONLY : fpi, eps8, e2, au_debye,eps12
   USE ions_base,     ONLY : nat, ntyp => nsp, ityp, tau, zv
   USE cell_base,     ONLY : alat, at, omega, bg, tpiba2,tpiba
   USE force_mod,     ONLY : lforce
@@ -457,7 +460,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   ! local variables
   !
   INTEGER :: index0, i, j, k, n, ipol, ir, na, ip, ik, npw,ig
-  REAL(DP) :: length, vamp, value, sawarg, e_dipole, ion_dipole,gvec
+  REAL(DP) :: length, vamp, value, sawarg, e_dipole, ion_dipole,gvec,tot_hirsh_charge
   !
   ! ... Coulomb Vars
   !
@@ -491,12 +494,12 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   character(len=1024) :: filename
   LOGICAL :: hirshfeld=.true.
   LOGICAL :: do_analytical_gradient=.true.
-  
+  tot_hirsh_charge=0.d0
   !
   force=0._dp
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
 
-  ! set up to be in bohr via one_atom_shifted_wfc
+  ! set up to be in bohr via one_atom_shifted_wfc - only used for gradient via finite difference
   dx=1e-6
   
   ALLOCATE( wfcatomr(dfftp%nnr) )
@@ -524,6 +527,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   !
   DO na = 1, nat ! for each atom
     nt = ityp (na) ! get atom type
+    tot_hirsh_charge=tot_hirsh_charge+zv(nt)
     nwfc=sum(upf(nt)%oc(:))
     ALLOCATE( wfcatomg(npwx, nwfc) )
 
@@ -662,8 +666,8 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
     ! CUTOFF FOR NUMERICAL STABILITY OF DIVISION ON A GRID
     vbottot = SUM(vbot)
     CALL mp_sum( vbottot, intra_bgrp_comm )
-    normfac=REAL(nelec,KIND=DP)/(REAL(vbottot,KIND=DP) *dv)
-    cutoff = epcdft_tol/(normfac*1e3)
+    normfac=REAL(tot_hirsh_charge,KIND=DP)/(REAL(vbottot,KIND=DP) *dv)
+    cutoff = eps12/(normfac)
     
     DO ir = 1, n
       if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
