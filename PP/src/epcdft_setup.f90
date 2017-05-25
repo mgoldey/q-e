@@ -51,8 +51,7 @@ SUBROUTINE epcdft_setup
   REAL(DP) :: dtmp
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
-                       debug,  s_spin, free1, free2,&
-                       cor1, cor2, eig_of_w, debug2
+                       debug,  s_spin, eig_of_w, debug2
   !
   ! setup vars and consistency checks
   !
@@ -92,10 +91,10 @@ SUBROUTINE epcdft_setup
   CALL mp_bcast( debug, ionode_id, world_comm )
   CALL mp_bcast( debug2, ionode_id, world_comm )
   CALL mp_bcast( s_spin, ionode_id, world_comm )
-  CALL mp_bcast( free1, ionode_id, world_comm )
-  CALL mp_bcast( free2, ionode_id, world_comm )
-  CALL mp_bcast( cor1, ionode_id, world_comm )
-  CALL mp_bcast( cor2, ionode_id, world_comm )
+!  CALL mp_bcast( free1, ionode_id, world_comm )
+!  CALL mp_bcast( free2, ionode_id, world_comm )
+!  CALL mp_bcast( cor1, ionode_id, world_comm )
+!  CALL mp_bcast( cor2, ionode_id, world_comm )
   CALL mp_bcast( eig_of_w, ionode_id, world_comm )
   !
   ! first read system 2 and store in system 1's variables 
@@ -130,6 +129,15 @@ SUBROUTINE epcdft_setup
   nctmp = nconstr_epcdft
   ALLOCATE( lm( nconstr_epcdft, 2 ) )
   lm(:,2) = epcdft_guess(:)
+  !
+  !
+  ! get correction = V*int*dr*w(r)*rho(r)
+  !
+  cor2 = epcdft_shift
+  !
+  ! get free energy
+  !
+  CALL epcdft_build_free_energy(free2)
   !
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
@@ -167,6 +175,14 @@ SUBROUTINE epcdft_setup
   !IF( nconstr_epcdft .ne. 1 .and. eig_of_w .and. ionode ) WRITE( stdout,*)&
   !"    !!!! number of constraints need to be 1 for eig_of_w = .true. !!!!"
   lm(:,1) = epcdft_guess(:)
+  !
+  ! get correction = V*int*dr*w(r)*rho(r)
+  !
+  cor1 = epcdft_shift
+  !
+  ! get free energy
+  !
+  CALL epcdft_build_free_energy(free1)
   !
   IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
   !
@@ -255,4 +271,52 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
   RETURN
   !
 END SUBROUTINE print_checks_warns 
+!
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE epcdft_build_free_energy(inFree)
+  !--------------------------------------------------------------------------
+  !
+  ! calculate free energy and put it in inFree
+  !
+  USE kinds, ONLY : DP
+  USE epcdft, ONLY : epcdft_guess, epcdft_target, nconstr_epcdft, epcdft_shift
+  USE pw_restart_new, ONLY : pw_readschema_file
+  USE qes_types_module, ONLY : output_type, parallel_info_type, general_info_type
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP), INTENT(INOUT)    :: inFree
+  !
+  REAL(DP) :: etot
+  INTEGER :: ik
+  INTEGER :: ierr
+  TYPE (output_type) :: output_obj
+  TYPE (parallel_info_type) :: parinfo_obj
+  TYPE (general_info_type) :: geninfo_obj
+  !
+  ! etot = E_ks + V*int*dr*w(r)*rho(r) - V*N_cdft
+  !
+  ! free = E_ks + V*int*dr*w(r)*rho(r)
+  !      = etot + V*N_cdft 
+  !
+  ! read xml and add output to obj to get etot
+  !
+  CALL pw_readschema_file ( ierr, output_obj, parinfo_obj, geninfo_obj)
+  !
+  ! etot is in Hartree it needs to be in Ry
+  !
+  etot = 2.D0*output_obj%total_energy%etot
+  !
+  !
+  ! build V*N_cdft 
+  !
+  inFree = 0.D0
+  DO ik = 1, nconstr_epcdft
+    inFree = inFree + epcdft_guess(ik)*epcdft_target(ik)
+  ENDDO
+  !
+  inFree = etot + inFree
+  !
+END SUBROUTINE  epcdft_build_free_energy
 !

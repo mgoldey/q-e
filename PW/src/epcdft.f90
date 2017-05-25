@@ -159,7 +159,7 @@ SUBROUTINE epcdft_controller(dr2)
       SELECT CASE( epcdft_type(iconstraint) )
       CASE('charge','delta_charge')
         !
-        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv - vpotenp(i,2) * rho%of_r(i,2) * dv
+        einwellp = einwellp + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
         !
         IF(vpotenp(i,1)<0.D0) THEN
           !
@@ -173,7 +173,7 @@ SUBROUTINE epcdft_controller(dr2)
         !
       CASE('spin','delta_spin')
         !
-        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv - vpotenp(i,2) * rho%of_r(i,2) * dv
+        einwellp = einwellp + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
         !
         IF(vpotenp(i,1)<0.D0) THEN
           !
@@ -187,7 +187,7 @@ SUBROUTINE epcdft_controller(dr2)
         !
       CASE('delta_alpha')
         !
-        einwellp = einwellp - vpotenp(i,1) * rho%of_r(i,1) * dv  
+        einwellp = einwellp + vpotenp(i,1) * rho%of_r(i,1) * dv  
         !
         IF(vpotenp(i,1)<0.D0) THEN
           !
@@ -201,7 +201,7 @@ SUBROUTINE epcdft_controller(dr2)
         !
       CASE('delta_beta')
         !
-        einwellp = einwellp - vpotenp(i,2) * rho%of_r(i,2) * dv  
+        einwellp = einwellp + vpotenp(i,2) * rho%of_r(i,2) * dv  
         !
         IF(vpotenp(i,2)<0.D0) THEN
           !
@@ -324,7 +324,7 @@ SUBROUTINE epcdft_controller(dr2)
       !
       ! CDFT
       !
-      WRITE(*,'(5x,a3,a10,a2,a10,a12,a12,a17,a17)') "I","D",'  ','A','Val','Target','Old','New'
+      WRITE(*,'(5x,a3,a10,a2,a10,a12,a12,a17,a17)') "I","D(charge)",'  ','A(charge)','Val=A-D','Target','Old','New'
       WRITE(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e17.8,e17.8)') &
       !
       iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint), &
@@ -336,7 +336,7 @@ SUBROUTINE epcdft_controller(dr2)
         !
         ! CDFT
         !
-        WRITE(*,'(5x,a3,a10,a2,a10,a12,a12,a17)') "I","D",'  ','A','Val','Target','Str'
+        WRITE(*,'(5x,a3,a10,a2,a10,a12,a12,a17)') "I","D(charge)",'  ','A(charge)','Val=A-D','Target','Str'
         WRITE(*,'(5x,i3,e10.3,a2,e10.3,e12.3,e12.3,e17.8)') &
         iconstraint, dcharge,'  ',acharge,einwell,epcdft_target(iconstraint),epcdft_guess(iconstraint)
         WRITE(*,'(5x,a,2x,e17.8)') 'CDFT charge error:', enumerr
@@ -347,10 +347,6 @@ SUBROUTINE epcdft_controller(dr2)
   END DO ! iconstraint
   !
   DEALLOCATE(vpotenp)
-  !
-  ! the correction is - of the energy
-  !
-  epcdft_shift = -1.D0 * epcdft_shift
   !
 END SUBROUTINE epcdft_controller
 !

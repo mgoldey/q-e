@@ -32,13 +32,13 @@ SUBROUTINE epcdft_get_h
   IMPLICIT NONE
   !
   INTEGER i, j, s
-  REAL(DP) :: core(2) ! corrected energy
+  REAL(DP) :: core(2) ! <|H_KS|> = Free - V int rho(r) w(r)
   REAL(DP) :: ftot ! F1+F2, Sup*Sdown, W_up+W_down
   COMPLEX(DP) :: stot(2,2), wtot(2,2) ! F1+F2, Sup*Sdown, W_up+W_down
   !
   hc = 0.D0
-  core(1) = free1 + cor1 
-  core(2) = free2 + cor2
+  core(1) = free1 - cor1 
+  core(2) = free2 - cor2
   stot(:,:) = smat(:,:,1) * smat(:,:,2)
   !
   ! Wtot = Wab + Wba

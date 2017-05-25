@@ -31,7 +31,7 @@ SUBROUTINE epcdft_print
     IF(debug) THEN
       !
       WRITE(stdout,4) free1, free2
-      WRITE(stdout,7) free1+cor1, free2+cor2
+      WRITE(stdout,7) free1-cor1, free2-cor2
       WRITE(stdout,8) cor1, cor2
       WRITE(*,*)""
       !

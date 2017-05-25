@@ -44,7 +44,7 @@ MODULE epcdft_mod
   REAL(DP) :: free1, free2 ! free energies for system 1 and 2, 
                            ! Free = < H_KS + W(r) >, see text below Eq. 11b in J. Chem. Phys. 133, 244105 (2010)
                            !
-  REAL(DP) :: cor1, cor2   ! energy corrections to the free energy for systems 1 and 2
+  REAL(DP) :: cor1, cor2   ! V int dr rho(r) w(r), for system 1 and 2
   COMPLEX(DP) :: hc(2,2)   ! coupling matrix hc(a,b)
   COMPLEX(DP) :: ohc(2,2)  ! orthogonal coupling matrix ohc(a,b)
   !
