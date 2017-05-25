@@ -2892,14 +2892,14 @@ input_description -distribution {Quantum Espresso} -package PWscf -program pw.x 
                         col cdft_constr_target
                         col cdft_constr_guess
                         info {
-                            These variables have different meanings for different constraint types:
+                            These variables have different meanings for different constraint types. Note: the sign convention of charge for input and output is negative for electrons and positive for nuclei. 
 
                             @b 'delta_charge' :
                                @i cdft_constr(1) is the index of the atom defining the start of the acceptor region
                                @i cdft_constr(2) is the index of the atom defining the end of the acceptor region
                                @i cdft_constr(3) is the index of the atom defining the start of the donor region
                                @i cdft_constr(4) is the index of the atom defining the end of the donor region
-                               @i cdft_constr_target is the target difference in charges between the two regions
+                               @i cdft_constr_target is the total charge difference between the acceptor and the donor regions ( target = A - D ).
                                @i cdft_constr_guess is the initial guess for the constraint in Rydberg atomic units
                             @b 'charge' :
                                @i cdft_constr(1) is the index of the atom defining the start of the constrained region

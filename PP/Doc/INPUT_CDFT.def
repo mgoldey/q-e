@@ -5,18 +5,13 @@ input_description -distribution {Quantum Espresso} -package PWscf -program epcdf
     intro {
 	@b {Purpose of epcdft_coupling.x:}
 
-        Computes diabatic coupling between two diabatic states created by CDFT runs using pwscf.[1]
+        Computes diabatic coupling between two diabatic states created by CDFT runs using pwscf.
 
         The input data can be read from file using 	command-line options 
         "epcdft_coupling.x < file-name" (same syntax as for pw.x)	
 
-        The script setup_coupling_input.sh will create input for epcdft_coupling.x see
-        PP/examples/CDFT example file for details.
-
-	    Output files:
-	    - See PP/examples/CDFT example file.
-
-        [1] N.P. Brawand and M.B. Goldey, M. Voros, and G. Galli submitted (2016)
+        J. Chem. Theory Comput., In Press. doi:10.1021/acs.jctc.7b00088 
+        Chem. Mater., 2017, 29 (3), 1255-1262 doi:10.1021/acs.chemmater.6b04631
 
         @b {Example of the input data:}
 	============================
@@ -33,10 +28,6 @@ input_description -distribution {Quantum Espresso} -package PWscf -program epcdf
               debug        = .true.
               eig_of_w     = .false.
               s_spin       = .true.
-              free1 = -138.56
-              free2 = -138.54
-              cor1 =  0.25 
-              cor2 =  0.25
 	   @b /
     }
 
@@ -107,30 +98,6 @@ input_description -distribution {Quantum Espresso} -package PWscf -program epcdf
 	var s_spin -type LOGICAL {     
 	    info {
 			Set to true for spin polarized calculations.	
-	    }
-	}
-
-	var free1 -type DOUBLE  {     
-	    info {
-			Free energy (Etot - CDFT correction + Image interaction energy) for first diabatic state.
-	    }
-	}
-
-	var free2 -type DOUBLE  {     
-	    info {
-			Free energy (Etot - CDFT correction + Image interaction energy) for second diabatic state.
-	    }
-	}
-
-	var cor1 -type DOUBLE  {     
-	    info {
-			CDFT correction to total energy for first diabatic state. Given in pwscf output file.	
-	    }
-	}
-
-	var cor2 -type DOUBLE  {     
-	    info {
-			CDFT correction to total energy for second diabatic state. Given in pwscf output file.	
 	    }
 	}
 

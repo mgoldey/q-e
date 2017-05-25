@@ -7,6 +7,7 @@ HTMLS = INPUT_PP.html \
 	INPUT_PROJWFC.html \
 	INPUT_DOS.html \
 	INPUT_BANDS.html \
+	INPUT_CDFT.html \
 	INPUT_pw_export.html \
         INPUT_pw2bgw.html \
         INPUT_bgw2pw.html \
@@ -62,6 +63,9 @@ link_on_main_doc:
 	ln -fs ../PP/Doc/INPUT_BANDS.html . ; \
 	ln -fs ../PP/Doc/INPUT_BANDS.xml . ; \
 	ln -fs ../PP/Doc/INPUT_BANDS.txt . ; \
+	ln -fs ../PP/Doc/INPUT_CDFT.html . ; \
+	ln -fs ../PP/Doc/INPUT_CDFT.xml . ; \
+	ln -fs ../PP/Doc/INPUT_CDFT.txt . ; \
 	ln -fs ../PP/Doc/INPUT_pw_export.html . ; \
 	ln -fs ../PP/Doc/INPUT_pw_export.xml . ; \
 	ln -fs ../PP/Doc/INPUT_pw_export.txt . ; \
