@@ -21,13 +21,8 @@ input_description -distribution {Quantum Espresso} -package PWscf -program epcdf
               prefix2 = 'right' 
               outdir = 'out'  
               outdir2 = 'out'  
-              occup1       = 26
-              occup2       = 26
-              occdown1     = 25
-              occdown2     = 25
               debug        = .true.
               eig_of_w     = .false.
-              s_spin       = .true.
 	   @b /
     }
 
@@ -57,30 +52,6 @@ input_description -distribution {Quantum Espresso} -package PWscf -program epcdf
 		}
     }
 
-	var occup1 -type INTEGER {     
-	    info {
-			Number of occupied up states for first diabatic state.	
-	    }
-	}
-
-	var occup2 -type INTEGER {     
-	    info {
-			Number of occupied up states for second diabatic state.	Note: occup2 must be equal to occup1.
-	    }
-	}
-
-	var occdown1 -type INTEGER {     
-	    info {
-			Number of occupied down states for first diabatic state.	
-	    }
-	}
-
-	var occdown2 -type INTEGER {     
-	    info {
-			Number of occupied down states for second diabatic state. Note: occdown2 must be equal to occdown1.	
-	    }
-	}
-
 	var debug -type LOGICAL {     
         default { .true. }
 	    info {
@@ -92,12 +63,6 @@ input_description -distribution {Quantum Espresso} -package PWscf -program epcdf
         default { .false. }
 	    info {
 			Print full overlap matrix, cofactor and W matrix to files.	
-	    }
-	}
-
-	var s_spin -type LOGICAL {     
-	    info {
-			Set to true for spin polarized calculations.	
 	    }
 	}
 
