@@ -10,7 +10,12 @@ MODULE cp_restart_new
   !-----------------------------------------------------------------------------
   !
   ! ... This module contains subroutines to write and read data required to
-  ! ... restart a calculation from the disk
+  ! ... restart a calculation from the disk. Important notice:
+  ! ... * only one processor writes (the one for which ionode = .true.)
+  ! ... * all processors read the xml file
+  ! ... * one processor per band group reads the wavefunctions,
+  ! ...   distributes them within their band group
+  ! ... * lambda matrices are read by one processors, broadcast to all others
   !
   USE kinds,     ONLY : DP
 #if !defined(__OLDXML)
@@ -65,10 +70,6 @@ MODULE cp_restart_new
       USE mp_images,                ONLY : intra_image_comm, me_image, &
                                            nproc_image
       USE mp_pools,                 ONLY : nproc_pool, intra_pool_comm, root_pool, inter_pool_comm
-      USE mp_bands,                 ONLY : me_bgrp, nproc_bgrp, &
-                                           my_bgrp_id, intra_bgrp_comm, &
-                                           inter_bgrp_comm, root_bgrp, &
-                                           ntask_groups
       USE mp_diag,                  ONLY : nproc_ortho
       USE mp_world,                 ONLY : world_comm, nproc
       USE run_info,                 ONLY : title
@@ -406,14 +407,16 @@ MODULE cp_restart_new
          nb = nupdwn(iss)
          ! wavefunctions at time t
          filename = TRIM(dirname) // 'wfc' // TRIM(int_to_char(ik_eff))
-         CALL write_wfc( iunpun, ik_eff, nk, iss, nspin, &
+         CALL write_wfc( iunpun, filename, ik_eff, xk(:,1), iss, nspin, &
               c02(:,ib:ib+nb-1), ngw_g, gamma_only, nb, ig_l2g, ngw,  &
-              filename, scalef, ionode, root_pool, intra_pool_comm )
+              alat*b1, alat*b2, alat*b3, mill, scalef, ionode, root_pool, &
+              intra_pool_comm )
          ! wavefunctions at time t-dt
          filename = TRIM(dirname) // 'wfcm' // TRIM(int_to_char(ik_eff))
-         CALL write_wfc( iunpun, ik_eff, nk, iss, nspin, &
+         CALL write_wfc( iunpun, filename, ik_eff, xk(:,1), iss, nspin, &
               cm2(:,ib:ib+nb-1), ngw_g, gamma_only, nb, ig_l2g, ngw,  &
-              filename, scalef, ionode, root_pool, intra_pool_comm )
+              alat*b1, alat*b2, alat*b3, mill, scalef, ionode, root_pool, &
+              intra_pool_comm )
          ! matrix of orthogonality constrains lambda at time t
          filename = TRIM(dirname) // 'lambda' // TRIM(int_to_char(ik_eff))
          CALL cp_write_lambda( filename, iunpun, iss, nspin, nudx, &
@@ -468,12 +471,7 @@ MODULE cp_restart_new
       !
       s1 = cclock() 
       !
-      IF ( ionode ) THEN
-         !
-         WRITE( stdout, &
-                '(3X,"restart file written in ",F8.3," sec.",/)' ) ( s1 - s0 )
-         !
-      END IF
+      WRITE( stdout, '(3X,"restart file written in ",F8.3," sec.",/)' ) (s1-s0)
       !
       RETURN
       !
@@ -1346,9 +1344,8 @@ MODULE cp_restart_new
     ! Wrapper, and ugly hack, for old cp_read_wfc called in restart.f90
     ! If ierr is present, returns ierr=-1 if file not found, 0 otherwise
     !
-    USE io_global,          ONLY : ionode
     USE io_files,           ONLY : prefix, iunpun
-    USE mp_global,          ONLY : root_pool, intra_pool_comm
+    USE mp_bands,           ONLY : me_bgrp, root_bgrp, intra_bgrp_comm
     USE electrons_base,     ONLY : iupdwn, nupdwn
     USE gvecw,              ONLY : ngw, ngw_g
     USE gvect,              ONLY : ig_l2g
@@ -1362,9 +1359,11 @@ MODULE cp_restart_new
     COMPLEX(DP),           INTENT(OUT) :: c2(:,:)
     INTEGER, OPTIONAL,     INTENT(OUT) :: ierr
     !
-    INTEGER            :: ib, nb, nbnd, is_, ns_
+    INTEGER            :: ib, nb, nbnd, is_, npol
+    INTEGER,ALLOCATABLE:: mill_k(:,:)
     CHARACTER(LEN=320) :: filename
-    REAL(DP)           :: scalef
+    REAL(DP)           :: scalef, xk(3), b1(3), b2(3), b3(3)
+    LOGICAL            :: ionode_b, gamma_only
     !
     IF ( tag == 'm' ) THEN
        WRITE(filename,'(A,A,"_",I2,".save/wfcm",I1)') &
@@ -1377,16 +1376,26 @@ MODULE cp_restart_new
     nb = nupdwn(iss)
     ! next two lines workaround for bogus complaint due to intent(in)
     is_= iss
-    ns_= nspin
+    ALLOCATE ( mill_k(3,ngw) )
+    !
+    ! the first processor of each "band group" reads the wave function,
+    ! distributes it to the other processors in the same band group
+    !
+    ionode_b = ( me_bgrp == root_bgrp )
+    !
     IF ( PRESENT(ierr) ) THEN
-       CALL read_wfc( iunpun, is_, nk, is_, ns_, &
-         c2(:,ib:ib+nb-1), ngw_g, nbnd, ig_l2g, ngw,  &
-         filename, scalef, ionode, root_pool, intra_pool_comm, ierr )
+       CALL read_wfc( iunpun, filename, is_, xk, is_, npol, &
+         c2(:,ib:ib+nb-1), ngw_g, gamma_only, nbnd, ig_l2g, ngw,  &
+         b1,b2,b3, mill_k, scalef, ionode_b, root_bgrp, intra_bgrp_comm, ierr )
     ELSE
-       CALL read_wfc( iunpun, is_, nk, is_, ns_, &
-         c2(:,ib:ib+nb-1), ngw_g, nbnd, ig_l2g, ngw,  &
-         filename, scalef, ionode, root_pool, intra_pool_comm )
+       CALL read_wfc( iunpun, filename, is_, xk, is_, npol, &
+         c2(:,ib:ib+nb-1), ngw_g, gamma_only, nbnd, ig_l2g, ngw,  &
+         b1,b2,b3, mill_k, scalef, ionode_b, root_bgrp, intra_bgrp_comm )
     END IF
+    !
+    ! Add here checks on consistency of what has been read
+    !
+    DEALLOCATE ( mill_k)
     !
   END SUBROUTINE cp_read_wfc
   !
@@ -1806,8 +1815,8 @@ MODULE cp_restart_new
        READ (iunpun, iostat=ierr) mrepl
        CLOSE( unit=iunpun, status='keep')
     END IF
+    CALL mp_bcast( mrepl, ionode_id, intra_image_comm )
     CALL distribute_lambda( mrepl, lambda, descla(iss) )
-    CALL mp_bcast (ierr, ionode_id, intra_image_comm )
     DEALLOCATE( mrepl )
     !
   END SUBROUTINE cp_read_lambda

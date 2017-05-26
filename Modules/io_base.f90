@@ -22,12 +22,12 @@ MODULE io_base
   CONTAINS
     !
     !------------------------------------------------------------------------
-    SUBROUTINE write_wfc( iuni, ik, nk, ispin, nspin, wfc, ngw,   &
-                          gamma_only, nbnd, igl, ngwl, filename, scalef, &
-                          ionode_in_group, root_in_group, intra_group_comm)
+    SUBROUTINE write_wfc( iuni, filename, ik, xk, ispin, nspin, wfc, ngw,   &
+                          gamma_only, nbnd, igl, ngwl, b1,b2,b3, mill_k,    &
+                          scalef, ionode_in_group, root_in_group, intra_group_comm)
       !------------------------------------------------------------------------
       !
-      USE mp_wave,    ONLY : mergewf
+      USE mp_wave,    ONLY : mergewf, mergekg
       USE mp,         ONLY : mp_size, mp_rank, mp_max
       !
 #if defined(__HDF5)
@@ -39,14 +39,17 @@ MODULE io_base
       IMPLICIT NONE
       !
       INTEGER,            INTENT(IN) :: iuni
-      INTEGER,            INTENT(IN) :: ik, nk, ispin, nspin
+      CHARACTER(LEN=*),   INTENT(IN) :: filename
+      INTEGER,            INTENT(IN) :: ik, ispin, nspin
+      REAL(DP),           INTENT(IN) :: xk(:)
       COMPLEX(DP),        INTENT(IN) :: wfc(:,:)
       INTEGER,            INTENT(IN) :: ngw
       LOGICAL,            INTENT(IN) :: gamma_only
       INTEGER,            INTENT(IN) :: nbnd
       INTEGER,            INTENT(IN) :: ngwl
       INTEGER,            INTENT(IN) :: igl(:)
-      CHARACTER(LEN=*),   INTENT(IN) :: filename
+      INTEGER,            INTENT(IN) :: mill_k(:,:)
+      REAL(DP),           INTENT(IN) :: b1(3), b2(3), b3(3)    
       REAL(DP),           INTENT(IN) :: scalef    
         ! scale factor, usually 1.0 for pw and 1/SQRT( omega ) for CP
       LOGICAL,            INTENT(IN) :: ionode_in_group
@@ -55,6 +58,7 @@ MODULE io_base
       INTEGER                  :: j, ierr
       INTEGER                  :: igwx, npwx, npol
       INTEGER                  :: me_in_group, nproc_in_group, my_group
+      INTEGER, ALLOCATABLE     :: itmp(:,:)
       COMPLEX(DP), ALLOCATABLE :: wtmp(:)
       !
 #if defined(__HDF5) 
@@ -70,36 +74,54 @@ MODULE io_base
       npol = 1
       IF ( nspin == 4 ) npol = 2
       npwx = SIZE( wfc, 1 ) / npol
-      ALLOCATE( wtmp( MAX( npol*igwx, 1 ) ) )
-      !
-      wtmp = 0.0_DP
       !
       IF ( ionode_in_group ) THEN
 #if defined  __HDF5
          CALL prepare_for_writing_final ( h5_write_desc, 0, &
               TRIM(filename)//'.hdf5',ik, ADD_GROUP = .false.)
-         CALL add_attributes_hdf5(h5_write_desc, ngw,"ngw",ik)
-         CALL add_attributes_hdf5(h5_write_desc, gamma_only,"gamma_only",ik)
-         CALL add_attributes_hdf5(h5_write_desc, igwx,"igwx",ik)
-         CALL add_attributes_hdf5(h5_write_desc, nbnd,"nbnd",ik)
          CALL add_attributes_hdf5(h5_write_desc, ik,"ik",ik)
-         CALL add_attributes_hdf5(h5_write_desc, nk,"nk",ik)
+         CALL add_attributes_hdf5(h5_write_desc, xk,"xk",xk)
          CALL add_attributes_hdf5(h5_write_desc, ispin,"ispin",ik)
-         CALL add_attributes_hdf5(h5_write_desc, nspin,"nspin",ik)
+         CALL add_attributes_hdf5(h5_write_desc, gamma_only,"gamma_only",ik)
          CALL add_attributes_hdf5(h5_write_desc, scalef,"scale_factor",ik)
-         !
+         CALL add_attributes_hdf5(h5_write_desc, ngw,"ngw",ik)
+         CALL add_attributes_hdf5(h5_write_desc, igwx,"igwx",ik)
+         CALL add_attributes_hdf5(h5_write_desc, npol,"npol",ik)
+         CALL add_attributes_hdf5(h5_write_desc, nbnd,"nbnd",ik)
 #else
-         !
          OPEN ( UNIT = iuni, FILE = TRIM(filename)//'.dat', &
               FORM='unformatted', STATUS = 'unknown' )
-         !
-         WRITE(iuni) ik, nk, ispin, nspin
-         WRITE(iuni) gamma_only, scalef
-         WRITE(iuni) ngw, igwx, nbnd
-         !
+         WRITE(iuni) ik, xk, ispin, gamma_only, scalef
+         WRITE(iuni) ngw, igwx, npol, nbnd
 #endif
          !
       END IF
+      !
+      IF ( ionode_in_group ) THEN
+         ALLOCATE( itmp( 3, MAX (igwx,1) ) )
+      ELSE
+         ! not used: some compiler do not like passing unallocated arrays
+         ALLOCATE( itmp( 3, 1 ) )
+      ENDIF
+      itmp (:,:) = 0
+      CALL mergekg( mill_k, itmp, ngwl, igl, me_in_group, &
+           nproc_in_group, root_in_group, intra_group_comm )
+      IF ( ionode_in_group ) THEN
+#if defined(__HDF5)
+         CALL errore('write_wfc', 'hdf5 not yet ready',1)
+#else
+         WRITE(iuni) b1, b2, b3
+         WRITE(iuni) itmp(1:3,1:igwx)
+#endif
+      END IF
+      DEALLOCATE( itmp )
+      !
+      IF ( ionode_in_group ) THEN
+         ALLOCATE( wtmp( MAX( npol*igwx, 1 ) ) )
+      ELSE
+         ALLOCATE( wtmp( 1 ) )
+      ENDIF
+      wtmp = 0.0_DP
       !
       DO j = 1, nbnd
          !
@@ -119,12 +141,13 @@ MODULE io_base
             !
          END IF
          !
-         IF ( ionode_in_group ) &
+         IF ( ionode_in_group ) THEN
 #if defined(__HDF5)
             CALL write_evc(h5_write_desc, j, wtmp(1:npol*igwx), ik) 
 #else
             WRITE(iuni) wtmp(1:npol*igwx)
 #endif
+         END IF
          !
       END DO
       IF ( ionode_in_group ) THEN
@@ -134,7 +157,7 @@ MODULE io_base
 #else 
          CLOSE (UNIT = iuni, STATUS = 'keep' )
 #endif
-     END IF
+      END IF
       !
       DEALLOCATE( wtmp )
       !
@@ -143,14 +166,14 @@ MODULE io_base
     END SUBROUTINE write_wfc
     !
     !------------------------------------------------------------------------
-    SUBROUTINE read_wfc( iuni, ik, nk, ispin, nspin, wfc, ngw, nbnd, &
-                         igl, ngwl, filename, scalef, &
-                         ionode_in_group, root_in_group, intra_group_comm, &
-                         ierr )
+    SUBROUTINE read_wfc( iuni, filename, ik, xk, ispin, npol, wfc, ngw, &
+                         gamma_only, nbnd, igl, ngwl, b1, b2, b3, mill_k,&
+                         scalef, ionode_in_group, root_in_group, &
+                         intra_group_comm, ierr )
       ! if ierr is present, return 0 if everything is ok, /= 0 if not
       !------------------------------------------------------------------------
       !
-      USE mp_wave,   ONLY : splitwf
+      USE mp_wave,   ONLY : splitwf, splitkg
       USE mp,        ONLY : mp_bcast, mp_size, mp_rank, mp_max
       !
 #if defined  __HDF5
@@ -161,23 +184,27 @@ MODULE io_base
       IMPLICIT NONE
       !
       INTEGER,            INTENT(IN)    :: iuni
+      CHARACTER(LEN=*),   INTENT(IN)    :: filename
       COMPLEX(DP),        INTENT(OUT)   :: wfc(:,:)
-      INTEGER,            INTENT(IN)    :: ik, nk
-      INTEGER,            INTENT(INOUT) :: ngw, nbnd, ispin, nspin
+      INTEGER,            INTENT(IN)    :: ik
+      INTEGER,            INTENT(INOUT) :: ngw, nbnd, ispin, npol
       INTEGER,            INTENT(IN)    :: ngwl
       INTEGER,            INTENT(IN)    :: igl(:)
-      CHARACTER(LEN=*),   INTENT(IN)    :: filename
       REAL(DP),           INTENT(OUT)   :: scalef
+      REAL(DP),           INTENT(OUT)   :: xk(3)
+      REAL(DP),           INTENT(OUT)   :: b1(3), b2(3), b3(3)
+      INTEGER,            INTENT(OUT)   :: mill_k(:,:)
+      LOGICAL,            INTENT(OUT)   :: gamma_only
       LOGICAL,            INTENT(IN)    :: ionode_in_group
       INTEGER,            INTENT(IN)    :: root_in_group, intra_group_comm
       INTEGER, OPTIONAL,  INTENT(OUT)   :: ierr
       !
       INTEGER                           :: j
       COMPLEX(DP), ALLOCATABLE          :: wtmp(:)
+      INTEGER, ALLOCATABLE              :: itmp(:,:)
       INTEGER                           :: ierr_
-      INTEGER                           :: igwx, igwx_, npwx, npol, ik_, nk_
+      INTEGER                           :: igwx, igwx_, npwx, ik_
       INTEGER                           :: me_in_group, nproc_in_group
-      LOGICAL                           :: gamma_only_
 #if defined(__HDF5)
       TYPE (hdf5_type),ALLOCATABLE      :: h5_read_desc
       ! 
@@ -214,35 +241,54 @@ MODULE io_base
            CALL prepare_for_reading_final(h5_read_desc, 0, &
                TRIM(filename)//'.hdf5',KPOINT = ik)
          END IF 
+         CALL read_attributes_hdf5(h5_read_desc, ik_,"ik",ik)
+         CALL read_attributes_hdf5(h5_read_desc, xk,"xk",ik)
+         CALL read_attributes_hdf5(h5_read_desc, ispin,"ispin",ik)
+         CALL read_attributes_hdf5(h5_read_desc, gamma_only,"gamma_only",ik)
+         CALL read_attributes_hdf5(h5_read_desc, scalef,"scale_factor",ik)
          CALL read_attributes_hdf5(h5_read_desc, ngw,"ngw",ik)
          CALL read_attributes_hdf5(h5_read_desc, nbnd,"nbnd",ik)
-         CALL read_attributes_hdf5(h5_read_desc, ik_,"ik",ik)
-         CALL read_attributes_hdf5(h5_read_desc, nk_,"ik",ik)
-         CALL read_attributes_hdf5(h5_read_desc, ispin,"ispin",ik)
-         CALL read_attributes_hdf5(h5_read_desc, nspin,"nspin",ik)
+         CALL read_attributes_hdf5(h5_read_desc, npol,"npol",ik)
          CALL read_attributes_hdf5(h5_read_desc, igwx_,"igwx",ik)
-         CALL read_attributes_hdf5(h5_read_desc, scalef,"scale_factor",ik)
 #else
-         READ (iuni) ik_, nk_, ispin, nspin
-         READ(iuni) gamma_only_, scalef
-         READ (iuni) ngw, igwx_, nbnd
+         READ (iuni) ik_, xk, ispin, gamma_only, scalef
+         READ (iuni) ngw, igwx_, npol, nbnd
 #endif
       END IF
       !
-      CALL mp_bcast( ngw,    root_in_group, intra_group_comm )
-      CALL mp_bcast( nbnd,   root_in_group, intra_group_comm )
       CALL mp_bcast( ik_,    root_in_group, intra_group_comm )
-      CALL mp_bcast( nk_,    root_in_group, intra_group_comm )
+      CALL mp_bcast( xk,     root_in_group, intra_group_comm )
       CALL mp_bcast( ispin,  root_in_group, intra_group_comm )
-      CALL mp_bcast( nspin,  root_in_group, intra_group_comm )
-      CALL mp_bcast( igwx_,  root_in_group, intra_group_comm )
+      CALL mp_bcast( gamma_only, root_in_group, intra_group_comm )
       CALL mp_bcast( scalef, root_in_group, intra_group_comm )
+      CALL mp_bcast( ngw,    root_in_group, intra_group_comm )
+      CALL mp_bcast( igwx_,  root_in_group, intra_group_comm )
+      CALL mp_bcast( npol,   root_in_group, intra_group_comm )
+      CALL mp_bcast( nbnd,   root_in_group, intra_group_comm )
       !
-      npol = 1
-      IF ( nspin == 4 ) npol = 2
-      ALLOCATE( wtmp( npol*MAX( igwx_, igwx ) ) )
       npwx = SIZE( wfc, 1 ) / npol
       !
+      IF ( ionode_in_group ) THEN 
+         ALLOCATE( itmp( 3,MAX( igwx_, igwx ) ) )
+#if defined(__HDF5)
+         CALL errore('read_wfc', 'hdf5 not yet ready',1)
+#else
+         READ (iuni) b1, b2, b3
+         READ (iuni) itmp(1:3,1:igwx_)
+#endif
+         IF ( igwx > igwx_ ) itmp(1:3,igwx_+1:igwx) = 0
+      ELSE
+         ALLOCATE( itmp( 3, 1 ) )
+      END IF
+      CALL splitkg( mill_k(:,:), itmp, ngwl, igl, me_in_group, &
+           nproc_in_group, root_in_group, intra_group_comm )
+      DEALLOCATE (itmp)
+      !
+      IF ( ionode_in_group ) THEN 
+         ALLOCATE( wtmp( npol*MAX( igwx_, igwx ) ) )
+      ELSE
+         ALLOCATE( wtmp(1) )
+      ENDIF
       DO j = 1, nbnd
          !
          IF ( j <= SIZE( wfc, 2 ) ) THEN
@@ -273,12 +319,12 @@ MODULE io_base
          !
       END DO
       !
-#if !defined (__HDF5)
-      IF ( ionode_in_group ) CLOSE ( UNIT = iuni, STATUS = 'keep' )
-#else
-      IF ( ionode_in_group ) THEN 
+      IF ( ionode_in_group ) THEN
+#if defined (__HDF5)
          CALL h5fclose_f(h5_read_desc%file_id, ierr_)
          DEALLOCATE (h5_read_desc)
+#else
+         CLOSE ( UNIT = iuni, STATUS = 'keep' )
       END IF
 #endif
       !
@@ -295,6 +341,7 @@ MODULE io_base
       !! Write rho(G) in reciprocal space and related information to file
       !! 'charge-density.*' (* = dat if fortran binary, * = hdf5 if HDF5)
       !! Quick-and-dirty version, allocates a large array on all mpi processes
+      !! Processor "ionode" collects data from band group, writes to file
       !
       USE mp,                   ONLY : mp_sum, mp_bcast
       USE mp_bands,             ONLY : intra_bgrp_comm
@@ -325,6 +372,9 @@ MODULE io_base
       INTEGER                  :: iun, ns, ig, ierr
       CHARACTER(LEN=320)       :: filename
       !
+#if defined __HDF5
+      CALL errore('write_rhog', 'hdf5 not yet ready',1)
+#endif
       ngm  = SIZE (rho, 1)
       IF (ngm /= SIZE (mill, 2) .OR. ngm /= SIZE (ig_l2g, 1) ) &
          CALL errore('write_rhog', 'inconsistent input dimensions', 1)
@@ -387,9 +437,23 @@ MODULE io_base
       DO ns = 1, nspin
          !
          rho_g = 0
-         DO ig = 1, ngm
-            rho_g(ig_l2g(ig)) = rho(ig,ns)
-         END DO
+         !
+         ! Workaround for LSDA, while waiting for much-needed harmonization:
+         ! we have rhoup and rhodw, we write rhotot=up+dw and rhodif=up-dw
+         ! 
+         IF ( ns == 1 .AND. nspin == 2 ) THEN
+            DO ig = 1, ngm
+               rho_g(ig_l2g(ig)) = rho(ig,ns) + rho(ig,ns+1)
+            END DO
+         ELSE IF ( ns == 2 .AND. nspin == 2 ) THEN
+            DO ig = 1, ngm
+               rho_g(ig_l2g(ig)) = rho(ig,ns-1) - rho(ig,ns)
+            END DO
+        ELSE
+            DO ig = 1, ngm
+               rho_g(ig_l2g(ig)) = rho(ig,ns)
+            END DO
+         END IF
          !
          CALL mp_sum( rho_g, intra_bgrp_comm )
          !
@@ -414,10 +478,12 @@ MODULE io_base
       !! Read rho(G) in reciprocal space from file  'charge-density.*' 
       !! (* = dat if fortran binary, * = hdf5 if HDF5)
       !! Quick-and-dirty version, allocates a large array on all mpi processes
+      !! All pools read the file: 1 proc reads, broadcasts to other procs
+      !! Works only if there is a single band group per pool
       !
       USE mp,                   ONLY : mp_bcast
       USE mp_bands,             ONLY : intra_bgrp_comm
-      USE io_global,            ONLY : ionode, ionode_id
+      USE mp_pools,             ONLY : me_pool, root_pool
       !
       IMPLICIT NONE
       !
@@ -427,48 +493,65 @@ MODULE io_base
       !! local-to-global indices, for machine- and mpi-independent ordering
       !! on this processor, G(ig) maps to G(ig_l2g(ig)) in global ordering
       INTEGER,          INTENT(IN) :: nspin
-      !! read up to npsin components
+      !! read up to nspin components
       COMPLEX(dp),  INTENT(INOUT) :: rho(:,:)
       !
       COMPLEX(dp), ALLOCATABLE :: rho_g(:)
+      COMPLEX(dp)              :: rhoup, rhodw
       REAL(dp)                 :: b1(3), b2(3), b3(3)
-      INTEGER                  :: ngm, nspin_, ngm_g
+      INTEGER                  :: ngm, nspin_, ngm_g, isup, isdw
       INTEGER                  :: iun, mill_dum, ns, ig, ierr
-      LOGICAL                  :: gamma_only
+      LOGICAL                  :: ionode_k, gamma_only
       CHARACTER(LEN=320)       :: filename
-       !
-      iun  = 4
+      !
+#if defined __HDF5
+      CALL errore('read_rhog', 'hdf5 not yet ready',1)
+#endif
       !
       ngm  = SIZE (rho, 1)
       IF (ngm /= SIZE (ig_l2g, 1) ) &
          CALL errore('read_rhog', 'inconsistent input dimensions', 1)
       !
+      iun  = 4
       filename = TRIM( dirname ) // 'charge-density.dat'
       ierr = 0
-      IF ( ionode ) OPEN ( UNIT = iun, FILE = TRIM( filename ), &
-                FORM = 'unformatted', STATUS = 'old', iostat = ierr )
-      CALL mp_bcast( ierr, ionode_id, intra_bgrp_comm )
-      IF ( ierr > 0 ) CALL errore ( 'read_rhog','error opening file ' & !
-           & // TRIM( filename ), 1 )
-      IF ( ionode ) THEN
-         READ (iun, iostat=ierr) gamma_only, ngm_g, nspin_
-         READ (iun, iostat=ierr) b1, b2, b3
-      END IF
-      CALL mp_bcast( ierr, ionode_id, intra_bgrp_comm )
-      IF ( ierr > 0 ) CALL errore ( 'read_rhog','error reading file ' &
-           & // TRIM( filename ), 1 )
-      CALL mp_bcast( ngm_g, ionode_id, intra_bgrp_comm )
-      CALL mp_bcast( nspin_, ionode_id, intra_bgrp_comm )
-      IF ( nspin > nspin_ ) &
-         CALL errore('read_rhog', 'not enough spin components found', 1)
       !
+      ! ... the root processor of each pool reads
+      !
+      ionode_k = (me_pool == root_pool)
+      !
+      IF ( ionode_k ) THEN
+         OPEN ( UNIT = iun, FILE = TRIM( filename ), &
+              FORM = 'unformatted', STATUS = 'old', iostat = ierr )
+         IF ( ierr /= 0 ) THEN
+            ierr = 1
+            GO TO 10
+         END IF
+         READ (iun, iostat=ierr) gamma_only, ngm_g, nspin_
+         IF ( ierr /= 0 ) THEN
+            ierr = 2
+            GO TO 10
+         END IF
+         READ (iun, iostat=ierr) b1, b2, b3
+         IF ( ierr /= 0 ) ierr = 3
+10       CONTINUE
+      END IF
+      !
+      CALL mp_bcast( ierr, root_pool, intra_bgrp_comm )
+      IF ( ierr > 0 ) CALL errore ( 'read_rhog','error reading file ' &
+           & // TRIM( filename ), ierr )
+      CALL mp_bcast( ngm_g, root_pool, intra_bgrp_comm )
+      CALL mp_bcast( nspin_, root_pool, intra_bgrp_comm )
+      !
+      IF ( nspin > nspin_ ) &
+         CALL infomsg('read_rhog', 'some spin components not found')
       IF ( ngm_g < MAXVAL (ig_l2g(:)) ) &
            CALL errore('read_rhog', 'some G-vectors are missing', 1)
       !
       ! ... skip record containing G-vector indices
       !
-      IF ( ionode ) READ (iun, iostat = ierr) mill_dum
-      CALL mp_bcast( ierr, ionode_id, intra_bgrp_comm )
+      IF ( ionode_k ) READ (iun, iostat = ierr) mill_dum
+      CALL mp_bcast( ierr, root_pool, intra_bgrp_comm )
       IF ( ierr > 0 ) CALL errore ( 'read_rhog','error reading file ' &
            & // TRIM( filename ), 2 )
       !
@@ -479,11 +562,11 @@ MODULE io_base
       !
       DO ns = 1, nspin
          !
-         IF ( ionode ) READ (iun, iostat=ierr) rho_g(1:ngm_g)
-         CALL mp_bcast( ierr, ionode_id, intra_bgrp_comm )
+         IF ( ionode_k ) READ (iun, iostat=ierr) rho_g(1:ngm_g)
+         CALL mp_bcast( ierr, root_pool, intra_bgrp_comm )
          IF ( ierr > 0 ) CALL errore ( 'read_rhog','error reading file ' &
               & // TRIM( filename ), 2+ns )
-         CALL mp_bcast( rho_g, ionode_id, intra_bgrp_comm )
+         CALL mp_bcast( rho_g, root_pool, intra_bgrp_comm )
          !
          DO ig = 1, ngm
             rho(ig,ns) = rho_g(ig_l2g(ig))
@@ -491,7 +574,21 @@ MODULE io_base
          !
       END DO
       !
-      IF (ionode) CLOSE (UNIT = iun, status ='keep' )
+      ! Workaround for LSDA, while waiting for much-needed harmonization:
+      ! file contains rhotot=up+dw and rhodif=up-dw, we need rhoup and rhodw
+      ! 
+      IF ( nspin_ == 2 .AND. nspin > 1 ) THEN
+         isup = 1
+         isdw = 2
+         DO ig = 1, ngm
+            rhoup = ( rho(ig,isup) + rho(ig,isdw) ) / 2.0_dp
+            rhodw = ( rho(ig,isup) - rho(ig,isdw) ) / 2.0_dp
+            rho(ig,isup) = rhoup
+            rho(ig,isdw) = rhodw
+         END DO
+      END IF
+      !
+      IF ( ionode_k ) CLOSE (UNIT = iun, status ='keep' )
       !
       DEALLOCATE( rho_g )
       !
