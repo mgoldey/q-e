@@ -242,7 +242,10 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
      IF( ionode ) WRITE( stdout,*)"      EPCDFT_Coupling:"
      IF( ionode ) WRITE( stdout,*)"      1) Make sure your grids/cutoffs... are the same for both systems."
      IF( ionode ) WRITE( stdout,*)"      2) Previous PW runs must NOT use parallelization over k points."
-     IF( ionode ) WRITE( stdout,*)"      3) occup1+occdown1 == occup2+occdown2."
+     IF( ionode ) WRITE( stdout,*)"      3) The number of up/down electrons must be the same for both systems."
+     IF( ionode ) WRITE( stdout,*)"         For example, if system 1 has 2 up and 1 down electrons, then system 2"
+     IF( ionode ) WRITE( stdout,*)"         must have 2 up and 1 down electrons. In other words, spin "
+     IF( ionode ) WRITE( stdout,*)"         must be conserved during the transfer process."
 !     IF( ionode ) WRITE( stdout,*)"      4) if s_spin = .true. then  occup1 must = occup2."
 !     IF( ionode ) WRITE( stdout,*)"      5) if s_spin = .true. then occdown1 must = occdown2."
      IF( ionode ) WRITE( stdout,*)" "
@@ -323,8 +326,8 @@ SUBROUTINE epcdft_build_occ(inOccUp, inOccDown, output_obj)
   ! count up
   !
   !
+  inOccUp = 0
   IF(output_obj%band_structure%nbnd_up_ispresent)THEN
-    inOccUp = 0
     DO i= 1, output_obj%band_structure%nbnd_up
       inOccUp = inOccUp + output_obj%band_structure%ks_energies(1)%occupations(i)
     ENDDO
@@ -332,8 +335,8 @@ SUBROUTINE epcdft_build_occ(inOccUp, inOccDown, output_obj)
   !
   ! count down
   !
+  inOccDown = 0
   IF(output_obj%band_structure%nbnd_dw_ispresent)THEN
-    inOccDown = 0
     DO i = 1, output_obj%band_structure%nbnd_dw
       inOccDown = inOccDown + output_obj%band_structure%ks_energies(1)%occupations(output_obj%band_structure%nbnd_up+i)
     ENDDO
