@@ -50,7 +50,7 @@ SUBROUTINE epcdft_setup
   INTEGER :: ios
   REAL(DP) :: dtmp
   !
-  NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, occup1, occup2, occdown1, occdown2, &
+  NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, &
                        debug,  s_spin, eig_of_w, debug2
   !
   ! setup vars and consistency checks
@@ -84,10 +84,10 @@ SUBROUTINE epcdft_setup
   CALL mp_bcast( prefix, ionode_id, world_comm )
   CALL mp_bcast( prefix2, ionode_id, world_comm )
   CALL mp_bcast( outdir2, ionode_id, world_comm )
-  CALL mp_bcast( occup1, ionode_id, world_comm )
-  CALL mp_bcast( occup2, ionode_id, world_comm )
-  CALL mp_bcast( occdown1, ionode_id, world_comm )
-  CALL mp_bcast( occdown2, ionode_id, world_comm )
+!  CALL mp_bcast( occup1, ionode_id, world_comm )
+!  CALL mp_bcast( occup2, ionode_id, world_comm )
+!  CALL mp_bcast( occdown1, ionode_id, world_comm )
+!  CALL mp_bcast( occdown2, ionode_id, world_comm )
   CALL mp_bcast( debug, ionode_id, world_comm )
   CALL mp_bcast( debug2, ionode_id, world_comm )
   CALL mp_bcast( s_spin, ionode_id, world_comm )
@@ -135,9 +135,9 @@ SUBROUTINE epcdft_setup
   !
   cor2 = epcdft_shift
   !
-  ! get free energy
+  ! get free energy and occupations
   !
-  CALL epcdft_build_free_energy(free2)
+  CALL epcdft_init_vars(free2, occup2, occdown2)
   !
   ! deallocate to avoid reallocation of sys 1 vars
   CALL clean_pw( .TRUE. )
@@ -180,9 +180,9 @@ SUBROUTINE epcdft_setup
   !
   cor1 = epcdft_shift
   !
-  ! get free energy
+  ! get free energy and occupations
   !
-  CALL epcdft_build_free_energy(free1)
+  CALL epcdft_init_vars(free1, occup1, occdown1)
   !
   IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
   !
@@ -274,40 +274,101 @@ END SUBROUTINE print_checks_warns
 !
 !
 !-----------------------------------------------------------------------------
-SUBROUTINE epcdft_build_free_energy(inFree)
+SUBROUTINE epcdft_init_vars(inFree, inOccUp, inOccDown)
+  !--------------------------------------------------------------------------
+  !
+  ! Init variables: free energy, occup, occdown
+  !
+  USE kinds, ONLY : DP
+  USE pw_restart_new, ONLY : pw_readschema_file
+  USE qes_types_module, ONLY : output_type, parallel_info_type, general_info_type
+  !
+  IMPLICIT NONE
+  !
+  REAL(DP), INTENT(INOUT) :: inFree
+  INTEGER, INTENT(INOUT) :: inOccUp, inOccDown
+  INTEGER :: ierr
+  TYPE (output_type) :: output_obj
+  TYPE (parallel_info_type) :: parinfo_obj
+  TYPE (general_info_type) :: geninfo_obj
+  !
+  ! read xml and add output to obj to get etot
+  !
+  CALL pw_readschema_file ( ierr, output_obj, parinfo_obj, geninfo_obj)
+  !
+  CALL epcdft_build_free_energy(inFree, output_obj)
+  !
+  CALL epcdft_build_occ(inOccUp, inOccDown, output_obj)
+  !
+END SUBROUTINE  epcdft_init_vars
+!
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE epcdft_build_occ(inOccUp, inOccDown, output_obj)
+  !--------------------------------------------------------------------------
+  !
+  ! calculate occupations for up and down
+  !
+  USE kinds, ONLY : DP
+  USE qes_types_module, ONLY : output_type
+  !
+  !
+  IMPLICIT NONE
+  !
+  INTEGER, INTENT(INOUT)    :: inOccUp, inOccDown
+  TYPE (output_type), INTENT(IN) :: output_obj
+  !
+  INTEGER :: i
+  !
+  ! count up
+  !
+  !
+  IF(output_obj%band_structure%nbnd_up_ispresent)THEN
+    inOccUp = 0
+    DO i= 1, output_obj%band_structure%nbnd_up
+      inOccUp = inOccUp + output_obj%band_structure%ks_energies(1)%occupations(i)
+    ENDDO
+  ENDIF
+  !
+  ! count down
+  !
+  IF(output_obj%band_structure%nbnd_dw_ispresent)THEN
+    inOccDown = 0
+    DO i = 1, output_obj%band_structure%nbnd_dw
+      inOccDown = inOccDown + output_obj%band_structure%ks_energies(1)%occupations(output_obj%band_structure%nbnd_up+i)
+    ENDDO
+  ENDIF
+  !
+END SUBROUTINE  epcdft_build_occ
+!
+!
+!-----------------------------------------------------------------------------
+SUBROUTINE epcdft_build_free_energy(inFree, output_obj)
   !--------------------------------------------------------------------------
   !
   ! calculate free energy and put it in inFree
   !
   USE kinds, ONLY : DP
   USE epcdft, ONLY : epcdft_guess, epcdft_target, nconstr_epcdft, epcdft_shift
-  USE pw_restart_new, ONLY : pw_readschema_file
-  USE qes_types_module, ONLY : output_type, parallel_info_type, general_info_type
+  USE qes_types_module, ONLY : output_type
   !
   IMPLICIT NONE
   !
   REAL(DP), INTENT(INOUT)    :: inFree
+  TYPE (output_type), INTENT(IN) :: output_obj
   !
   REAL(DP) :: etot
   INTEGER :: ik
-  INTEGER :: ierr
-  TYPE (output_type) :: output_obj
-  TYPE (parallel_info_type) :: parinfo_obj
-  TYPE (general_info_type) :: geninfo_obj
   !
   ! etot = E_ks + V*int*dr*w(r)*rho(r) - V*N_cdft
   !
   ! free = E_ks + V*int*dr*w(r)*rho(r)
   !      = etot + V*N_cdft 
   !
-  ! read xml and add output to obj to get etot
-  !
-  CALL pw_readschema_file ( ierr, output_obj, parinfo_obj, geninfo_obj)
   !
   ! etot is in Hartree it needs to be in Ry
   !
   etot = 2.D0*output_obj%total_energy%etot
-  !
   !
   ! build V*N_cdft 
   !
