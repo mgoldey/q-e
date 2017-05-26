@@ -26,14 +26,6 @@ $ECHO "  executables directory: $BIN_DIR"
 $ECHO "  pseudo directory:      $PSEUDO_DIR"
 $ECHO "  checking that needed directories and files exist...\c"
 
-# check for gnuplot
-GP_COMMAND=`which gnuplot 2>/dev/null`
-if [ "$GP_COMMAND" = "" ]; then
-        $ECHO
-        $ECHO "gnuplot not in PATH"
-        $ECHO "Results will not be plotted"
-fi
-
 # check for directories
 for DIR in "$BIN_DIR" "$PSEUDO_DIR" ; do
     if test ! -d $DIR ; then
@@ -93,10 +85,10 @@ cat > left.in << EOF
   nosym = .true.
   nbnd = 14
   ibrav = 1,
-  a = 17,
+  a = 12,
   nat = 2,
   ntyp = 1,
-  ecutwfc = 80,
+  ecutwfc = 60,
   tot_charge = +1
   nspin = 2,
   tot_magnetization = 1
@@ -106,7 +98,7 @@ cat > left.in << EOF
 /
 EPCDFT
 1 1.D-5 1.D-2 100
-delta_charge 1 1 2 2 1.0 0.320679E+00
+delta_charge 1 1 2 2 -1.0 0.320679E+00
 K_POINTS {Gamma}
 ATOMIC_SPECIES
 Zn 0.0 Zn.pbe-mt_fhi.UPF
@@ -131,10 +123,10 @@ cat > right.in << EOF
   nosym = .true.
   nbnd = 14
   ibrav = 1,
-  a = 17,
+  a = 12,
   nat = 2,
   ntyp = 1,
-  ecutwfc = 80,
+  ecutwfc = 60,
   tot_charge = +1
   nspin = 2,
   tot_magnetization = 1
@@ -144,7 +136,7 @@ cat > right.in << EOF
 /
 EPCDFT
 1 1.D-5 1.D-2 100
-delta_charge 2 2 1 1 1.0 0.320679E+00
+delta_charge 2 2 1 1 -1.0 0.320679E+00
 K_POINTS {Gamma}
 ATOMIC_SPECIES
 Zn 0.0 Zn.pbe-mt_fhi.UPF

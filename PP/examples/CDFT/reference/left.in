@@ -2,17 +2,17 @@
   calculation  = "scf",
   prefix       = "left",
   outdir       = "./out",
-  pseudo_dir = '/project/gagalli/nbrawand/tmp/qe60cdft/pseudo/',
+  pseudo_dir = '/home/matt/Programs/epcdft_merge/pseudo/',
   wf_collect = .true.
 /
 &SYSTEM
   nosym = .true.
   nbnd = 14
   ibrav = 1,
-  a = 17,
+  a = 12,
   nat = 2,
   ntyp = 1,
-  ecutwfc = 80,
+  ecutwfc = 60,
   tot_charge = +1
   nspin = 2,
   tot_magnetization = 1
@@ -22,7 +22,7 @@
 /
 EPCDFT
 1 1.D-5 1.D-2 100
-delta_charge 1 1 2 2 1.0 0.320679E+00
+delta_charge 1 1 2 2 -1.0 0.320679E+00
 K_POINTS {Gamma}
 ATOMIC_SPECIES
 Zn 0.0 Zn.pbe-mt_fhi.UPF
