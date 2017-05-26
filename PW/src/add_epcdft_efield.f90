@@ -475,8 +475,8 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   COMPLEX(DP), ALLOCATABLE :: wfcatomg (:,:) ! atomic wfcs in g
   COMPLEX(DP), ALLOCATABLE :: wfcatomr (:) ! atomic wfcs in r
   COMPLEX(DP), ALLOCATABLE :: total_atom_rho_r (:) ! atomic wfcs in r - collected
-  COMPLEX(DP), ALLOCATABLE :: shifted_atom1 (:,:) ! atomic wfcs in r -shifted and collected
-  COMPLEX(DP), ALLOCATABLE :: shifted_atom2 (:,:) ! atomic wfcs in r -shifted and collected
+  COMPLEX(DP), ALLOCATABLE :: temp_array_1 (:,:) ! atomic wfcs in r -shifted and collected
+  COMPLEX(DP), ALLOCATABLE :: temp_array_2 (:,:) ! atomic wfcs in r -shifted and collected
   INTEGER :: orbi ! orbital index for wfcatom
   INTEGER :: nfuncs, lmax ! number of functions as derived from lmax
   REAL(DP) :: orboc ! occupation of orbital
@@ -504,16 +504,16 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   
   ALLOCATE( wfcatomr(dfftp%nnr) )
   ALLOCATE( total_atom_rho_r(dfftp%nnr) )
-  ALLOCATE( shifted_atom1(3,dfftp%nnr) )
-  ALLOCATE( shifted_atom2(3,dfftp%nnr) )
+  ALLOCATE( temp_array_1(3,dfftp%nnr) )
+  ALLOCATE( temp_array_2(3,dfftp%nnr) )
   !
   n=dfftp%nnr
   ik=1
   npw=ngk(ik)
   wfcatomr = 0.D0
   total_atom_rho_r=0.D0
-  shifted_atom1=0.d0
-  shifted_atom2=0.d0
+  temp_array_1=0.d0
+  temp_array_2=0.d0
   vtop = 0.D0
   vbot = 0.D0
   v = 0.D0
@@ -696,8 +696,8 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 
     DO na = 1, nat ! for each atom
       !
-      shifted_atom1=0.D0!  
-      shifted_atom2=0.D0!  
+      temp_array_1=0.D0!  
+      temp_array_2=0.D0!  
       nt = ityp (na) ! get atom type
       nwfc=sum(upf(nt)%oc(:))
       ALLOCATE( wfcatomg(npwx, nwfc) )
@@ -727,16 +727,16 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
               IF(gamma_only) wfcatomr(nlm(igk_k(1:npw,1))) = CONJG( wfcatomg(1:npw,orbi) )
               CALL invfft ('Dense', wfcatomr(:), dfftp)
               !
-              shifted_atom2=0.D0
+              temp_array_2=0.D0
               DO ipol=1,3
                 ! Calculate derivative
                 DO ig = 1,npw
                   gvec = g(ipol,igk_k(ig,ik)) * tpiba
-                  shifted_atom2(ipol,nl(igk_k(ig,1)))= (0.d0,-1.d0) * gvec * wfcatomg(ig,orbi)
-                  IF(gamma_only) shifted_atom2(ipol, nlm(igk_k(ig,1))) = CONJG((0.d0,-1.d0) * gvec * wfcatomg(ig,orbi))
+                  temp_array_2(ipol,nl(igk_k(ig,1)))= (0.d0,-1.d0) * gvec * wfcatomg(ig,orbi)
+                  IF(gamma_only) temp_array_2(ipol, nlm(igk_k(ig,1))) = CONJG((0.d0,-1.d0) * gvec * wfcatomg(ig,orbi))
                 END DO
-                CALL invfft ('Dense', shifted_atom2(ipol,:), dfftp)
-                shifted_atom1(ipol,:) = shifted_atom1(ipol,:)+2.d0*orboc*shifted_atom2(ipol,:)*CONJG(wfcatomr(:))
+                CALL invfft ('Dense', temp_array_2(ipol,:), dfftp)
+                temp_array_1(ipol,:) = temp_array_1(ipol,:)+2.d0*orboc*temp_array_2(ipol,:)*CONJG(wfcatomr(:))
               END DO 
               !
             ENDDO ! m
@@ -751,22 +751,22 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
             else
               write(filename,"(A7,I2,A1,I1)") "atomic_",na,"_",ipol
             ENDIF
-            CALL write_cube_r ( 9519395, filename, REAL(shifted_atom1(ipol,:)))
+            CALL write_cube_r ( 9519395, filename, REAL(temp_array_1(ipol,:)))
           ENDIF
 
           DO ir = 1, n
             if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
-              shifted_atom1(ipol,ir)=0.D0  
+              temp_array_1(ipol,ir)=0.D0  
             ELSE
-              shifted_atom1(ipol,ir) = shifted_atom1(ipol,ir)/vbot(ir)
+              temp_array_1(ipol,ir) = temp_array_1(ipol,ir)/vbot(ir)
             ENDIF
           ENDDO
         ENDDO
       ELSE  ! DO DERIVATIVE VIA FINITE DIFFERENCE
         DO ipol=1,3        
           ! Negative displacement, stored in total_atom_rho_r
-          shifted_atom1(ipol,:)=0.d0
-          shifted_atom2(ipol,:)=0.d0
+          temp_array_1(ipol,:)=0.d0
+          temp_array_2(ipol,:)=0.d0
           wfcatomg=0.D0
           CALL one_atom_shifted_wfc (1, wfcatomg, na, nwfc, ipol, -dx) 
           orbi = 0 
@@ -786,7 +786,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
                 ! convert atomic(g) -> |atomic(r)|^2
                 CALL invfft ('Dense', wfcatomr(:), dfftp)
                 wfcatomr(:) = wfcatomr(:) * CONJG(wfcatomr(:))  
-                shifted_atom1(ipol,:)=shifted_atom1(ipol,:)+ orboc * wfcatomr(:)
+                temp_array_1(ipol,:)=temp_array_1(ipol,:)+ orboc * wfcatomr(:)
               ENDDO ! m
             ENDIF
           ENDDO ! nb
@@ -797,11 +797,11 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
             else
               write(filename,"(A7,I2,A2,I1)") "atomic_",na,"_-",ipol
             ENDIF
-            CALL write_cube_r ( 9519395, filename, REAL(shifted_atom1(ipol,:)))
+            CALL write_cube_r ( 9519395, filename, REAL(temp_array_1(ipol,:)))
           ENDIF
 
           ! Positive displacement
-          shifted_atom2(ipol,:)=0.d0
+          temp_array_2(ipol,:)=0.d0
           wfcatomg=0.D0
           CALL one_atom_shifted_wfc (1, wfcatomg, na, nwfc, ipol, dx) 
           orbi = 0 
@@ -821,7 +821,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
                 ! convert atomic(g) -> |atomic(r)|^2
                 CALL invfft ('Dense', wfcatomr(:), dfftp)
                 wfcatomr(:) = wfcatomr(:) * CONJG(wfcatomr(:))
-                shifted_atom2(ipol,:)=shifted_atom2(ipol,:)+ orboc * wfcatomr(:)
+                temp_array_2(ipol,:)=temp_array_2(ipol,:)+ orboc * wfcatomr(:)
               ENDDO ! m
             ENDIF
           ENDDO ! for each orbital
@@ -832,16 +832,16 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
             else
               write(filename,"(A7,I2,A1,I1)") "atomic_",na,"_",ipol
             ENDIF
-            CALL write_cube_r ( 9519395, filename, REAL(shifted_atom2(ipol,:)))
+            CALL write_cube_r ( 9519395, filename, REAL(temp_array_2(ipol,:)))
           ENDIF
 
           ! shifted_atom now has drho_i/tot_rho in it, calculated using the two-point center formula
           DO ir = 1, n
             if (ABS(REAL(vbot(ir))).lt.REAL(cutoff)) THEN
-              shifted_atom1(ipol,ir)=0.D0  
+              temp_array_1(ipol,ir)=0.D0  
             ELSE
-              shifted_atom1(ipol,ir) = (shifted_atom2(ipol,ir) - shifted_atom1(ipol,ir))/vbot(ir)
-              shifted_atom1(ipol,ir) =  shifted_atom1(ipol,ir)/(2*dx)
+              temp_array_1(ipol,ir) = (temp_array_2(ipol,ir) - temp_array_1(ipol,ir))/vbot(ir)
+              temp_array_1(ipol,ir) =  temp_array_1(ipol,ir)/(2*dx)
             ENDIF
           ENDDO
           !
@@ -853,52 +853,52 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
         ! -V rho w*(-drho_i/tot_rho) 
         
         CASE('charge')
-          force_idir=REAL(SUM((v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
+          force_idir=REAL(SUM((v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*temp_array_1(ipol,:)))
         CASE('spin')
-          force_idir=REAL(SUM((-v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
+          force_idir=REAL(SUM((-v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*temp_array_1(ipol,:)))
         CASE('delta_charge')
-          force_idir=REAL(SUM((v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
+          force_idir=REAL(SUM((v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*temp_array_1(ipol,:)))
         CASE('delta_spin')
-          force_idir=REAL(SUM((-v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*shifted_atom1(ipol,:)))
+          force_idir=REAL(SUM((-v(:,1)*rho(:,1)+v(:,2)*rho(:,2))*temp_array_1(ipol,:)))
         CASE('delta_alpha')
-          force_idir=REAL(SUM((-v(:,1)*rho(:,1)*shifted_atom1(ipol,:))))
+          force_idir=REAL(SUM((-v(:,1)*rho(:,1)*temp_array_1(ipol,:))))
         CASE('delta_beta')
-          force_idir=REAL(SUM((-v(:,2)*rho(:,2)*shifted_atom1(ipol,:))))
+          force_idir=REAL(SUM((-v(:,2)*rho(:,2)*temp_array_1(ipol,:))))
         END SELECT
 
         ! +/- (-V) rho (-drho_i/tot_rho)
         SELECT CASE( epcdft_type(icon) )
         CASE('charge')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
-            force_idir=force_idir+REAL(SUM((rho(:,1)+rho(:,2))*shifted_atom1(ipol,:)))
+            force_idir=force_idir+REAL(SUM((rho(:,1)+rho(:,2))*temp_array_1(ipol,:)))
           ENDIF
         CASE('spin')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
-            force_idir=force_idir+REAL(SUM((-rho(:,1)+rho(:,2))*shifted_atom1(ipol,:)))
+            force_idir=force_idir+REAL(SUM((-rho(:,1)+rho(:,2))*temp_array_1(ipol,:)))
           ENDIF
         CASE('delta_charge')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
-            force_idir=force_idir+REAL(SUM((rho(:,1)+rho(:,2))*shifted_atom1(ipol,:)))
+            force_idir=force_idir+REAL(SUM((rho(:,1)+rho(:,2))*temp_array_1(ipol,:)))
           ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN ! atom in donor
-            force_idir=force_idir-REAL(SUM((rho(:,1)+rho(:,2))*shifted_atom1(ipol,:)))
+            force_idir=force_idir-REAL(SUM((rho(:,1)+rho(:,2))*temp_array_1(ipol,:)))
           ENDIF
         CASE('delta_spin')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
-            force_idir=force_idir+REAL(SUM((-rho(:,1)+rho(:,2))*shifted_atom1(ipol,:)))
+            force_idir=force_idir+REAL(SUM((-rho(:,1)+rho(:,2))*temp_array_1(ipol,:)))
           ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN ! atom in donor
-            force_idir=force_idir-REAL(SUM((-rho(:,1)+rho(:,2))*shifted_atom1(ipol,:)))
+            force_idir=force_idir-REAL(SUM((-rho(:,1)+rho(:,2))*temp_array_1(ipol,:)))
           ENDIF
         CASE('delta_alpha')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
-            force_idir=force_idir+REAL(SUM((-rho(:,1))*shifted_atom1(ipol,:)))
+            force_idir=force_idir+REAL(SUM((-rho(:,1))*temp_array_1(ipol,:)))
           ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
-            force_idir=force_idir-REAL(SUM((-rho(:,1))*shifted_atom1(ipol,:)))
+            force_idir=force_idir-REAL(SUM((-rho(:,1))*temp_array_1(ipol,:)))
           ENDIF
         CASE('delta_beta')
           IF( na .ge. epcdft_locs(1,icon) .and. na .le. epcdft_locs(2,icon) )THEN ! atom in acceptor
-            force_idir=force_idir+REAL(SUM((-rho(:,2))*shifted_atom1(ipol,:)))
+            force_idir=force_idir+REAL(SUM((-rho(:,2))*temp_array_1(ipol,:)))
           ELSE IF( na .ge. epcdft_locs(3,icon) .and. na .le. epcdft_locs(4,icon) )THEN
-            force_idir=force_idir-REAL(SUM((-rho(:,2))*shifted_atom1(ipol,:)))
+            force_idir=force_idir-REAL(SUM((-rho(:,2))*temp_array_1(ipol,:)))
           ENDIF
         END SELECT
         CALL mp_sum( force_idir, intra_bgrp_comm )
@@ -909,8 +909,8 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
   ENDDO ! icon
 
   DEALLOCATE( wfcatomr )
-  DEALLOCATE( shifted_atom1 )
-  DEALLOCATE( shifted_atom2 )
+  DEALLOCATE( temp_array_1 )
+  DEALLOCATE( temp_array_2 )
   DEALLOCATE( total_atom_rho_r )
   !
   RETURN

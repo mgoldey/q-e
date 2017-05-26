@@ -84,17 +84,9 @@ SUBROUTINE epcdft_setup
   CALL mp_bcast( prefix, ionode_id, world_comm )
   CALL mp_bcast( prefix2, ionode_id, world_comm )
   CALL mp_bcast( outdir2, ionode_id, world_comm )
-!  CALL mp_bcast( occup1, ionode_id, world_comm )
-!  CALL mp_bcast( occup2, ionode_id, world_comm )
-!  CALL mp_bcast( occdown1, ionode_id, world_comm )
-!  CALL mp_bcast( occdown2, ionode_id, world_comm )
   CALL mp_bcast( debug, ionode_id, world_comm )
   CALL mp_bcast( debug2, ionode_id, world_comm )
   CALL mp_bcast( s_spin, ionode_id, world_comm )
-!  CALL mp_bcast( free1, ionode_id, world_comm )
-!  CALL mp_bcast( free2, ionode_id, world_comm )
-!  CALL mp_bcast( cor1, ionode_id, world_comm )
-!  CALL mp_bcast( cor2, ionode_id, world_comm )
   CALL mp_bcast( eig_of_w, ionode_id, world_comm )
   !
   ! first read system 2 and store in system 1's variables 
