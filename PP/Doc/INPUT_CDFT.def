@@ -22,7 +22,6 @@ input_description -distribution {Quantum Espresso} -package PWscf -program epcdf
               outdir = 'out'  
               outdir2 = 'out'  
               debug        = .true.
-              eig_of_w     = .false.
 	   @b /
     }
 
