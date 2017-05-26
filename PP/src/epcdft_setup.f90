@@ -51,7 +51,7 @@ SUBROUTINE epcdft_setup
   REAL(DP) :: dtmp
   !
   NAMELIST / inputpp / outdir, prefix, prefix2, outdir2, &
-                       debug,  s_spin, eig_of_w, debug2
+                       debug,  eig_of_w, debug2
   !
   ! setup vars and consistency checks
   !
