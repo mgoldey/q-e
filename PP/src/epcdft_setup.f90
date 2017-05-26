@@ -243,8 +243,8 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
      IF( ionode ) WRITE( stdout,*)"      1) Make sure your grids/cutoffs... are the same for both systems."
      IF( ionode ) WRITE( stdout,*)"      2) Previous PW runs must NOT use parallelization over k points."
      IF( ionode ) WRITE( stdout,*)"      3) occup1+occdown1 == occup2+occdown2."
-     IF( ionode ) WRITE( stdout,*)"      4) if s_spin = .true. then  occup1 must = occup2."
-     IF( ionode ) WRITE( stdout,*)"      5) if s_spin = .true. then occdown1 must = occdown2."
+!     IF( ionode ) WRITE( stdout,*)"      4) if s_spin = .true. then  occup1 must = occup2."
+!     IF( ionode ) WRITE( stdout,*)"      5) if s_spin = .true. then occdown1 must = occdown2."
      IF( ionode ) WRITE( stdout,*)" "
      IF( ionode ) WRITE( stdout,*)"    ======================================================================= "
      IF( ionode ) WRITE( stdout,*)" "
@@ -257,7 +257,7 @@ SUBROUTINE print_checks_warns(prefix, tmp_dir, prefix2, tmp_dir2, nks, nbnd, occ
      IF( ionode ) WRITE( stdout,*)"    outdir2      :", tmp_dir2
      IF( ionode ) WRITE( stdout,*)"    debug        :", debug
      IF( ionode ) WRITE( stdout,*)"    debug2       :", debug2
-     IF( ionode ) WRITE( stdout,*)"    s_spin       :", s_spin
+!     IF( ionode ) WRITE( stdout,*)"    s_spin       :", s_spin
      IF( ionode ) WRITE( stdout,*)" "
      IF( ionode ) WRITE( stdout,*)"    # of spins   :", nks
      IF( ionode ) WRITE( stdout,*)"    # of bands   :", nbnd
