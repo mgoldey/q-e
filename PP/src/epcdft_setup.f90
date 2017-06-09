@@ -77,7 +77,7 @@ SUBROUTINE epcdft_setup
   !
   ! ... Broadcast variables
   !
-  CALL mp_bcast (ios, ionode_id, world_comm )
+  CALL mp_bcast( ios, ionode_id, world_comm )
   CALL mp_bcast( tmp_dir, ionode_id, world_comm )
   CALL mp_bcast( tmp_dir2, ionode_id, world_comm )
   CALL mp_bcast( outdir, ionode_id, world_comm )
@@ -321,7 +321,7 @@ SUBROUTINE epcdft_build_occ(inOccUp, inOccDown, output_obj)
   inOccUp = 0
   IF(output_obj%band_structure%nbnd_up_ispresent)THEN
     DO i= 1, output_obj%band_structure%nbnd_up
-      inOccUp = inOccUp + output_obj%band_structure%ks_energies(1)%occupations(i)
+      inOccUp = inOccUp + NINT(output_obj%band_structure%ks_energies(1)%occupations(i))
     ENDDO
   ENDIF
   !
@@ -330,7 +330,7 @@ SUBROUTINE epcdft_build_occ(inOccUp, inOccDown, output_obj)
   inOccDown = 0
   IF(output_obj%band_structure%nbnd_dw_ispresent)THEN
     DO i = 1, output_obj%band_structure%nbnd_dw
-      inOccDown = inOccDown + output_obj%band_structure%ks_energies(1)%occupations(output_obj%band_structure%nbnd_up+i)
+      inOccDown = inOccDown + NINT(output_obj%band_structure%ks_energies(1)%occupations(output_obj%band_structure%nbnd_up+i))
     ENDDO
   ENDIF
   !
