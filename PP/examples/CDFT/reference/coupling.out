@@ -1,0 +1,155 @@
+
+     Program epcdft_coupling v.6.1 starts on 26May2017 at 16:19: 7 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on       1 processor cores
+     Number of MPI processes:                 1
+     Threads/MPI process:                     1
+     ======================================================================= 
+     SYSTEM 2 INFO
+
+     Reading data from directory:
+     ./out/right.save/
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1, nr2, nr3 values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file Zn.pbe-mt_fhi.UPF: wavefunction(s)  4p 4f renormalized
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum        9809    9809   2449               732287   732287   91623
+
+     Generating pointlists ...
+     new r_m :   0.1719 (alat units)  3.8976 (a.u.) for type    1
+     ======================================================================= 
+     SYSTEM 1 INFO
+
+     Reading data from directory:
+     ./out/left.save/
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1, nr2, nr3 values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file Zn.pbe-mt_fhi.UPF: wavefunction(s)  4p 4f renormalized
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum        9809    9809   2449               732287   732287   91623
+
+     Generating pointlists ...
+     ======================================================================= 
+  
+     ======================================================================= 
+  
+       EPCDFT_Coupling:
+       1) Make sure your grids/cutoffs... are the same for both systems.
+       2) Previous PW runs must NOT use parallelization over k points.
+       3) The number of up/down electrons must be the same for both systems.
+          For example, if system 1 has 2 up and 1 down electrons, then system 2
+          must have 2 up and 1 down electrons. In other words, spin 
+          must be conserved during the transfer process.
+  
+     ======================================================================= 
+  
+  
+     Data from input file :
+  
+     prefix1      :left                                                                                                                                                                                                                                                            
+     outdir1      :./out/                                                                                                                                                                                                                                                          
+     prefix2      :right                                                                                                                                                                                                                                                           
+     outdir2      :./out/                                                                                                                                                                                                                                                          
+     debug        : T
+     debug2       : F
+  
+     # of spins   :           2
+     # of bands   :          14
+     # occ up states in sys 1   :          12
+     # occ down states in sys 1 :          11
+     # occ up states in sys 2   :          12
+     # occ down states in sys 2 :          11
+  
+     ======================================================================= 
+     Progress : 
+     Setup done
+     S done
+     W done
+     H done
+     =======================================================================
+ 
+     F1 =   -220.45536   F2 =   -220.45536
+     E1 =   -220.14393   E2 =   -220.14393
+     C1 =     -0.31143   C2 =     -0.31143
+ 
+ 
+     S up                                                                                                
+     ( 0.1000000000000062E+01, 0.0000000000000000E+00)  (-0.9821697215938486E+00, 0.0000000000000000E+00)
+     (-0.9821697215938489E+00, 0.0000000000000000E+00)  ( 0.9999999999999062E+00, 0.0000000000000000E+00)
+ 
+ 
+     S down                                                                                              
+     ( 0.1000000000000089E+01, 0.0000000000000000E+00)  (-0.3628387503754723E-01, 0.0000000000000000E+00)
+     (-0.3628387503754679E-01, 0.0000000000000000E+00)  ( 0.1000000000000187E+01, 0.0000000000000000E+00)
+ 
+ 
+     W up                                                                                                
+     (-0.2874913149843228E-02, 0.0000000000000000E+00)  ( 0.2459425816596090E-07, 0.0000000000000000E+00)
+     (-0.2459443496726506E-07, 0.0000000000000000E+00)  (-0.2875073719127819E-02, 0.0000000000000000E+00)
+ 
+ 
+     W down                                                                                              
+     (-0.3085594996068537E+00, 0.0000000000000000E+00)  ( 0.2125190264831670E-06, 0.0000000000000000E+00)
+     (-0.2125204456454447E-06, 0.0000000000000000E+00)  (-0.3085574116584135E+00, 0.0000000000000000E+00)
+ 
+ 
+     H                                                                                                   
+     (-0.2201439292229290E+03, 0.0000000000000000E+00)  (-0.7856350879663502E+01, 0.0000000000000000E+00)
+     (-0.7856350879663502E+01, 0.0000000000000000E+00)  (-0.2201439290718191E+03, 0.0000000000000000E+00)
+ 
+ 
+     H using lowdin orthogonalization                                                                    
+     (-0.2201435332025385E+03, 0.0000000000000000E+00)  (-0.1111264293277969E-01, 0.0000000000000000E+00)
+     (-0.1111264293275527E-01, 0.0000000000000000E+00)  (-0.2201435330513452E+03, 0.0000000000000000E+00)
+ 
+     |Sab| =   0.356369E-01
+     |Hab| =   0.111126E-01 Ry
+     |Hab| =   0.555632E-02 Ha
+     |Hab| =   0.151195E+00 eV
+ 
+     =======================================================================
+ 
+     Thank you for using CDFT!
+ 
+     Please cite: 
+         DOI: 10.1021/acs.chemmater.6b04631 and 10.1021/acs.jctc.7b00088
+     
+ 
+
+     epcdft_coupl :    16.80s CPU        17.56s WALL
+
+
+   This run was terminated on:  16:19:25  26May2017            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

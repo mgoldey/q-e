@@ -1,0 +1,162 @@
+#!/bin/sh
+
+# run from directory where this script is
+cd `echo $0 | sed 's/\(.*\)\/.*/\1/'` # extract pathname
+EXAMPLE_DIR=`pwd`
+
+# check whether echo has the -e option
+if test "`echo -e`" = "-e" ; then ECHO=echo ; else ECHO="echo -e" ; fi
+
+$ECHO
+$ECHO "$EXAMPLE_DIR : starting"
+$ECHO
+$ECHO "This example illustrates how to run CDFT"
+$ECHO "- prepare two diabatic states using pwscf.x"
+$ECHO "- calculate coupling between them epcdft_coupling.x"
+
+# set the needed environment variables
+. ../../../environment_variables
+
+# required executables and pseudopotentials
+BIN_LIST="pw.x epcdft_coupling.x"
+PSEUDO_LIST="Zn.pbe-mt_fhi.UPF"
+
+$ECHO
+$ECHO "  executables directory: $BIN_DIR"
+$ECHO "  pseudo directory:      $PSEUDO_DIR"
+$ECHO "  checking that needed directories and files exist...\c"
+
+# check for directories
+for DIR in "$BIN_DIR" "$PSEUDO_DIR" ; do
+    if test ! -d $DIR ; then
+        $ECHO
+        $ECHO "ERROR: $DIR not existent or not a directory"
+        $ECHO "Aborting"
+        exit 1
+    fi
+done
+
+# check for executables
+for FILE in $BIN_LIST ; do
+    if test ! -x $BIN_DIR/$FILE ; then
+        $ECHO
+        $ECHO "ERROR: $BIN_DIR/$FILE not existent or not executable"
+        $ECHO "Aborting"
+        exit 1
+    fi
+done
+
+# check for pseudopotentials
+for FILE in $PSEUDO_LIST ; do
+    if test ! -r $PSEUDO_DIR/$FILE ; then
+       $ECHO
+       $ECHO "Downloading $FILE to $PSEUDO_DIR...\c"
+            $WGET $PSEUDO_DIR/$FILE $NETWORK_PSEUDO/$FILE 2> /dev/null
+    fi
+    if test $? != 0; then
+        $ECHO
+        $ECHO "ERROR: $PSEUDO_DIR/$FILE not existent or not readable"
+        $ECHO "Aborting"
+        exit 1
+    fi
+done
+$ECHO " done"
+
+# how to run executables
+PW_COMMAND="$PARA_PREFIX $BIN_DIR/pw.x $PARA_POSTFIX"
+PREPCUP_COMMAND="bash setup_coupling_input.sh"
+CUP_COMMAND="$BIN_DIR/epcdft_coupling.x"
+$ECHO
+$ECHO "  running pw.x as:       $PW_COMMAND"
+$ECHO "  running setup_coupling_input.sh as:       $PREPCUP_COMMAND"
+$ECHO "  running epcdft_coupling.x as:  $CUP_COMMAND"
+$ECHO
+
+# self-consistent calculation
+cat > left.in << EOF
+&CONTROL
+  calculation  = "scf",
+  prefix       = "left",
+  outdir       = "./out",
+  pseudo_dir = '$PSEUDO_DIR/',
+  wf_collect = .true.
+/
+&SYSTEM
+  nosym = .true.
+  nbnd = 14
+  ibrav = 1,
+  a = 12,
+  nat = 2,
+  ntyp = 1,
+  ecutwfc = 60,
+  tot_charge = +1
+  nspin = 2,
+  tot_magnetization = 1
+/
+&ELECTRONS
+  conv_thr    = 1.D-8,
+/
+EPCDFT
+1 1.D-5 1.D-2 100
+delta_charge 1 1 2 2 -1.0 0.320679E+00
+K_POINTS {Gamma}
+ATOMIC_SPECIES
+Zn 0.0 Zn.pbe-mt_fhi.UPF
+ATOMIC_POSITIONS (angstrom)
+Zn 0 0 0
+Zn 5 0 0
+EOF
+$ECHO "  running the CDFT first calculation...\c"
+$PW_COMMAND < left.in > left.out
+check_failure $?
+$ECHO " done"
+
+cat > right.in << EOF
+&CONTROL
+  calculation  = "scf",
+  prefix       = "right",
+  outdir       = "./out",
+  pseudo_dir = '$PSEUDO_DIR/',
+  wf_collect = .true.
+/
+&SYSTEM
+  nosym = .true.
+  nbnd = 14
+  ibrav = 1,
+  a = 12,
+  nat = 2,
+  ntyp = 1,
+  ecutwfc = 60,
+  tot_charge = +1
+  nspin = 2,
+  tot_magnetization = 1
+/
+&ELECTRONS
+  conv_thr    = 1.D-8,
+/
+EPCDFT
+1 1.D-5 1.D-2 100
+delta_charge 2 2 1 1 -1.0 0.320679E+00
+K_POINTS {Gamma}
+ATOMIC_SPECIES
+Zn 0.0 Zn.pbe-mt_fhi.UPF
+ATOMIC_POSITIONS (angstrom)
+Zn 0 0 0
+Zn 5 0 0
+EOF
+$ECHO "  running the CDFT second calculation...\c"
+$PW_COMMAND < right.in > right.out
+check_failure $?
+$ECHO " done"
+
+# create input for coupling
+$ECHO "  Creating input for coupling...\c"
+$PREPCUP_COMMAND left.out right.out > coupling.in
+check_failure $?
+$ECHO " done"
+
+# Calculate coupling
+$ECHO "  running epcdft_coupling.x...\c"
+$CUP_COMMAND < coupling.in > coupling.out
+check_failure $?
+$ECHO " done"

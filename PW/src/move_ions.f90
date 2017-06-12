@@ -115,8 +115,8 @@ SUBROUTINE move_ions ( idone )
         END IF
         !
         CALL bfgs( pos, h, etot, grad, fcell, fixion, tmp_dir, stdout, epse,&
-                   epsf, epsp1,  energy_error, gradient_error, cell_error,  &
-                   lmovecell, step_accepted, conv_ions, istep )
+           epsf, epsp1,  energy_error, gradient_error, cell_error,  &
+           lmovecell, step_accepted, conv_ions, istep )
         !
         ! ... relax for FCP
         !

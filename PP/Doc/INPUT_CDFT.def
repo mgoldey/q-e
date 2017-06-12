@@ -1,0 +1,69 @@
+input_description -distribution {Quantum Espresso} -package PWscf -program epcdft_coupling.x {
+
+    toc {}
+
+    intro {
+	@b {Purpose of epcdft_coupling.x:}
+
+        Computes diabatic coupling between two diabatic states created by CDFT runs using pwscf.
+
+        The input data can be read from file using 	command-line options 
+        "epcdft_coupling.x < file-name" (same syntax as for pw.x)	
+
+        J. Chem. Theory Comput., In Press. doi:10.1021/acs.jctc.7b00088 
+        Chem. Mater., 2017, 29 (3), 1255-1262 doi:10.1021/acs.chemmater.6b04631
+
+        @b {Example of the input data:}
+	============================
+
+	   @b &INPUTPP
+              prefix = 'left' 
+              prefix2 = 'right' 
+              outdir = 'out'  
+              outdir2 = 'out'  
+              debug        = .true.
+	   @b /
+    }
+
+    namelist INPUTPP {
+
+	var prefix -type CHARACTER {   
+	    info {
+			Prefix of files of first diabatic state saved by program pw.x.
+	    }
+	}
+
+	var prefix2 -type CHARACTER {   
+	    info {
+			Prefix of files of second diabatic state saved by program pw.x.
+	    }
+	}
+
+    var outdir -type CHARACTER {
+        info {
+			Directory containing the input data for first diabatic state, i.e. the same as in pw.x.
+		}
+    }
+
+    var outdir2 -type CHARACTER {
+        info {
+			Directory containing the input data for second diabatic state, i.e. the same as in pw.x.
+		}
+    }
+
+	var debug -type LOGICAL {     
+        default { .true. }
+	    info {
+			Print additional S, H and W info to output.	
+	    }
+	}
+
+	var debug2 -type LOGICAL {     
+        default { .false. }
+	    info {
+			Print full overlap matrix, cofactor and W matrix to files.	
+	    }
+	}
+
+    }
+}

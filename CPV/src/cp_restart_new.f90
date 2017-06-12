@@ -10,8 +10,14 @@ MODULE cp_restart_new
   !-----------------------------------------------------------------------------
   !
   ! ... This module contains subroutines to write and read data required to
-  ! ... restart a calculation from the disk
+  ! ... restart a calculation from the disk. Important notice:
+  ! ... * only one processor writes (the one for which ionode = .true.)
+  ! ... * all processors read the xml file
+  ! ... * one processor per band group reads the wavefunctions,
+  ! ...   distributes them within their band group
+  ! ... * lambda matrices are read by one processors, broadcast to all others
   !
+  USE kinds,     ONLY : DP
 #if !defined(__OLDXML)
   !
   USE iotk_module
@@ -27,10 +33,9 @@ MODULE cp_restart_new
                           qexsd_init_outputElectricField, input_obj => qexsd_input_obj
   USE io_files,  ONLY : iunpun, xmlpun_schema, prefix, tmp_dir, qexsd_fmt,&
        qexsd_version
-  USE io_base,   ONLY : write_wfc, read_wfc
-  USE xml_io_base,     ONLY  : write_rho_xml,read_print_counter, create_directory
+  USE io_base,   ONLY : write_wfc, read_wfc, write_rhog
+  USE xml_io_base,     ONLY  : read_print_counter, create_directory
   !
-  USE kinds,     ONLY : DP
   USE io_global, ONLY : ionode, ionode_id, stdout
   USE mp,        ONLY : mp_bcast
   USE parser,    ONLY : version_compare
@@ -49,7 +54,7 @@ MODULE cp_restart_new
                              vnhp, xnhp0, xnhpm, nhpcl, nhpdim, occ0, occm,  &
                              lambda0,lambdam, xnhe0, xnhem, vnhe, ekincm,    &
                              et, rho, c02, cm2, ctot, iupdwn, nupdwn,        &
-                             iupdwn_tot, nupdwn_tot, wfc, mat_z ) ! BS added wfc
+                             iupdwn_tot, nupdwn_tot, wfc, mat_z )
       !------------------------------------------------------------------------
       !
       USE control_flags,            ONLY : gamma_only, force_pairing, trhow, &
@@ -58,16 +63,13 @@ MODULE cp_restart_new
                                            tfor, tpre
       USE control_flags,            ONLY : lwfpbe0nscf, lwfnscf, lwf ! Lingzhu Kong
       USE constants,                ONLY : e2
+      USE parameters,               ONLY : ntypx
       USE dener,                    ONLY : detot
       USE io_files,                 ONLY : psfile, pseudo_dir, iunwfc, &
                                            nwordwfc, tmp_dir, diropn
       USE mp_images,                ONLY : intra_image_comm, me_image, &
                                            nproc_image
       USE mp_pools,                 ONLY : nproc_pool, intra_pool_comm, root_pool, inter_pool_comm
-      USE mp_bands,                 ONLY : me_bgrp, nproc_bgrp, &
-                                           my_bgrp_id, intra_bgrp_comm, &
-                                           inter_bgrp_comm, root_bgrp, &
-                                           ntask_groups
       USE mp_diag,                  ONLY : nproc_ortho
       USE mp_world,                 ONLY : world_comm, nproc
       USE run_info,                 ONLY : title
@@ -88,10 +90,9 @@ MODULE cp_restart_new
                                            epseu, enl, exc, vave
       USE mp,                       ONLY : mp_sum, mp_barrier
       USE fft_base,                 ONLY : dfftp, dffts, dfftb
+      USE fft_rho,                  ONLY : rho_r2g
       USE uspp_param,               ONLY : n_atom_wfc, upf
       USE global_version,           ONLY : version_number
-      USE cp_main_variables,        ONLY : descla
-      USE cp_interfaces,            ONLY : collect_lambda, collect_zmat
       USE kernel_table,             ONLY : vdw_table_name, kernel_file_name
       USE london_module,            ONLY : scal6, lon_rcut, in_c6
       USE tsvdw_module,             ONLY : vdw_isolated, vdw_econv_thr
@@ -157,27 +158,24 @@ MODULE cp_restart_new
       INTEGER               :: nk1, nk2, nk3
       INTEGER               :: j, i, iss, ig, nspin_wfc, iss_wfc
       INTEGER               :: is, ia, isa, ik, ierr
-      INTEGER,  ALLOCATABLE :: ftmp(:,:)
       INTEGER,  ALLOCATABLE :: ityp(:)
+      REAL(DP), ALLOCATABLE :: ftmp(:,:)
       REAL(DP), ALLOCATABLE :: tau(:,:)
-      REAL(DP), ALLOCATABLE :: rhoaux(:)
+      COMPLEX(DP), ALLOCATABLE :: rhog(:,:)
       REAL(DP)              :: omega, htm1(3,3), h(3,3)
       REAL(DP)              :: a1(3), a2(3), a3(3)
       REAL(DP)              :: b1(3), b2(3), b3(3)
-      REAL(DP)              :: nelec
+      REAL(DP)              :: wk_(2), nelec
       REAL(DP)              :: scalef
       LOGICAL               :: lsda
       REAL(DP)              :: s0, s1, cclock
-      INTEGER               :: nbnd_tot
       INTEGER               :: natomwfc, nbnd_, nb, ib
       REAL(DP), ALLOCATABLE :: mrepl(:,:)
-      CHARACTER(LEN=256)    :: tmp_dir_save
       LOGICAL               :: exst
       INTEGER               :: inlc
-      REAL(DP), ALLOCATABLE :: temp_vec(:), wfc_temp(:,:) ! BS 
       TYPE(output_type) :: output_obj
-      LOGICAL :: is_hubbard(nsp)
-      REAL(dp):: hubbard_dum(3,nsp)
+      LOGICAL :: is_hubbard(ntypx)
+      REAL(dp):: hubbard_dum(3,ntypx)
       CHARACTER(LEN=6), EXTERNAL :: int_to_char
       !
       ! ... subroutine body
@@ -186,6 +184,10 @@ MODULE cp_restart_new
       !
       IF( force_pairing ) &
             CALL errore('cp_writefile',' force pairing not implemented', 1 )
+      IF( tksw ) &
+            CALL infomsg('cp_writefile',' Kohn-Sham states not written' )
+      IF( PRESENT(mat_z) ) &
+            CALL errore('cp_writefile',' case not implemented', 1 )
       !
       lsda = ( nspin == 2 )
       IF( lsda ) THEN
@@ -193,15 +195,10 @@ MODULE cp_restart_new
          !  check if the array storing wave functions is large enought
          !
          IF( SIZE( c02, 2 ) < ( iupdwn( 2 ) + nupdwn(1) - 1 ) ) &
-            CALL errore('cp_writefile',' wrong wave functions dimension ', 1 )
+            CALL errore('cp_writefile',' wrong dimensions for wave functions', 1 )
          !
       END IF
       !
-      IF(  nupdwn_tot(1) < nupdwn(1) ) &
-         CALL errore( " writefile ", " wrong number of states ", 1 )
-      !
-      nbnd_    = nupdwn(1) 
-      nbnd_tot = MAX( nupdwn(1), nupdwn_tot(1) )
       nelec = nelt
       !
       ! ... Cell related variables
@@ -239,7 +236,8 @@ MODULE cp_restart_new
       !
       CALL s_to_r( stau0, tau, na, nsp, h )
       !
-      ALLOCATE( ftmp( nbnd_tot , nspin ) )
+      nbnd_    = nupdwn(1) 
+      ALLOCATE( ftmp( nbnd_ , nspin ) )
       ftmp = 0.0d0
       DO iss = 1, nspin
          ftmp( 1:nupdwn(iss), iss ) = occ0( iupdwn(iss) : iupdwn(iss) + nupdwn(iss) - 1 )
@@ -306,10 +304,6 @@ MODULE cp_restart_new
               nat, tau(:,ind_bck(:)), alat, alat*a1(:), alat*a2(:), alat*a3(:), ibrav)
          !
 !-------------------------------------------------------------------------------
-! ... SYMMETRIES
-!-------------------------------------------------------------------------------
-         output_obj%symmetries%lwrite=.false.
-!-------------------------------------------------------------------------------
 ! ... BASIS SET
 !-------------------------------------------------------------------------------
          CALL qexsd_init_basis_set(output_obj%basis_set,gamma_only, ecutwfc/e2, ecutwfc*dual/e2, &
@@ -348,26 +342,27 @@ MODULE cp_restart_new
 ! ... BAND STRUCTURE
 !-------------------------------------------------------------------------------
          ! TEMP
-         k1  = 0
-         k2  = 0
-         k3  = 0
-         nk1 = 0
-         nk2 = 0
-         nk3 = 0
+         IF (lsda) THEN
+            wk_ = 1.0_dp
+         ELSE
+            wk_ = 2.0_dp
+         END IF
          CALL qexsd_init_k_points_ibz( input_obj%k_points_ibz, 'Gamma', &
-              'CP',nk1,nk2,nk3,k1,k2,k3,1,xk,wk,alat,a1,.false.) 
+              'CP',1,1,1,0,0,0,1,xk,wk_,alat,a1,.false.) 
          input_obj%bands%occupations%tagname="occupations"
          input_obj%bands%occupations%lread=.false.
          input_obj%bands%occupations%lwrite=.true.
-         input_obj%bands%occupations%spin_ispresent=.false.
+         input_obj%bands%occupations%spin_ispresent=lsda
          input_obj%bands%occupations%occupations="fixed"
          ! TEMP
          CALL  qexsd_init_band_structure(output_obj%band_structure,lsda, .false., &
-              .false., nbnd_, nelec, natomwfc, .true., 0.0_dp , .false., & 
-              [0.0_dp,0.0_dp], et,  DBLE( ftmp ), nspin, xk, [ngw_g], wk,  &
+              .false., nupdwn(1), nupdwn(2), nelec, natomwfc, .true., 0.0_dp, &
+              .false., [0.0_dp,0.0_dp], et, ftmp, nspin, xk, [ngw_g], wk_,&
               STARTING_KPOINTS = input_obj%k_points_IBZ, &
               OCCUPATION_KIND = input_obj%bands%occupations, &
               WF_COLLECTED = twfcollect)
+         CALL qes_reset_bands(input_obj%bands)
+         CALL qes_reset_k_points_IBZ(input_obj%k_points_IBZ)
 !-------------------------------------------------------------------------------
 ! ... FORCES
 !-------------------------------------------------------------------------------
@@ -379,9 +374,14 @@ MODULE cp_restart_new
 ! ... STRESS - TO BE VERIFIED
 !-------------------------------------------------------------------------------
          output_obj%stress_ispresent=tpre
-         ! may be wrong or incomplete
+         ! FIXME: may be wrong or incomplete
          IF ( tpre) h = -MATMUL( detot, ht ) / omega
          CALL qexsd_init_stress(output_obj%stress, h, tpre ) 
+!-------------------------------------------------------------------------------
+! ... non existent or not implemented fields
+!-------------------------------------------------------------------------------
+         output_obj%symmetries_ispresent=.false.
+         output_obj%electric_field_ispresent=.false.
 !-------------------------------------------------------------------------------
 ! ... ACTUAL WRITING
 !-------------------------------------------------------------------------------
@@ -398,17 +398,33 @@ MODULE cp_restart_new
       END IF
       !
 !-------------------------------------------------------------------------------
-! ... WRITE WFC
+! ... WRITE WAVEFUNCTIONS AND LAMBDA MATRICES
 !-------------------------------------------------------------------------------
       DO iss = 1, nspin
          !
          ik_eff = iss
-         filename = TRIM(dirname) // 'wfc' // TRIM(int_to_char(ik_eff))
          ib = iupdwn(iss)
          nb = nupdwn(iss)
-         CALL write_wfc( iunpun, ik_eff, nk, iss, nspin, &
+         ! wavefunctions at time t
+         filename = TRIM(dirname) // 'wfc' // TRIM(int_to_char(ik_eff))
+         CALL write_wfc( iunpun, filename, ik_eff, xk(:,1), iss, nspin, &
               c02(:,ib:ib+nb-1), ngw_g, gamma_only, nb, ig_l2g, ngw,  &
-              filename, scalef, ionode, root_pool, intra_pool_comm )
+              alat*b1, alat*b2, alat*b3, mill, scalef, ionode, root_pool, &
+              intra_pool_comm )
+         ! wavefunctions at time t-dt
+         filename = TRIM(dirname) // 'wfcm' // TRIM(int_to_char(ik_eff))
+         CALL write_wfc( iunpun, filename, ik_eff, xk(:,1), iss, nspin, &
+              cm2(:,ib:ib+nb-1), ngw_g, gamma_only, nb, ig_l2g, ngw,  &
+              alat*b1, alat*b2, alat*b3, mill, scalef, ionode, root_pool, &
+              intra_pool_comm )
+         ! matrix of orthogonality constrains lambda at time t
+         filename = TRIM(dirname) // 'lambda' // TRIM(int_to_char(ik_eff))
+         CALL cp_write_lambda( filename, iunpun, iss, nspin, nudx, &
+              lambda0(:,:,iss), ierr )
+         ! matrix of orthogonality constrains lambda at time t-dt
+         filename = TRIM(dirname) // 'lambdam' // TRIM(int_to_char(ik_eff))
+         CALL cp_write_lambda( filename, iunpun, iss, nspin, nudx, &
+              lambdam(:,:,iss), ierr )
          !
       END DO
 !-------------------------------------------------------------------------------
@@ -435,40 +451,16 @@ MODULE cp_restart_new
 ! ... CHARGE DENSITY
 !-------------------------------------------------------------------------------
       !
-      IF (trhow) THEN
-         !
-         filename = TRIM( dirname ) // 'charge-density'
-         !
-         IF ( nspin == 1 ) THEN
-            !
-            CALL write_rho_xml( filename, rho(:,1), &
-                                dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x, dfftp%nr2x, &
-                                dfftp%ipp, dfftp%npp, ionode, intra_bgrp_comm, inter_bgrp_comm )
-            !
-         ELSE IF ( nspin == 2 ) THEN
-            !
-            ALLOCATE( rhoaux( SIZE( rho, 1 ) ) )
-            !
-            rhoaux = rho(:,1) + rho(:,2) 
-            !
-            CALL write_rho_xml( filename, rhoaux, &
-                                dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x, dfftp%nr2x, &
-                                dfftp%ipp, dfftp%npp, ionode, intra_bgrp_comm, inter_bgrp_comm )
-            !
-            filename = TRIM( dirname ) // 'spin-polarization'
-            !
-            rhoaux = rho(:,1) - rho(:,2) 
-            !
-            CALL write_rho_xml( filename, rhoaux, &
-                                dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x, dfftp%nr2x, &
-                                dfftp%ipp, dfftp%npp, ionode, intra_bgrp_comm, inter_bgrp_comm )
-            !
-            DEALLOCATE( rhoaux )
-            !
-         END IF
-         !
-      END IF
-      !
+     IF (trhow) THEN
+        ! Workaround: input rho in real space, bring it to reciprocal space
+        ! To be removed together with old I/O
+        ALLOCATE ( rhog(ngm, nspin) )
+        CALL rho_r2g (rho, rhog)
+        CALL write_rhog ( dirname, alat*b1, alat*b2, alat*b3, gamma_only, mill,&
+             ig_l2g, rhog )
+        DEALLOCATE ( rhog )
+     END IF
+     !
 !-------------------------------------------------------------------------------
 ! ... END RESTART SECTIONS
 !-------------------------------------------------------------------------------
@@ -479,12 +471,7 @@ MODULE cp_restart_new
       !
       s1 = cclock() 
       !
-      IF ( ionode ) THEN
-         !
-         WRITE( stdout, &
-                '(3X,"restart file written in ",F8.3," sec.",/)' ) ( s1 - s0 )
-         !
-      END IF
+      WRITE( stdout, '(3X,"restart file written in ",F8.3," sec.",/)' ) (s1-s0)
       !
       RETURN
       !
@@ -496,7 +483,7 @@ MODULE cp_restart_new
                             taui, cdmi, stau0, svel0, staum, svelm, force,    &
                             vnhp, xnhp0, xnhpm, nhpcl,nhpdim,occ0, occm,      &
                             lambda0, lambdam, b1, b2, b3, xnhe0, xnhem, vnhe, &
-                            ekincm, c02, cm2, wfc, mat_z ) ! added wfc
+                            ekincm, c02, cm2, wfc, mat_z )
       !------------------------------------------------------------------------
       !
       USE control_flags,            ONLY : gamma_only, force_pairing, llondon,&
@@ -506,14 +493,12 @@ MODULE cp_restart_new
       USE run_info,                 ONLY : title
       USE gvect,                    ONLY : ngm
       USE gvecw,                    ONLY : ngw, ngw_g
-      USE electrons_base,           ONLY : nspin, nbnd, nelt, nel, &
-                                           nupdwn, iupdwn, nudx
+      USE electrons_base,           ONLY : nspin, nbnd, nupdwn, iupdwn, nudx
       USE cell_base,                ONLY : ibrav, alat, s_to_r, r_to_s
       USE ions_base,                ONLY : nsp, nat, na, atm, zv, &
                                            sort_tau, ityp, ions_cofmass
       USE gvect,       ONLY : ig_l2g, mill
-      USE cp_main_variables,        ONLY : nprint_nfi, descla
-      USE cp_interfaces,            ONLY : distribute_lambda, distribute_zmat
+      USE cp_main_variables,        ONLY : nprint_nfi
       USE ldaU_cp,                  ONLY : lda_plus_U, ns, Hubbard_l, &
                                            Hubbard_lmax, Hubbard_U
       USE mp,                       ONLY : mp_sum, mp_bcast
@@ -599,13 +584,12 @@ MODULE cp_restart_new
       REAL(DP)              :: ecutwfc_, ecutrho_
       INTEGER               :: nr1,nr2,nr3,nr1s,nr2s,nr3s,nr1b,nr2b,nr3b
       INTEGER               :: ngm_g, ngms_g, npw_g 
-      INTEGER               :: iss_, nspin_, ngwt_, nbnd_ , nbnd_tot
-      INTEGER               :: nstates_up_ , nstates_dw_ , ntmp, nel_(2)
+      INTEGER               :: iss_, nspin_, ngwt_, nbnd_
+      INTEGER               :: nbnd_up, nbnd_dw, ntmp
       REAL(DP)              :: nelec_, ef, ef_up, ef_dw
       REAL(DP)              :: scalef_
       REAL(DP)              :: wk_(2)
       INTEGER               :: ib, nb
-      INTEGER               :: ik_eff
       REAL(DP)              :: amass_(ntypx)
       INTEGER,  ALLOCATABLE :: ityp_(:) 
       INTEGER,  ALLOCATABLE :: isrt_(:) 
@@ -617,7 +601,6 @@ MODULE cp_restart_new
       REAL(DP)              :: s1, s0, cclock
       REAL(DP), ALLOCATABLE :: mrepl(:,:) 
       LOGICAL               :: md_found, exist_wfc 
-      CHARACTER(LEN=256)    :: tmp_dir_save
       INTEGER               :: io_bgrp_id
       TYPE ( output_type)   :: output_obj 
       TYPE (parallel_info_type) :: parinfo_obj
@@ -630,6 +613,9 @@ MODULE cp_restart_new
       LOGICAL :: x_gamma_extrapolation
       REAL(dp):: hubbard_dum(3,nsp)
       CHARACTER(LEN=6), EXTERNAL :: int_to_char
+      !
+      IF( PRESENT(mat_z) ) &
+            CALL errore('cp_readfile',' case not implemented', 1 )
       !
       ! ... look for an empty unit
       !
@@ -720,8 +706,9 @@ MODULE cp_restart_new
       !
       nbnd_ = nupdwn(1)
       ALLOCATE( occ_(nbnd_, nspin), et_(nbnd_, nspin) )
-      CALL qexsd_copy_band_structure( output_obj%band_structure, lsda_, nk_, &
-           isk_, natomwfc, nbnd_, nelec_, wk_, occ_, ef, ef_up, ef_dw, et_ )
+      CALL qexsd_copy_band_structure( output_obj%band_structure, lsda_, &
+              nk_, isk_, natomwfc, nbnd_up, nbnd_dw, nelec_, wk_, occ_, &
+              ef, ef_up, ef_dw, et_ )
       ! FIXME: in the call, the same array is passed as both occ0 and occm!
       DO iss = 1, nspin
          ib = iupdwn(iss)
@@ -734,17 +721,29 @@ MODULE cp_restart_new
       CALL iotk_close_read (iunpun)
       !
       DO iss = 1, nspin
+         ib = iupdwn(iss)
+         nb = nupdwn(iss)
          CALL cp_read_wfc( ndr, tmp_dir, 1, 1, iss, nspin, c02, ' ' )
-      END DO
-wfcm: DO iss = 1, nspin
-         CALL cp_read_wfc( ndr, tmp_dir, 1, 1, iss, nspin, c02, 'm', ierr )
+         CALL cp_read_wfc( ndr, tmp_dir, 1, 1, iss, nspin, cm2, 'm', ierr )
          IF ( ierr /= 0) THEN
-            cm2 = c02
-            exit wfcm
+            CALL infomsg('cp_readfile','wfc at t-dt not found')
+            cm2(:,ib:ib+nb-1) = c02(:,ib:ib+nb-1)
          END IF
-      END DO wfcm
-      lambda0 =0.0_dp
-      lambdam =0.0_dp
+         ! matrix of orthogonality constrains lambda at time t
+         filename = TRIM(dirname) // 'lambda' // TRIM(int_to_char(iss))
+         CALL cp_read_lambda( filename, iunpun, iss, nspin, nudx, &
+              lambda0(:,:,iss), ierr )
+         IF ( ierr /= 0 ) THEN
+            CALL infomsg('cp_readfile','lambda not found')
+            lambda0 =0.0_dp
+            lambdam =0.0_dp
+         ELSE
+            ! matrix of orthogonality constrains lambda at time t-dt
+            filename = TRIM(dirname) // 'lambdam' // TRIM(int_to_char(iss))
+            CALL cp_read_lambda( filename, iunpun, iss, nspin, nudx, &
+                 lambdam(:,:,iss), ierr )
+         END IF
+      END DO
       !
       RETURN
       !
@@ -1106,7 +1105,7 @@ wfcm: DO iss = 1, nspin
     !
     !------------------------------------------------------------------------
     SUBROUTINE qexsd_copy_band_structure( band_struct_obj, lsda, nkstot, &
-         isk, natomwfc, nbnd, nelec, wk, wg, ef, ef_up, ef_dw, et )
+         isk, natomwfc, nbnd_up, nbnd_dw, nelec, wk, wg, ef, ef_up, ef_dw, et )
       !------------------------------------------------------------------------
       !
       USE qes_types_module, ONLY : band_structure_type
@@ -1114,11 +1113,11 @@ wfcm: DO iss = 1, nspin
       IMPLICIT NONE
       TYPE ( band_structure_type)         :: band_struct_obj
       LOGICAL, INTENT(out) :: lsda
-      INTEGER, INTENT(out) :: nkstot, natomwfc, nbnd, isk(:)
+      INTEGER, INTENT(out) :: nkstot, natomwfc, nbnd_up, nbnd_dw, isk(:)
       REAL(dp), INTENT(out):: nelec, wk(:), wg(:,:)
       REAL(dp), INTENT(out):: ef, ef_up, ef_dw, et(:,:)
       !
-      INTEGER :: ik, nbnd_, nbnd_up_, nbnd_dw_
+      INTEGER :: ik, nbnd
       ! 
       lsda = band_struct_obj%lsda
       nkstot = band_struct_obj%nks 
@@ -1149,31 +1148,33 @@ wfcm: DO iss = 1, nspin
       DO ik =1, band_struct_obj%ndim_ks_energies
          IF ( band_struct_obj%lsda) THEN
             IF ( band_struct_obj%nbnd_up_ispresent .AND. band_struct_obj%nbnd_dw_ispresent) THEN
-               nbnd_up_ = band_struct_obj%nbnd_up
-               nbnd_dw_ = band_struct_obj%nbnd_dw 
+               nbnd_up = band_struct_obj%nbnd_up
+               nbnd_dw = band_struct_obj%nbnd_dw 
             ELSE IF ( band_struct_obj%nbnd_up_ispresent ) THEN 
-               nbnd_up_ = band_struct_obj%nbnd_up
-               nbnd_dw_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues - nbnd_up_
+               nbnd_up = band_struct_obj%nbnd_up
+               nbnd_dw = band_struct_obj%ks_energies(ik)%ndim_eigenvalues - nbnd_up
             ELSE IF ( band_struct_obj%nbnd_dw_ispresent ) THEN 
-               nbnd_dw_ = band_struct_obj%nbnd_dw
-               nbnd_up_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues - nbnd_dw_ 
+               nbnd_dw = band_struct_obj%nbnd_dw
+               nbnd_up = band_struct_obj%ks_energies(ik)%ndim_eigenvalues - nbnd_dw 
             ELSE 
-               nbnd_up_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues/2  
-               nbnd_dw_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues/2
+               nbnd_up = band_struct_obj%ks_energies(ik)%ndim_eigenvalues/2  
+               nbnd_dw = band_struct_obj%ks_energies(ik)%ndim_eigenvalues/2
             END IF
             wk(ik) = band_struct_obj%ks_energies(ik)%k_point%weight
             wk( ik + band_struct_obj%ndim_ks_energies ) = wk(ik) 
-            et(1:nbnd_up_,ik) = band_struct_obj%ks_energies(ik)%eigenvalues(1:nbnd_up_)
-            et(1:nbnd_dw_,ik+band_struct_obj%ndim_ks_energies) =  &
-                 band_struct_obj%ks_energies(ik)%eigenvalues(nbnd_up_+1:nbnd_up_+nbnd_dw_)
-            wg(1:nbnd_up_,ik) = band_struct_obj%ks_energies(ik)%occupations(1:nbnd_up_)*wk(ik)
-            wg(1:nbnd_dw_,ik+band_struct_obj%ndim_ks_energies) =  &
-                 band_struct_obj%ks_energies(ik)%occupations(nbnd_up_+1:nbnd_up_+nbnd_dw_)*wk(ik)
+            et(1:nbnd_up,ik) = band_struct_obj%ks_energies(ik)%eigenvalues(1:nbnd_up)
+            et(1:nbnd_dw,ik+band_struct_obj%ndim_ks_energies) =  &
+                 band_struct_obj%ks_energies(ik)%eigenvalues(nbnd_up+1:nbnd_up+nbnd_dw)
+            wg(1:nbnd_up,ik) = band_struct_obj%ks_energies(ik)%occupations(1:nbnd_up)*wk(ik)
+            wg(1:nbnd_dw,ik+band_struct_obj%ndim_ks_energies) =  &
+                 band_struct_obj%ks_energies(ik)%occupations(nbnd_up+1:nbnd_up+nbnd_dw)*wk(ik)
          ELSE 
             wk(ik) = band_struct_obj%ks_energies(ik)%k_point%weight
-            nbnd_ = band_struct_obj%ks_energies(ik)%ndim_eigenvalues
-            et (1:nbnd_,ik) = band_struct_obj%ks_energies(ik)%eigenvalues(1:nbnd_)
-            wg (1:nbnd_,ik) = band_struct_obj%ks_energies(ik)%occupations(1:nbnd_)*wk(ik)
+            nbnd = band_struct_obj%ks_energies(ik)%ndim_eigenvalues
+            et (1:nbnd,ik) = band_struct_obj%ks_energies(ik)%eigenvalues(1:nbnd)
+            wg (1:nbnd,ik) = band_struct_obj%ks_energies(ik)%occupations(1:nbnd)*wk(ik)
+            nbnd_up = nbnd
+            nbnd_dw = nbnd
          END IF
       END DO
     END SUBROUTINE qexsd_copy_band_structure
@@ -1343,9 +1344,8 @@ wfcm: DO iss = 1, nspin
     ! Wrapper, and ugly hack, for old cp_read_wfc called in restart.f90
     ! If ierr is present, returns ierr=-1 if file not found, 0 otherwise
     !
-    USE io_global,          ONLY : ionode
     USE io_files,           ONLY : prefix, iunpun
-    USE mp_global,          ONLY : root_pool, intra_pool_comm
+    USE mp_bands,           ONLY : me_bgrp, root_bgrp, intra_bgrp_comm
     USE electrons_base,     ONLY : iupdwn, nupdwn
     USE gvecw,              ONLY : ngw, ngw_g
     USE gvect,              ONLY : ig_l2g
@@ -1359,9 +1359,11 @@ wfcm: DO iss = 1, nspin
     COMPLEX(DP),           INTENT(OUT) :: c2(:,:)
     INTEGER, OPTIONAL,     INTENT(OUT) :: ierr
     !
-    INTEGER            :: ib, nb, nbnd, is_, ns_
+    INTEGER            :: ib, nb, nbnd, is_, npol
+    INTEGER,ALLOCATABLE:: mill_k(:,:)
     CHARACTER(LEN=320) :: filename
-    REAL(DP)           :: scalef
+    REAL(DP)           :: scalef, xk(3), b1(3), b2(3), b3(3)
+    LOGICAL            :: ionode_b, gamma_only
     !
     IF ( tag == 'm' ) THEN
        WRITE(filename,'(A,A,"_",I2,".save/wfcm",I1)') &
@@ -1374,16 +1376,26 @@ wfcm: DO iss = 1, nspin
     nb = nupdwn(iss)
     ! next two lines workaround for bogus complaint due to intent(in)
     is_= iss
-    ns_= nspin
+    ALLOCATE ( mill_k(3,ngw) )
+    !
+    ! the first processor of each "band group" reads the wave function,
+    ! distributes it to the other processors in the same band group
+    !
+    ionode_b = ( me_bgrp == root_bgrp )
+    !
     IF ( PRESENT(ierr) ) THEN
-       CALL read_wfc( iunpun, is_, nk, is_, ns_, &
-         c2(:,ib:ib+nb-1), ngw_g, nbnd, ig_l2g, ngw,  &
-         filename, scalef, ionode, root_pool, intra_pool_comm, ierr )
+       CALL read_wfc( iunpun, filename, is_, xk, is_, npol, &
+         c2(:,ib:ib+nb-1), ngw_g, gamma_only, nbnd, ig_l2g, ngw,  &
+         b1,b2,b3, mill_k, scalef, ionode_b, root_bgrp, intra_bgrp_comm, ierr )
     ELSE
-       CALL read_wfc( iunpun, is_, nk, is_, ns_, &
-         c2(:,ib:ib+nb-1), ngw_g, nbnd, ig_l2g, ngw,  &
-         filename, scalef, ionode, root_pool, intra_pool_comm )
+       CALL read_wfc( iunpun, filename, is_, xk, is_, npol, &
+         c2(:,ib:ib+nb-1), ngw_g, gamma_only, nbnd, ig_l2g, ngw,  &
+         b1,b2,b3, mill_k, scalef, ionode_b, root_bgrp, intra_bgrp_comm )
     END IF
+    !
+    ! Add here checks on consistency of what has been read
+    !
+    DEALLOCATE ( mill_k)
     !
   END SUBROUTINE cp_read_wfc
   !
@@ -1724,10 +1736,90 @@ wfcm: DO iss = 1, nspin
        xnhhm = 0.D0
        !
     END IF
+    CALL iotk_close_read (iunpun)
     !
 100 CALL errore( 'cp_read_cell ', attr, ierr )
     !
   END SUBROUTINE cp_read_cell
-#endif
+
+  SUBROUTINE cp_write_lambda( filename, iunpun, iss, nspin, nudx, &
+       lambda, ierr )
+    !
+    ! ... collect and write matrix lambda to file
+    !
+    USE kinds, ONLY : dp
+    USE mp, ONLY : mp_bcast
+    USE mp_images, ONLY : intra_image_comm
+    USE io_global, ONLY : ionode, ionode_id
+    USE cp_main_variables, ONLY : descla
+    USE cp_interfaces, ONLY : collect_lambda
+    !
+    IMPLICIT NONE
+    CHARACTER(LEN=*), INTENT(in) :: filename
+    INTEGER, INTENT(in) :: iunpun, iss, nspin, nudx
+    REAL(dp), INTENT(in) :: lambda(:,:)
+    INTEGER, INTENT(out) :: ierr
+    !
+    REAL(dp), ALLOCATABLE :: mrepl(:,:)
+    !
+    IF ( ionode ) OPEN( unit=iunpun, file =TRIM(filename), &
+         status='unknown', form='unformatted', iostat=ierr)
+    CALL mp_bcast (ierr, ionode_id, intra_image_comm )
+    IF ( ierr /= 0 ) RETURN
+    !
+    ALLOCATE( mrepl( nudx, nudx ) )
+    CALL collect_lambda( mrepl, lambda, descla(iss) )
+    !
+    IF ( ionode ) THEN
+       WRITE (iunpun, iostat=ierr) mrepl
+       CLOSE( unit=iunpun, status='keep')
+    END IF
+    CALL mp_bcast (ierr, ionode_id, intra_image_comm )
+    DEALLOCATE( mrepl )
+    !
+  END SUBROUTINE cp_write_lambda
   !
+  SUBROUTINE cp_read_lambda( filename, iunpun, iss, nspin, nudx, &
+             lambda, ierr )
+    !
+    ! ... read matrix lambda from file, distribute it
+    !
+    USE kinds, ONLY : dp
+    USE mp, ONLY : mp_bcast
+    USE mp_images, ONLY : intra_image_comm
+    USE io_global, ONLY : ionode, ionode_id
+    USE cp_main_variables, ONLY : descla
+    USE cp_interfaces, ONLY : distribute_lambda
+    !
+    IMPLICIT NONE
+    CHARACTER(LEN=*), INTENT(in) :: filename
+    INTEGER, INTENT(in) :: iunpun, iss, nspin, nudx
+    REAL(dp), INTENT(out) :: lambda(:,:)
+    INTEGER, INTENT(out) :: ierr
+    !
+    LOGICAL :: exst
+    REAL(dp), ALLOCATABLE :: mrepl(:,:)
+    !
+    ierr =0
+    IF (ionode) INQUIRE( file =TRIM(filename), exist=exst )
+    CALL mp_bcast (exst, ionode_id, intra_image_comm )
+    IF (.NOT. exst) THEN
+       ierr =-1
+       RETURN
+    END IF
+    !
+    ALLOCATE( mrepl( nudx, nudx ) )
+    IF (ionode) THEN
+       OPEN( unit=iunpun, file =TRIM(filename), status='old', &
+            form='unformatted')
+       READ (iunpun, iostat=ierr) mrepl
+       CLOSE( unit=iunpun, status='keep')
+    END IF
+    CALL mp_bcast( mrepl, ionode_id, intra_image_comm )
+    CALL distribute_lambda( mrepl, lambda, descla(iss) )
+    DEALLOCATE( mrepl )
+    !
+  END SUBROUTINE cp_read_lambda
+#endif
+
 END MODULE cp_restart_new

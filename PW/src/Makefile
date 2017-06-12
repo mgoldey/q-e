@@ -37,6 +37,7 @@ bp_strings.o \
 buffers.o \
 c_bands.o \
 c_phase_field.o \
+one_atom_wfc.o \
 orbm_kubo.o \
 ccgdiagg.o \
 cdiagh.o \
@@ -59,7 +60,6 @@ data_structure_custom.o \
 deriv_drhoc.o \
 divide_class.o \
 divide_class_so.o \
-realus.o \
 divide.o \
 divide_et_impera.o \
 dqvan2.o \
@@ -75,6 +75,7 @@ esm.o \
 esm_cft.o \
 ewald.o \
 ewald_dipole.o \
+extfield.o \
 exx.o \
 fcp.o \
 find_group.o \
@@ -148,6 +149,7 @@ paw_init.o \
 paw_onecenter.o \
 paw_symmetry.o \
 plugin_print_energies.o \
+epcdft.o \
 plugin_scf_energy.o \
 plugin_scf_potential.o \
 plugin_init_ions.o \
@@ -181,6 +183,7 @@ rdiaghg.o \
 read_conf_from_file.o \
 read_file.o \
 read_file_new.o \
+realus.o \
 regterg.o \
 remove_atomic_rho.o \
 report_mag.o \
@@ -201,6 +204,7 @@ save_in_cbands.o \
 save_in_electrons.o \
 scale_h.o \
 scf_mod.o \
+add_epcdft_efield.o \
 set_kplusq.o \
 set_kup_and_kdw.o \
 set_rhoc.o \
@@ -254,8 +258,7 @@ wannier_init.o \
 wannier_check.o \
 wannier_clean.o \
 wannier_occ.o \
-wannier_enrg.o \
-wyckoff.o       
+wannier_enrg.o
 
 QEMODS=../../Modules/libqemod.a ../../FFTXlib/libqefft.a ../../LAXlib/libqela.a
 

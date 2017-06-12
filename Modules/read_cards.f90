@@ -182,6 +182,10 @@ CONTAINS
          !
          CALL card_occupations( input_line )
          !
+      ELSEIF ( trim(card) == 'EPCDFT' ) THEN
+         !
+         CALL card_epcdft( input_line )
+         !
       ELSEIF ( trim(card) == 'CELL_PARAMETERS' ) THEN
          !
          CALL card_cell_parameters( input_line )
@@ -1458,6 +1462,164 @@ CONTAINS
       RETURN
       !
    END SUBROUTINE card_constraints
+   !
+   !------------------------------------------------------------------------
+   !    BEGIN manual
+   !----------------------------------------------------------------------
+   !
+   ! EPCDFT
+   !
+   !   Constraints on charge and spin density
+   !
+   ! Syntax:
+   !
+   !    EPCDFT
+   !      NCONSTR TOL
+   !      CONSTR_TYPE(.) CONSTR(1,.) CONSTR(2,.) ... { CONSTR_TARGET(.) CONSTR_GUESS }
+   !
+   ! Where:
+   !
+   !      NCONSTR(INTEGER)    number of constraints
+   !
+   !      TOL          tolerance for keeping the constraints satisfied
+   !
+   !      CONSTR_TYPE(.)      type of constrain:
+   !                          1: Charge density
+   !                          2: Spin density
+   !                          3: Delta charge density
+   !                          4: Delta spin density
+   !
+   !      CONSTR(1,.) CONSTR(2,.) ...
+   !
+   !                          indices of the start and end of the acceptor
+   !                          (if present, indices of the start and end of the donor)
+   !                          
+   !
+   !      CONSTR_TARGET       target for the constrain (in electrons)
+   !      CONSTR_GUESS        guess value for the Lagrange multiplier (in Ry/electron)
+   !
+   !----------------------------------------------------------------------
+   !    END manual
+   !------------------------------------------------------------------------
+   !
+   SUBROUTINE card_epcdft( input_line )
+      !
+      USE epcdft
+      !
+      IMPLICIT NONE
+      !
+      CHARACTER(len=256) :: input_line
+      INTEGER            :: i, nfield
+      !
+      do_epcdft=.true.
+      !
+      IF ( tepcdft ) CALL errore( 'card_epcdft', 'two occurrences', 2 )
+      !
+      CALL read_line( input_line )
+      !
+      CALL field_count( nfield, input_line )
+      !
+      IF ( nfield == 1 ) THEN
+         !
+         READ( input_line, * ) nconstr_epcdft
+         !
+      ELSEIF ( nfield == 2 ) THEN
+         !
+         READ( input_line, * ) nconstr_epcdft, epcdft_tol
+         !
+      ELSEIF ( nfield == 3) THEN 
+         !
+         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld
+         !
+         !
+      ELSEIF ( nfield == 4) THEN 
+         !
+         READ( input_line, * ) nconstr_epcdft, epcdft_tol, epcdft_delta_fld, epcdft_update_intrvl
+         !
+      ELSE
+         !
+         CALL errore( 'card_epcdft', 'too many fields in initial line', nfield )
+         !
+      ENDIF
+
+      !
+      CALL allocate_input_epcdft()
+      !
+      DO i = 1, nconstr_epcdft
+         !
+         CALL read_line( input_line )
+         !
+         READ( input_line, * ) epcdft_type(i)
+         !
+         CALL field_count( nfield, input_line )
+         !
+         IF ( nfield > epcdft_fields + 3 ) THEN
+            CALL errore( 'card_epcdft', &
+                        'too many fields for this constraint', i )
+         ELSEIF (nfield< 4) THEN
+            CALL errore( 'card_epcdft', &
+                        'too few fields for this constraint', i )
+         ENDIF
+         !
+         SELECT CASE( epcdft_type(i) )
+         CASE( 'charge', 'spin','delta_charge','delta_spin','delta_alpha','delta_beta')
+            !
+            IF ( nfield == 4 ) THEN
+               !
+               READ( input_line, * ) epcdft_type(i), &
+                                    epcdft_locs(1,i), &
+                                    epcdft_locs(2,i), &
+                                    epcdft_target(i)
+               epcdft_guess(i)=0.1
+               !
+            ELSEIF ( nfield == 5 ) THEN
+               !
+               READ( input_line, * ) epcdft_type(i), &
+                                    epcdft_locs(1,i), &
+                                    epcdft_locs(2,i), &
+                                    epcdft_target(i), &
+                                    epcdft_guess(i)
+            ELSEIF ( nfield == 6 ) THEN
+               !
+               READ( input_line, * ) epcdft_type(i), &
+                                    epcdft_locs(1,i), &
+                                    epcdft_locs(2,i), &
+                                    epcdft_locs(3,i), &
+                                    epcdft_locs(4,i), &
+                                    epcdft_target(i)
+               epcdft_guess(i)=0.1
+            ELSEIF ( nfield == 7 ) THEN
+               !
+               READ( input_line, * ) epcdft_type(i), &
+                                    epcdft_locs(1,i), &
+                                    epcdft_locs(2,i), &
+                                    epcdft_locs(3,i), &
+                                    epcdft_locs(4,i), &
+                                    epcdft_target(i), &
+                                    epcdft_guess(i)
+            ELSE
+               !
+               CALL errore( 'card_epcdft', &
+                           & 'wrong number of fields', nfield )
+               !
+            ENDIF
+            !
+         CASE DEFAULT
+            !
+            CALL errore( 'card_epcdft', 'unknown constraint ' // &
+                        & 'type: ' // trim( constr_type_inp(i) ), 1 )
+            !
+         END SELECT
+         !
+
+         !
+      END DO
+      !
+      tepcdft = .true.
+      !
+      RETURN
+      !
+   END SUBROUTINE card_epcdft
    !
    !
    !------------------------------------------------------------------------

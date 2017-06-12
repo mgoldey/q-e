@@ -49,6 +49,7 @@ SUBROUTINE electrons()
   USE paw_onecenter,        ONLY : PAW_potential
   USE paw_symmetry,         ONLY : PAW_symmetrize_ddd
   USE ions_base,            ONLY : nat
+  USE epcdft,        ONLY : do_epcdft, epcdft_shift,nconstr_epcdft,epcdft_target,epcdft_guess
   !
   !
   IMPLICIT NONE
@@ -67,10 +68,12 @@ SUBROUTINE electrons()
   REAL(DP) :: &
       tr2_min,     &! estimated error on energy coming from diagonalization
       tr2_final     ! final threshold for exx minimization 
+  REAL (DP) :: epcdft_contrib ! contribution in energy coming from underconverged CDFT calculations
+  INTEGER :: iconstraint ! iter var for constraints
+
                     ! when using adaptive thresholds.
   LOGICAL :: first, exst
   REAL(DP) :: etot_cmp_paw(nat,2,2)
-  !
   !
   exxen = 0.0d0
   iter = 0
@@ -87,6 +90,7 @@ SUBROUTINE electrons()
   IF (dft_is_hybrid() .AND. adapt_thr ) tr2= tr2_init
   fock0 = 0.D0
   fock1 = 0.D0
+
   IF (.NOT. exx_is_active () ) fock2 = 0.D0
   !
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -231,6 +235,16 @@ SUBROUTINE electrons()
            & Check that exxdiv_treatment is appropriate for the system,&
            & or ecutfock may be too low', 1 )
         ENDIF
+
+        IF ( do_epcdft ) THEN ! ADD CONTRIBUTION FROM CONSTRAINED DFT TO ENERGY
+          epcdft_contrib=0.D0
+          DO iconstraint=1,nconstr_epcdft
+            epcdft_contrib=epcdft_contrib-epcdft_guess(iconstraint)* epcdft_target(iconstraint)
+          ENDDO
+          epcdft_contrib=epcdft_shift+epcdft_contrib
+          etot=etot+epcdft_contrib ! COMPUTE AND ADD CONTRIBUTION HERE
+        ENDIF
+
         !
         !   remove the estimate exchange energy exxen used in the inner SCF
         !
@@ -251,6 +265,8 @@ SUBROUTINE electrons()
         
         WRITE( stdout, 9062 ) - fock1
         WRITE( stdout, 9064 ) 0.5D0*fock2
+        !
+        IF ( do_epcdft ) write( stdout, 9063 ) epcdft_contrib  ! CONTRIBUTION FROM ERROR IN CDFT SELF-CONSISTENT EQUATIONS
         !
         IF ( dexx < tr2_final ) THEN
            IF ( do_makov_payne ) CALL makov_payne( etot )
@@ -298,6 +314,7 @@ SUBROUTINE electrons()
 9101 FORMAT(/'     EXX self-consistency reached' )
 9120 FORMAT(/'     EXX convergence NOT achieved after ',i3,' iterations: stopping' )
 9121 FORMAT(/'     scf convergence threshold =',1PE17.1,' Ry' )
+9063 FORMAT( '     CDFT contribution         =',F17.8,' Ry' )
   !
 END SUBROUTINE electrons
 !
@@ -352,7 +369,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
   USE noncollin_module,     ONLY : noncolin, magtot_nc, i_cons,  bfield, &
                                    lambda, report
   USE spin_orb,             ONLY : domag
-  USE io_rho_xml,           ONLY : write_rho
+  USE io_rho_xml,           ONLY : write_scf
   USE uspp,                 ONLY : okvan
   USE mp_bands,             ONLY : intra_bgrp_comm
   USE mp_pools,             ONLY : root_pool, my_pool_id, inter_pool_comm
@@ -369,8 +386,12 @@ SUBROUTINE electrons_scf ( printout, exxen )
   USE esm,                  ONLY : do_comp_esm, esm_printpot, esm_ewald
   USE fcp_variables,        ONLY : lfcpopt, lfcpdyn
   USE iso_c_binding,        ONLY : c_int
+  USE funct,                ONLY : dft_is_hybrid,exx_is_active
+  USE exx,                  ONLY : dexx
   !
   USE plugin_variables,     ONLY : plugin_etot
+  USE epcdft,               ONLY : do_epcdft, conv_epcdft, epcdft_shift, epcdft_field, &
+                                   reset_field
   !
   IMPLICIT NONE
   !
@@ -407,6 +428,10 @@ SUBROUTINE electrons_scf ( printout, exxen )
   !
   REAL(DP), EXTERNAL :: ewald, get_clock
   REAL(DP) :: etot_cmp_paw(nat,2,2)
+  LOGICAL :: first_epcdft = .true. ! first call to cdft, used for hybrids + CDFT
+  SAVE first_epcdft
+  ! 
+  if (do_epcdft) conv_epcdft=.false.
   !
   iter = 0
   dr2  = 0.0_dp
@@ -615,6 +640,33 @@ SUBROUTINE electrons_scf ( printout, exxen )
            !
         END IF
         !
+        IF (conv_elec .AND. do_epcdft) THEN
+          !
+          ! skip first call to CDFT  if calculation is a hybrid
+          !
+          IF (.NOT. ( dft_is_hybrid() .AND. first_epcdft )) THEN
+            !
+            CALL epcdft_controller(dr2)
+            !
+            IF (conv_epcdft .and. conv_elec) deallocate(epcdft_field)
+            !
+            IF (.not.conv_epcdft) THEN
+              conv_elec=.false.
+              iter = 0
+            ENDIF 
+            !
+          ELSE
+            !
+            ! Hybrids are on and this was the first call to CDFT
+            !
+            first_epcdft = .false.
+            !
+          ENDIF
+            !
+        ENDIF        
+        !
+        IF (reset_field) iter = 0
+        !
         IF ( .NOT. conv_elec ) THEN
            !
            ! ... no convergence yet: calculate new potential from mixed
@@ -783,6 +835,11 @@ SUBROUTINE electrons_scf ( printout, exxen )
      !
      etot = etot + plugin_etot 
      !
+     ! called every step, this will allow cdft dynamic updating
+     !
+     IF(do_epcdft .and. .not. conv_epcdft) CALL epcdft_controller(dr2)
+     !
+     !
      CALL print_energies ( printout )
      !
      IF ( conv_elec ) THEN
@@ -825,7 +882,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
   ! ... exiting: write (unless disabled) the charge density to file
   ! ... (also write ldaU ns coefficients and PAW becsum)
   !
-  IF ( io_level > -1 ) CALL write_rho( rho, nspin )
+  IF ( io_level > -1 ) CALL write_scf( rho, nspin )
   !
   ! ... delete mixing info if converged, keep it if not
   !
@@ -1097,12 +1154,24 @@ SUBROUTINE electrons_scf ( printout, exxen )
        !-----------------------------------------------------------------------
        !
        USE constants, ONLY : eps8
-       INTEGER, INTENT (IN) :: printout
+       USE epcdft,        ONLY : do_epcdft, epcdft_shift,conv_epcdft,nconstr_epcdft,epcdft_guess,epcdft_target
        !
-   
+       INTEGER, INTENT (IN) :: printout
+       REAL (DP) :: epcdft_contrib
+       INTEGER :: iconstraint
+       !       
        IF ( printout == 0 ) RETURN
-       IF ( ( conv_elec .OR. MOD(iter,iprint) == 0 ) .AND. printout > 1 ) THEN
+       IF ( ( conv_elec .OR. (MOD(iter,iprint) == 0 .and. .not. do_epcdft )) .AND. printout > 1 ) THEN
           !
+          IF ( do_epcdft ) THEN
+            epcdft_contrib=0.D0
+            DO iconstraint=1,nconstr_epcdft
+              epcdft_contrib=epcdft_contrib-epcdft_guess(iconstraint)* epcdft_target(iconstraint)
+            ENDDO
+            epcdft_contrib=epcdft_shift+epcdft_contrib
+            etot=etot+epcdft_contrib ! COMPUTE AND ADD CONTRIBUTION HERE
+          ENDIF
+
           IF ( dr2 > eps8 ) THEN
              WRITE( stdout, 9081 ) etot, hwf_energy, dr2
           ELSE
@@ -1119,6 +1188,8 @@ SUBROUTINE electrons_scf ( printout, exxen )
           IF ( textfor)  WRITE ( stdout , 9077 ) eext
           IF ( tefield )            WRITE( stdout, 9061 ) etotefield
           IF ( monopole )           WRITE( stdout, 9062 ) etotmonofield ! TB
+          IF ( do_epcdft ) write( stdout, 9063 ) epcdft_contrib  ! CONTRIBUTION FROM ERROR IN CDFT SELF-CONSISTENT EQUATIONS
+
           IF ( lda_plus_u )         WRITE( stdout, 9065 ) eth
           IF ( ABS (descf) > eps8 ) WRITE( stdout, 9069 ) descf
           IF ( okpaw ) THEN
@@ -1188,7 +1259,8 @@ SUBROUTINE electrons_scf ( printout, exxen )
             /'     xc contribution           =',F17.8,' Ry' &
             /'     ewald contribution        =',F17.8,' Ry' )
 9061 FORMAT( '     electric field correction =',F17.8,' Ry' )
-9062 FORMAT( '     monopole field correction =',F17.8,' Ry' ) ! TB
+9062 FORMAT( '     monopole field correction =',F17.8,' Ry' ) 
+9063 FORMAT( '     CDFT contribution         =',F17.8,' Ry' )
 9065 FORMAT( '     Hubbard energy            =',F17.8,' Ry' )
 9067 FORMAT( '     one-center paw contrib.   =',F17.8,' Ry' )
 9068 FORMAT( '      -> PAW hartree energy AE =',F17.8,' Ry' &

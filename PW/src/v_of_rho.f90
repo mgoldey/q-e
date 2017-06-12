@@ -26,6 +26,8 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
   USE cell_base,        ONLY : alat
   USE control_flags,    ONLY : ts_vdw
   USE tsvdw_module,     ONLY : tsvdw_calculate, UtsvdW
+  USE epcdft,    ONLY : do_epcdft, reset_field, epcdft_field
+
   !
   IMPLICIT NONE
   !
@@ -48,6 +50,12 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
     ! electric field energy - inout due to the screwed logic of add_efield
   ! ! 
   INTEGER :: is, ir
+  REAL(DP) :: x0(3) ! center of charge of system
+  REAL(DP) :: qq ! total charge
+  REAL(DP) :: dipole(3)!, quadrupole(3) ! total dips
+
+  logical :: first=.true.
+  SAVE first
   !
   CALL start_clock( 'v_of_rho' )
   !
@@ -82,6 +90,40 @@ SUBROUTINE v_of_rho( rho, rho_core, rhog_core, &
   DO is = 1, nspin_lsda
      CALL add_efield(v%of_r(1,is), etotefield, rho%of_r, .false. )
   END DO
+  !
+  ! allocate and add epcdft 
+  !
+  IF(do_epcdft)THEN
+    !
+    x0 = 0.D0
+    qq = 0.D0
+    dipole = 0.D0
+    !
+    IF (first .or. .not. allocated(epcdft_field)) THEN
+      !
+      reset_field=.true.
+      !
+      IF(.not. allocated(epcdft_field)) allocate(epcdft_field(dfftp%nnr,2))
+      !
+    ENDIF
+    !
+    first=.false.
+    !
+    IF (reset_field) THEN
+      !
+      ! cdft field
+      !
+      epcdft_field=0.0D0
+      CALL add_epcdft_efield(epcdft_field,.TRUE.)
+      reset_field=.false.
+      !
+    ENDIF
+    !
+    ! add epcdft to potential
+    !
+    v%of_r=v%of_r+epcdft_field
+    !
+  ENDIF ! end if epcdft
   !
   ! ... add Tkatchenko-Scheffler potential (factor 2: Ha -> Ry)
   ! 

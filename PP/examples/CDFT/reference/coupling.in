@@ -1,0 +1,6 @@
+&INPUTPP
+prefix = "left",
+prefix2 = "right",
+outdir = "./out",
+outdir2 = "./out",
+/
