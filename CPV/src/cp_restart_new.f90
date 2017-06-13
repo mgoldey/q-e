@@ -20,7 +20,6 @@ MODULE cp_restart_new
   USE kinds,     ONLY : DP
 #if !defined(__OLDXML)
   !
-  USE iotk_module
   USE qes_module
   USE qexsd_input, ONLY: qexsd_init_k_points_ibz
   USE qexsd_module, ONLY: qexsd_init_schema, qexsd_openschema, qexsd_closeschema,      &
@@ -34,19 +33,20 @@ MODULE cp_restart_new
   USE io_files,  ONLY : iunpun, xmlpun_schema, prefix, tmp_dir, qexsd_fmt,&
        qexsd_version
   USE io_base,   ONLY : write_wfc, read_wfc, write_rhog
-  USE xml_io_base,     ONLY  : read_print_counter, create_directory
+  USE xml_io_base,ONLY: create_directory
   !
   USE io_global, ONLY : ionode, ionode_id, stdout
   USE mp,        ONLY : mp_bcast
-  USE parser,    ONLY : version_compare
   USE matrix_inversion
   !
+#endif
   IMPLICIT NONE
   !
   SAVE
   !
   CONTAINS
     !
+#if !defined(__OLDXML)
     !------------------------------------------------------------------------
     SUBROUTINE cp_writefile( ndw, ascii, nfi, simtime, acc, nk, xk,          &
                              wk, ht, htm, htvel, gvel, xnhh0, xnhhm, vnhh,   &
@@ -54,7 +54,7 @@ MODULE cp_restart_new
                              vnhp, xnhp0, xnhpm, nhpcl, nhpdim, occ0, occm,  &
                              lambda0,lambdam, xnhe0, xnhem, vnhe, ekincm,    &
                              et, rho, c02, cm2, ctot, iupdwn, nupdwn,        &
-                             iupdwn_tot, nupdwn_tot, wfc, mat_z )
+                             iupdwn_tot, nupdwn_tot, wfc )
       !------------------------------------------------------------------------
       !
       USE control_flags,            ONLY : gamma_only, force_pairing, trhow, &
@@ -78,7 +78,7 @@ MODULE cp_restart_new
       USE gvecw,                    ONLY : ngw, ngw_g, ecutwfc
       USE gvect,                    ONLY : ig_l2g, mill
       USE electrons_base,           ONLY : nspin, nelt, nel, nudx
-      USE cell_base,                ONLY : ibrav, alat, s_to_r, ainv ! BS added ainv
+      USE cell_base,                ONLY : ibrav, alat, s_to_r
       USE ions_base,                ONLY : nsp, nat, na, atm, zv, &
                                            amass, iforce, ind_bck
       USE funct,                    ONLY : get_dft_name, get_inlc, &
@@ -92,7 +92,6 @@ MODULE cp_restart_new
       USE fft_base,                 ONLY : dfftp, dffts, dfftb
       USE fft_rho,                  ONLY : rho_r2g
       USE uspp_param,               ONLY : n_atom_wfc, upf
-      USE global_version,           ONLY : version_number
       USE kernel_table,             ONLY : vdw_table_name, kernel_file_name
       USE london_module,            ONLY : scal6, lon_rcut, in_c6
       USE tsvdw_module,             ONLY : vdw_isolated, vdw_econv_thr
@@ -147,7 +146,6 @@ MODULE cp_restart_new
       INTEGER,               INTENT(IN) :: iupdwn_tot(:)! 
       INTEGER,               INTENT(IN) :: nupdwn_tot(:)! 
       REAL(DP),              INTENT(IN) :: wfc(:,:)     ! BS 
-      REAL(DP),    OPTIONAL, INTENT(IN) :: mat_z(:,:,:) ! 
       !
       CHARACTER(LEN=20)     :: dft_name
       CHARACTER(LEN=256)    :: dirname
@@ -186,8 +184,6 @@ MODULE cp_restart_new
             CALL errore('cp_writefile',' force pairing not implemented', 1 )
       IF( tksw ) &
             CALL infomsg('cp_writefile',' Kohn-Sham states not written' )
-      IF( PRESENT(mat_z) ) &
-            CALL errore('cp_writefile',' case not implemented', 1 )
       !
       lsda = ( nspin == 2 )
       IF( lsda ) THEN
@@ -272,6 +268,8 @@ MODULE cp_restart_new
               epseu, enl, exc, vave, enthal, acc, stau0, svel0, taui, cdmi,&
               force, nhpcl, nhpdim, xnhp0, vnhp, ekincm, xnhe0, vnhe, ht,&
               htvel, gvel, xnhh0, vnhh, staum, svelm, xnhpm, xnhem, htm, xnhhm)
+         ! Wannier function centers
+         IF ( lwf ) CALL cp_writecenters ( iunpun, h, wfc)
          !
 !-------------------------------------------------------------------------------
 ! ... CONVERGENCE_INFO - TO BE VERIFIED
@@ -483,9 +481,10 @@ MODULE cp_restart_new
                             taui, cdmi, stau0, svel0, staum, svelm, force,    &
                             vnhp, xnhp0, xnhpm, nhpcl,nhpdim,occ0, occm,      &
                             lambda0, lambdam, b1, b2, b3, xnhe0, xnhem, vnhe, &
-                            ekincm, c02, cm2, wfc, mat_z )
+                            ekincm, c02, cm2, wfc )
       !------------------------------------------------------------------------
       !
+      USE iotk_module
       USE control_flags,            ONLY : gamma_only, force_pairing, llondon,&
                                            ts_vdw, lxdm, iverbosity, twfcollect, lwf
       USE io_files,                 ONLY : iunpun, xmlpun, iunwfc, nwordwfc, &
@@ -559,7 +558,6 @@ MODULE cp_restart_new
       COMPLEX(DP),           INTENT(INOUT) :: c02(:,:)     ! 
       COMPLEX(DP),           INTENT(INOUT) :: cm2(:,:)     ! 
       REAL(DP),              INTENT(INOUT) :: wfc(:,:)     ! BS 
-      REAL(DP),    OPTIONAL, INTENT(INOUT) :: mat_z(:,:,:) ! 
       !
       CHARACTER(LEN=256)   :: dirname, kdirname, filename
       CHARACTER(LEN=5)     :: kindex
@@ -614,9 +612,6 @@ MODULE cp_restart_new
       REAL(dp):: hubbard_dum(3,nsp)
       CHARACTER(LEN=6), EXTERNAL :: int_to_char
       !
-      IF( PRESENT(mat_z) ) &
-            CALL errore('cp_readfile',' case not implemented', 1 )
-      !
       ! ... look for an empty unit
       !
       CALL iotk_free_unit( iunpun, ierr )
@@ -639,7 +634,10 @@ MODULE cp_restart_new
            ierr )
       md_found = ( ierr == 0 )
       IF ( ierr > 0 ) CALL errore ('cp_readcp','bad CP section read',ierr)
+      ! Wannier function centers
+      IF ( lwf ) CALL cp_readcenters ( iunpun, wfc)
       !
+      ierr = 0
       CALL qexsd_get_general_info ( iunpun, geninfo_obj, found)
       IF ( .NOT. found ) THEN
          ierr = ierr + 1
@@ -1333,9 +1331,52 @@ MODULE cp_restart_new
        !
     ENDIF
     !
-    RETURN
-    !
   END SUBROUTINE cp_writecp
+  !
+  !------------------------------------------------------------------------
+  SUBROUTINE cp_writecenters( iunpun, h, wfc )
+    !------------------------------------------------------------------------
+    !
+    ! ... Write Wannier centers
+    !
+    USE kinds, ONLY : dp
+    USE io_global, ONLY : ionode
+    USE iotk_module
+    USE cell_base, ONLY : ainv ! what is this? what is the relation with h?
+    !
+    REAL(DP), INTENT(IN) :: h(:,:), wfc(:,:)
+    INTEGER, INTENT(in) :: iunpun
+    !
+    INTEGER :: i, nbnd
+    REAL(DP) :: temp_vec(3)
+    REAL(DP), ALLOCATABLE :: centers(:,:)
+    !
+    IF ( ionode ) THEN
+       !
+       nbnd = SIZE (wfc, 2)
+       ALLOCATE ( centers(3,nbnd) )
+       CALL iotk_write_begin( iunpun, "WANNIER_CENTERS" )
+       !
+       temp_vec=0.0_DP
+       centers =0.0_DP
+       !
+       DO i = 1, nbnd
+          !
+          temp_vec(:) = MATMUL( ainv(:,:), wfc(:,i) )
+          temp_vec(:) = temp_vec(:) - floor (temp_vec(:))
+          centers(:,i) = MATMUL( h, temp_vec(:) )
+          !
+       END DO
+       !
+       CALL iotk_write_dat(iunpun, "wanniercentres", &
+            & centers(1:3,1:nbnd),  COLUMNS=3 )
+       !
+       DEALLOCATE ( centers )
+       CALL iotk_write_end(   iunpun, "WANNIER_CENTERS" )
+       !
+    END IF
+    !
+  END SUBROUTINE cp_writecenters
   !
   !------------------------------------------------------------------------
   SUBROUTINE cp_read_wfc( ndr, tmp_dir, ik, nk, iss, nspin, c2, tag, ierr )
@@ -1606,6 +1647,43 @@ MODULE cp_restart_new
   END SUBROUTINE cp_readcp
   !
   !------------------------------------------------------------------------
+  SUBROUTINE cp_readcenters( iunpun, wfc )
+    !------------------------------------------------------------------------
+    !
+    ! ... Read Wannier centers
+    !
+    USE kinds, ONLY : dp
+    USE io_global, ONLY : stdout
+    USE iotk_module
+    !
+    INTEGER, INTENT(IN)  :: iunpun
+    REAL(DP), INTENT(OUT):: wfc(:,:)
+    !
+    INTEGER :: nbnd, ierr
+    LOGICAL :: found
+    !
+    nbnd = SIZE (wfc, 2)
+    CALL iotk_scan_begin( iunpun, "WANNIER_CENTERS", found=found )
+    !
+    IF (found) THEN
+       !
+       CALL iotk_scan_dat(iunpun, "wanniercentres", &
+            wfc(1:3, 1:nbnd), IERR=ierr )
+       IF ( ierr > 0 ) CALL errore ('cp_readcenters', &
+            'error reading Wannier centers',ierr)
+       CALL iotk_scan_end(   iunpun, "WANNIER_CENTERS" )
+       !
+    ELSE
+       !
+       CALL infomsg('cp_readcenters', &
+            'Wannier centers not found in restart file')
+       wfc(:,:)= 0.0_dp
+       !
+    END IF
+    !
+  END SUBROUTINE cp_readcenters
+  !
+  !------------------------------------------------------------------------
   SUBROUTINE cp_read_cell( ndr, tmp_dir, ascii, ht, &
                            htm, htvel, gvel, xnhh0, xnhhm, vnhh )
     !------------------------------------------------------------------------
@@ -1742,8 +1820,10 @@ MODULE cp_restart_new
     !
   END SUBROUTINE cp_read_cell
 
+  !------------------------------------------------------------------------
   SUBROUTINE cp_write_lambda( filename, iunpun, iss, nspin, nudx, &
        lambda, ierr )
+    !------------------------------------------------------------------------
     !
     ! ... collect and write matrix lambda to file
     !
@@ -1779,8 +1859,10 @@ MODULE cp_restart_new
     !
   END SUBROUTINE cp_write_lambda
   !
+  !------------------------------------------------------------------------
   SUBROUTINE cp_read_lambda( filename, iunpun, iss, nspin, nudx, &
              lambda, ierr )
+    !------------------------------------------------------------------------
     !
     ! ... read matrix lambda from file, distribute it
     !
@@ -1821,5 +1903,112 @@ MODULE cp_restart_new
     !
   END SUBROUTINE cp_read_lambda
 #endif
-
+  !
+  !------------------------------------------------------------------------
+  SUBROUTINE cp_write_zmat( ndw, mat_z, ierr )
+    !------------------------------------------------------------------------
+    !
+    ! ... collect and write matrix z to file
+    !
+    USE kinds, ONLY : dp
+    USE mp, ONLY : mp_bcast
+    USE mp_images, ONLY : intra_image_comm
+    USE io_global, ONLY : ionode, ionode_id
+    USE io_files,  ONLY : iunpun, prefix, tmp_dir
+    USE cp_main_variables, ONLY : descla
+    USE cp_interfaces, ONLY : collect_zmat
+    USE electrons_base,ONLY: nspin, nudx
+    !
+    IMPLICIT NONE
+    REAL(dp), INTENT(in) :: mat_z(:,:,:)
+    INTEGER, INTENT(in)  :: ndw
+    INTEGER, INTENT(out) :: ierr
+    !
+    CHARACTER(LEN=256)    :: dirname
+    CHARACTER(LEN=320)    :: filename
+    INTEGER               :: iss
+    REAL(dp), ALLOCATABLE :: mrepl(:,:)
+    CHARACTER(LEN=6), EXTERNAL :: int_to_char
+    !
+    WRITE(dirname,'(A,A,"_",I2,".save/")') TRIM(tmp_dir), TRIM(prefix), ndw
+    !
+    IF ( ionode ) OPEN( unit=iunpun, file =TRIM(filename), &
+         status='unknown', form='unformatted', iostat=ierr)
+    CALL mp_bcast (ierr, ionode_id, intra_image_comm )
+    IF ( ierr /= 0 ) RETURN
+    !
+    ALLOCATE( mrepl( nudx, nudx ) )
+    !
+    DO iss = 1, nspin
+       !
+       filename = TRIM(dirname) // 'mat_z' // TRIM(int_to_char(iss))
+       !
+       CALL collect_zmat( mrepl, mat_z(:,:,iss), descla(iss) )
+       !
+       IF ( ionode ) THEN
+          WRITE (iunpun, iostat=ierr) mrepl
+          CLOSE( unit=iunpun, status='keep')
+       END IF
+       !
+       CALL mp_bcast (ierr, ionode_id, intra_image_comm )
+       !
+    END DO
+    !
+    DEALLOCATE( mrepl )
+    !
+  END SUBROUTINE cp_write_zmat  
+  !------------------------------------------------------------------------
+  SUBROUTINE cp_read_zmat( ndr, mat_z, ierr )
+    !------------------------------------------------------------------------
+    !
+    ! ... read from file and distribute matrix z
+    !
+    USE kinds, ONLY : dp
+    USE mp, ONLY : mp_bcast
+    USE mp_images, ONLY : intra_image_comm
+    USE io_global, ONLY : ionode, ionode_id
+    USE io_files,  ONLY : iunpun, prefix, tmp_dir
+    USE cp_main_variables, ONLY : descla
+    USE cp_interfaces, ONLY : distribute_zmat
+    USE electrons_base,ONLY: nspin, nudx
+    !
+    IMPLICIT NONE
+    REAL(dp), INTENT(out) :: mat_z(:,:,:)
+    INTEGER, INTENT(in)  :: ndr
+    INTEGER, INTENT(out) :: ierr
+    !
+    CHARACTER(LEN=256)    :: dirname
+    CHARACTER(LEN=320)    :: filename
+    INTEGER               :: iss
+    REAL(dp), ALLOCATABLE :: mrepl(:,:)
+    CHARACTER(LEN=6), EXTERNAL :: int_to_char
+    !
+    WRITE(dirname,'(A,A,"_",I2,".save/")') TRIM(tmp_dir), TRIM(prefix), ndr
+    !
+    IF ( ionode ) OPEN( unit=iunpun, file =TRIM(filename), &
+         status='old', form='unformatted', iostat=ierr)
+    CALL mp_bcast (ierr, ionode_id, intra_image_comm )
+    IF ( ierr /= 0 ) RETURN
+    !
+    ALLOCATE( mrepl( nudx, nudx ) )
+    !
+    DO iss = 1, nspin
+       !
+       filename = TRIM(dirname) // 'mat_z' // TRIM(int_to_char(iss))
+       !
+       IF ( ionode ) THEN
+          READ (iunpun, iostat=ierr) mrepl
+          CLOSE( unit=iunpun, status='keep')
+       END IF
+       CALL mp_bcast (ierr, ionode_id, intra_image_comm )
+       !
+       CALL distribute_zmat( mrepl, mat_z(:,:,iss), descla(iss) )
+       !
+    END DO
+    !
+    DEALLOCATE( mrepl )
+    !
+  END SUBROUTINE cp_read_zmat
+  !------------------------------------------------------------------------
+  !
 END MODULE cp_restart_new
