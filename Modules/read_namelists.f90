@@ -118,6 +118,7 @@ MODULE read_namelists_module
        nppstr   = 0
        wf_collect = .TRUE.
        lelfield = .FALSE.
+       lipr  = .FALSE.
        lorbm = .FALSE.
        nberrycyc  = 1
        lkpoint_dir = .TRUE.
@@ -714,6 +715,7 @@ MODULE read_namelists_module
        CALL mp_bcast( lkpoint_dir,   ionode_id, intra_image_comm )
        CALL mp_bcast( wf_collect,    ionode_id, intra_image_comm )
        CALL mp_bcast( lelfield,      ionode_id, intra_image_comm )
+       CALL mp_bcast( lipr,      ionode_id, intra_image_comm )
        CALL mp_bcast( lorbm,         ionode_id, intra_image_comm )
        CALL mp_bcast( nberrycyc,     ionode_id, intra_image_comm )
        CALL mp_bcast( saverho,       ionode_id, intra_image_comm )

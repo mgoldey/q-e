@@ -167,6 +167,7 @@ plus_u_full.o \
 potinit.o \
 print_clock_pw.o \
 print_ks_energies.o \
+print_ks_iprs.o \
 punch.o \
 pw_restart.o \
 pw_restart_new.o \

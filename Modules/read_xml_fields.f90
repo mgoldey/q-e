@@ -458,6 +458,9 @@ CONTAINS
     CASE ( 'lelfield' )
        CALL iotk_scan_dat_inside( xmlinputunit, lelfield, ierr = ierr )
        !
+    CASE ( 'lipr' )
+       CALL iotk_scan_dat_inside( xmlinputunit, lelfield, ierr = ierr )
+       !
     CASE ( 'lorbm' )
        CALL iotk_scan_dat_inside( xmlinputunit, lorbm, ierr = ierr )
        !

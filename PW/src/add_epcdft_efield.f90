@@ -601,7 +601,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 	              write(filename,"(A6,I2,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
 	            ENDIF
 	            CALL write_cube_r ( 84332, filename,  REAL(wfcatomr,KIND=DP))
-	        ENDIF ! write_debug_cube
+  	        ENDIF ! write_debug_cube
             !
           ENDDO ! m
         ENDIF ! end if occupied

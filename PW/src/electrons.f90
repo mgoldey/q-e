@@ -392,6 +392,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
   USE plugin_variables,     ONLY : plugin_etot
   USE epcdft,               ONLY : do_epcdft, conv_epcdft, epcdft_shift, epcdft_field, &
                                    reset_field
+  USE input_parameters,     ONLY : lipr                                
   !
   IMPLICIT NONE
   !
@@ -770,6 +771,7 @@ SUBROUTINE electrons_scf ( printout, exxen )
            ENDIF
         ENDIF
         CALL print_ks_energies()
+        if (lipr .eqv. .true.) CALL print_ks_iprs()
         !
      END IF
      !

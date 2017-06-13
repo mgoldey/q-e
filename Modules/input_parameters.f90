@@ -210,6 +210,9 @@ MODULE input_parameters
           ! if .TRUE. a static homogeneous electric field is present
           ! via the modern theory of polarizability - differs from tefield!
 
+        LOGICAL :: lipr = .false.
+          ! if .TRUE. it computes and prints IPRs at the end of the KS iterations
+
         LOGICAL :: lorbm = .false.
           ! if .TRUE. an orbital magnetization is computed (Kubo terms)
 
@@ -282,7 +285,7 @@ MODULE input_parameters
           nstep, iprint, isave, tstress, tprnfor, dt, ndr, ndw, outdir,   &
           prefix, wfcdir, max_seconds, ekin_conv_thr, etot_conv_thr,      &
           forc_conv_thr, pseudo_dir, disk_io, tefield, dipfield, lberry,  &
-          gdir, nppstr, wf_collect, lelfield, nberrycyc, refg,            &
+          gdir, nppstr, wf_collect, lelfield, lipr, nberrycyc, refg,      &
           tefield2, saverho, tabps, lkpoint_dir, use_wannier, lecrpa,     &
           tqmmm, vdw_table_name, lorbm, memory, point_label_type,         &
           lfcpopt, lfcpdyn, input_xml_schema_file, monopole

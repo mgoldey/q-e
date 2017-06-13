@@ -278,10 +278,12 @@ epcdft_setup.o : ../../Modules/mp_global.o
 epcdft_setup.o : ../../Modules/mp_world.o
 epcdft_setup.o : ../../Modules/noncol.o
 epcdft_setup.o : ../../Modules/paw_variables.o
+epcdft_setup.o : ../../Modules/qes_types.o
 epcdft_setup.o : ../../Modules/recvec.o
 epcdft_setup.o : ../../Modules/uspp.o
 epcdft_setup.o : ../../Modules/wavefunctions.o
 epcdft_setup.o : ../../PW/src/esm.o
+epcdft_setup.o : ../../PW/src/pw_restart_new.o
 epcdft_setup.o : ../../PW/src/pwcom.o
 epcdft_setup.o : ../../PW/src/scf_mod.o
 epcdft_setup.o : epcdft_mod.o

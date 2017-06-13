@@ -68,7 +68,8 @@ all : tldeps average.x bands.x dos.x epsilon.x initial_state.x fs.x \
       pawplot.x sumpdos.x pw2wannier90.x pw_export.x pw2gw.x \
       wannier_ham.x wannier_plot.x molecularpdos.x \
       pw2bgw.x bgw2pw.x wfck2r.x importexport_binary.x \
-      fermi_velocity.x fermi_proj.x epcdft_coupling.x
+      fermi_velocity.x fermi_proj.x epcdft_coupling.x \
+      rad_avg.x
 
 
 libpp.a : $(PPOBJS) 
@@ -100,6 +101,12 @@ pawplot.x : pawplot.o libpp.a libpp.a $(MODULES) $(LIBOBJS)
 plan_avg.x : plan_avg.o libpp.a $(MODULES) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ \
 		plan_avg.o libpp.a $(MODULES) \
+		$(LIBOBJS) $(LIBS)
+	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
+
+rad_avg.x : rad_avg.o libpp.a $(MODULES) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ \
+		rad_avg.o libpp.a $(MODULES) \
 		$(LIBOBJS) $(LIBS)
 	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
 

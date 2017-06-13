@@ -49,7 +49,6 @@ add_epcdft_efield.o : ../../Modules/recvec.o
 add_epcdft_efield.o : ../../Modules/uspp.o
 add_epcdft_efield.o : ../../Modules/wavefunctions.o
 add_epcdft_efield.o : pwcom.o
-add_epcdft_efield.o : scf_mod.o
 add_monofield.o : ../../Modules/cell_base.o
 add_monofield.o : ../../Modules/constants.o
 add_monofield.o : ../../Modules/control_flags.o
@@ -1658,7 +1657,6 @@ read_file.o : ../../FFTXlib/fft_types.o
 read_file.o : ../../Modules/cell_base.o
 read_file.o : ../../Modules/constants.o
 read_file.o : ../../Modules/control_flags.o
-read_file.o : ../../Modules/epcdft_module.o
 read_file.o : ../../Modules/fft_base.o
 read_file.o : ../../Modules/funct.o
 read_file.o : ../../Modules/gvecw.o
@@ -2207,7 +2205,6 @@ update_pot.o : ../../Modules/paw_variables.o
 update_pot.o : ../../Modules/recvec.o
 update_pot.o : ../../Modules/uspp.o
 update_pot.o : ../../Modules/wavefunctions.o
-update_pot.o : ../../Modules/wrappers.o
 update_pot.o : ../../Modules/xml_io_base.o
 update_pot.o : buffers.o
 update_pot.o : extfield.o
