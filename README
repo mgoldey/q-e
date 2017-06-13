@@ -25,3 +25,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
+[[FORKED]] FROM 
+
+QE MIRROR https://github.com/QEF/q-e
+NISHIHARA's QE repo https://github.com/nisihara1/q-e
+
+[[Features]] not in trunk:
+  * INVERSE PARTICIPATION RATIOS
+  * Constrained DFT with gradients
+  * New geometry optimization (SR1-BFGS)
+  * New NEB optimization (L-BFGS, L-SR1)
+  * RMM-DIIS diagonalization to solve KS-equation
+ 
