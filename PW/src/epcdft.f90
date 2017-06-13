@@ -60,7 +60,6 @@ SUBROUTINE epcdft_controller(dr2)
   INTEGER  :: i, is, iatom,iconstraint
   INTEGER  :: ictr=0
   LOGICAL  :: first =.true.
-  REAL(DP) :: tmp, step_factor
   REAL(DP), INTENT(IN) :: dr2
   REAL(DP) :: dv
   REAL(DP) :: acharge, dcharge                     ! acceptor/donor charge 
@@ -96,14 +95,6 @@ SUBROUTINE epcdft_controller(dr2)
   ictr=ictr+1
   IF ((.NOT. conv_elec) .AND. (mod( ictr, epcdft_update_intrvl ) .NE. 0) ) RETURN
   !
-  ! fancy scaling of maximum step size based on SCF convergence
-  !
-  step_factor=EXP(-SQRT(ABS(dr2)/1e-7))
-  if (step_factor*MIN(0.001D0,epcdft_delta_fld) .lt. 1e-7) THEN 
-    ictr=ictr-1
-    RETURN ! SKIP IF NOT GOING TO TAKE ANY SIGNIFICANT STEP
-  ENDIF
-  !
   ! restart the counter but dont start at 0 or you will need to reallocate
   !
   ictr = 1
@@ -113,7 +104,6 @@ SUBROUTINE epcdft_controller(dr2)
   ALLOCATE(vpotenp(dfftp%nnr, nspin))
   !
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
-  tmp      = 0.D0
   epcdft_shift = 0.D0
   epcdft_shiftp = 0.D0
   !
@@ -286,9 +276,9 @@ SUBROUTINE epcdft_controller(dr2)
         !
         IF(first) THEN
            !
-           next_epcdft_amp = epcdft_amp + step_factor * SIGN(1.0D0, epcdft_amp) *&
-                                                        SIGN(MIN(0.001D0,epcdft_delta_fld), enumerr) *&
-                                                        SIGN(1.0D0,einwell)
+           next_epcdft_amp = epcdft_amp + SIGN(1.0D0, epcdft_amp) *&
+                                          SIGN(MIN(0.001D0,epcdft_delta_fld*abs(enumerr)), enumerr) *&
+                                          SIGN(1.0D0,einwell)
            first=.false.
            !
         ELSE
@@ -298,9 +288,9 @@ SUBROUTINE epcdft_controller(dr2)
            !
            ! abs of the change in amp must be <= |delta_fld|
            !
-           IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. step_factor*ABS(epcdft_delta_fld) ) THEN
+           IF ( ABS(next_epcdft_amp - epcdft_amp) .gt. ABS(epcdft_delta_fld*enumerr) ) THEN
              !
-             next_epcdft_amp = epcdft_amp + step_factor*SIGN(1.D0, next_epcdft_amp - epcdft_amp) * epcdft_delta_fld
+             next_epcdft_amp = epcdft_amp + SIGN(1.D0, next_epcdft_amp - epcdft_amp) * epcdft_delta_fld*abs(enumerr)
              !
            ENDIF
            !
