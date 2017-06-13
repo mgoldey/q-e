@@ -12,4 +12,4 @@ Features in development version:
   * NEB optimization  with L-BFGS and L-SR1 (Satomichi Nishihara)
   * RMM-DIIS diagonalization to solve KS-equation (Satomichi Nishihara)
 
-Test files to be gathered in a separate repository.
+Test files are gathered in this repository (https://github.com/mgoldey/qe_test_cases) which should be checked out inside of this developmental version.
