@@ -52,11 +52,12 @@ PROGRAM do_projwfc
   INTEGER, PARAMETER :: N_MAX_BOXES = 999
   INTEGER :: n_proj_boxes, irmin(3,N_MAX_BOXES), irmax(3,N_MAX_BOXES)
   LOGICAL :: lgww  !if .true. use GW QP energies from file bands.dat
+  LOGICAL :: skipfiles
   !
   NAMELIST / projwfc / outdir, prefix, ngauss, degauss, lsym, &
              Emin, Emax, DeltaE, filpdos, filproj, lgww, &
              kresolveddos, tdosinboxes, n_proj_boxes, irmin, irmax, plotboxes, &
-             lwrite_overlaps, lbinary_data, pawproj, lforcet, ef_0
+             lwrite_overlaps, lbinary_data, pawproj, lforcet, ef_0, skipfiles
   !
   ! initialise environment
   !
@@ -234,9 +235,9 @@ ELSE
         CALL partialdos_boxes (Emin, Emax, DeltaE, kresolveddos, filpdos, n_proj_boxes)
      ELSE IF ( lsym .OR. kresolveddos ) THEN
         IF (noncolin) THEN
-           CALL partialdos_nc (Emin, Emax, DeltaE, kresolveddos, filpdos)
+           CALL partialdos_nc (Emin, Emax, DeltaE, kresolveddos, filpdos,skipfiles)
         ELSE
-           CALL partialdos (Emin, Emax, DeltaE, kresolveddos, filpdos)
+           CALL partialdos (Emin, Emax, DeltaE, kresolveddos, filpdos,skipfiles)
         ENDIF
      ENDIF
   ENDIF

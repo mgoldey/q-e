@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-SUBROUTINE  partialdos (Emin, Emax, DeltaE, kresolveddos, filpdos)
+SUBROUTINE  partialdos (Emin, Emax, DeltaE, kresolveddos, filpdos,skipfiles)
   !-----------------------------------------------------------------------
   !
   USE io_global,  ONLY : stdout
@@ -23,6 +23,7 @@ SUBROUTINE  partialdos (Emin, Emax, DeltaE, kresolveddos, filpdos)
   CHARACTER (len=256) :: filpdos
   REAL(DP) :: Emin, Emax, DeltaE
   LOGICAL :: kresolveddos
+  LOGICAL, INTENT(in) :: skipfiles
   !
   CHARACTER (len=33) :: filextension
   CHARACTER (len=256):: fileout
@@ -139,95 +140,96 @@ SUBROUTINE  partialdos (Emin, Emax, DeltaE, kresolveddos, filpdos)
         ENDDO
      ENDDO
   ENDDO
+  if (.not. skipfiles) THEN
+	  DO nwfc = 1, nproj
+	     IF (nlmchi(nwfc)%m == 1) THEN
+		filextension='.pdos_atm#'
+		!             12345678901
+		c_tab = 11
+		IF (nlmchi(nwfc)%na < 10) THEN
+		   WRITE (filextension( c_tab : c_tab ),'(i1)') nlmchi(nwfc)%na
+		   c_tab = c_tab + 1
+		ELSEIF (nlmchi(nwfc)%na < 100) THEN
+		   WRITE (filextension( c_tab : c_tab+1 ),'(i2)') nlmchi(nwfc)%na
+		   c_tab = c_tab + 2
+		ELSEIF (nlmchi(nwfc)%na < 1000) THEN
+		   WRITE (filextension( c_tab : c_tab+2 ),'(i3)') nlmchi(nwfc)%na
+		   c_tab = c_tab + 3
+		ELSEIF (nlmchi(nwfc)%na < 10000) THEN
+		   WRITE (filextension( c_tab : c_tab+3 ),'(i4)') nlmchi(nwfc)%na
+		   c_tab = c_tab + 4
+		ELSE
+		   CALL errore('partialdos',&
+		        'file extension not supporting so many atoms', nwfc)
+		ENDIF
+		WRITE (filextension(c_tab:c_tab+4),'(a1,a)') &
+		     '(',trim(atm(ityp(nlmchi(nwfc)%na)))
+		c_tab = c_tab + len_trim(atm(ityp(nlmchi(nwfc)%na))) + 1
+		IF (nlmchi(nwfc)%l > 3) &
+		     CALL errore('partialdos',&
+		     'file extension not supporting so many l', nwfc)
+		IF (nlmchi(nwfc)%n < 10) THEN
+		   WRITE (filextension(c_tab:),'(")_wfc#",i1,"(",a1,")")')  &
+		        nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l)
+		ELSE IF (nlmchi(nwfc)%n < 100) THEN
+		   WRITE (filextension(c_tab:),'(")_wfc#",i2,"(",a1,")")')  &
+		        nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l)
+		ELSE
+		   CALL errore('partialdos',&
+		     'file extension not supporting so many atomic wfc', nwfc)
+		END IF
+		fileout = trim(filpdos)//trim(filextension)
+		OPEN (4,file=fileout,form='formatted', status='unknown')
 
-  DO nwfc = 1, nproj
-     IF (nlmchi(nwfc)%m == 1) THEN
-        filextension='.pdos_atm#'
-        !             12345678901
-        c_tab = 11
-        IF (nlmchi(nwfc)%na < 10) THEN
-           WRITE (filextension( c_tab : c_tab ),'(i1)') nlmchi(nwfc)%na
-           c_tab = c_tab + 1
-        ELSEIF (nlmchi(nwfc)%na < 100) THEN
-           WRITE (filextension( c_tab : c_tab+1 ),'(i2)') nlmchi(nwfc)%na
-           c_tab = c_tab + 2
-        ELSEIF (nlmchi(nwfc)%na < 1000) THEN
-           WRITE (filextension( c_tab : c_tab+2 ),'(i3)') nlmchi(nwfc)%na
-           c_tab = c_tab + 3
-        ELSEIF (nlmchi(nwfc)%na < 10000) THEN
-           WRITE (filextension( c_tab : c_tab+3 ),'(i4)') nlmchi(nwfc)%na
-           c_tab = c_tab + 4
-        ELSE
-           CALL errore('partialdos',&
-                'file extension not supporting so many atoms', nwfc)
-        ENDIF
-        WRITE (filextension(c_tab:c_tab+4),'(a1,a)') &
-             '(',trim(atm(ityp(nlmchi(nwfc)%na)))
-        c_tab = c_tab + len_trim(atm(ityp(nlmchi(nwfc)%na))) + 1
-        IF (nlmchi(nwfc)%l > 3) &
-             CALL errore('partialdos',&
-             'file extension not supporting so many l', nwfc)
-        IF (nlmchi(nwfc)%n < 10) THEN
-           WRITE (filextension(c_tab:),'(")_wfc#",i1,"(",a1,")")')  &
-                nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l)
-        ELSE IF (nlmchi(nwfc)%n < 100) THEN
-           WRITE (filextension(c_tab:),'(")_wfc#",i2,"(",a1,")")')  &
-                nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l)
-        ELSE
-           CALL errore('partialdos',&
-             'file extension not supporting so many atomic wfc', nwfc)
-        END IF
-        fileout = trim(filpdos)//trim(filextension)
-        OPEN (4,file=fileout,form='formatted', status='unknown')
-
-        IF (kresolveddos) THEN
-           WRITE (4,'("# ik   ")', advance="NO")
-        ELSE
-           WRITE (4,'("#")', advance="NO")
-        ENDIF
-        IF (nspin == 1) THEN
-           WRITE (4,'(" E (eV)   ldos(E)  ")', advance="NO")
-        ELSE
-           WRITE (4,'(" E (eV)  ldosup(E)  ldosdw(E)")', advance="NO")
-        ENDIF
-        DO m=1,2 * nlmchi(nwfc)%l + 1
-           IF (nspin == 1) THEN
-              WRITE(4,'(" pdos(E)   ")', advance="NO")
-           ELSE
-              WRITE(4,'(" pdosup(E) ")', advance="NO")
-              WRITE(4,'(" pdosdw(E) ")', advance="NO")
-           ENDIF
-        ENDDO
-        WRITE(4,*)
-        !
-        ! ldos = PDOS summed over m (m=-l:+l)
-        !
-        ldos  (:,:,:) = 0.d0
-        DO ik=1,nkseff
-           DO ie= 0, ne
-              DO is=1, nspin
-                 DO m=1,2 * nlmchi(nwfc)%l + 1
-                    ldos  (ie, is, ik) = ldos  (ie, is, ik) + pdos(ie,nwfc+m-1,is,ik)
-                 ENDDO
-              ENDDO
-           ENDDO
-        ENDDO
-        DO ik=1,nkseff
-           DO ie= 0, ne
-              IF (kresolveddos) THEN
-                 WRITE (4,'(i5," ")', advance="NO") ik
-              ENDIF
-              etev = Emin + ie * DeltaE
-              WRITE (4,'(f7.3,2e11.3,14e11.3)') etev*rytoev,  &
-                   (ldos(ie,is,ik), is=1,nspin), &
-                   ((pdos(ie,nwfc+m-1,is,ik), is=1,nspin), &
-                   m=1,2*nlmchi(nwfc)%l+1)
-           ENDDO
-           IF (kresolveddos) WRITE (4,*)
-        ENDDO
-        CLOSE (4)
-     ENDIF
-  ENDDO
+		IF (kresolveddos) THEN
+		   WRITE (4,'("# ik   ")', advance="NO")
+		ELSE
+		   WRITE (4,'("#")', advance="NO")
+		ENDIF
+		IF (nspin == 1) THEN
+		   WRITE (4,'(" E (eV)   ldos(E)  ")', advance="NO")
+		ELSE
+		   WRITE (4,'(" E (eV)  ldosup(E)  ldosdw(E)")', advance="NO")
+		ENDIF
+		DO m=1,2 * nlmchi(nwfc)%l + 1
+		   IF (nspin == 1) THEN
+		      WRITE(4,'(" pdos(E)   ")', advance="NO")
+		   ELSE
+		      WRITE(4,'(" pdosup(E) ")', advance="NO")
+		      WRITE(4,'(" pdosdw(E) ")', advance="NO")
+		   ENDIF
+		ENDDO
+		WRITE(4,*)
+		!
+		! ldos = PDOS summed over m (m=-l:+l)
+		!
+		ldos  (:,:,:) = 0.d0
+		DO ik=1,nkseff
+		   DO ie= 0, ne
+		      DO is=1, nspin
+		         DO m=1,2 * nlmchi(nwfc)%l + 1
+		            ldos  (ie, is, ik) = ldos  (ie, is, ik) + pdos(ie,nwfc+m-1,is,ik)
+		         ENDDO
+		      ENDDO
+		   ENDDO
+		ENDDO
+		DO ik=1,nkseff
+		   DO ie= 0, ne
+		      IF (kresolveddos) THEN
+		         WRITE (4,'(i5," ")', advance="NO") ik
+		      ENDIF
+		      etev = Emin + ie * DeltaE
+		      WRITE (4,'(f7.3,2e11.3,14e11.3)') etev*rytoev,  &
+		           (ldos(ie,is,ik), is=1,nspin), &
+		           ((pdos(ie,nwfc+m-1,is,ik), is=1,nspin), &
+		           m=1,2*nlmchi(nwfc)%l+1)
+		   ENDDO
+		   IF (kresolveddos) WRITE (4,*)
+		ENDDO
+		CLOSE (4)
+	     ENDIF
+	  ENDDO
+  ENDIF
   fileout = trim(filpdos)//".pdos_tot"
   OPEN (4,file=fileout,form='formatted', status='unknown')
   IF (kresolveddos) THEN
@@ -262,7 +264,7 @@ SUBROUTINE  partialdos (Emin, Emax, DeltaE, kresolveddos, filpdos)
 END SUBROUTINE partialdos
 !
 !-----------------------------------------------------------------------
-SUBROUTINE  partialdos_nc (Emin, Emax, DeltaE, kresolveddos, filpdos)
+SUBROUTINE  partialdos_nc (Emin, Emax, DeltaE, kresolveddos, filpdos,skipfiles)
   !-----------------------------------------------------------------------
   !
   USE io_global,  ONLY : stdout
@@ -281,6 +283,7 @@ SUBROUTINE  partialdos_nc (Emin, Emax, DeltaE, kresolveddos, filpdos)
   CHARACTER (len=256) :: filpdos
   REAL(DP) :: Emin, Emax, DeltaE
   LOGICAL :: kresolveddos
+  LOGICAL, INTENT(in) :: skipfiles
   !
   CHARACTER (len=33) :: filextension
   CHARACTER (len=256):: fileout
@@ -408,144 +411,146 @@ SUBROUTINE  partialdos_nc (Emin, Emax, DeltaE, kresolveddos, filpdos)
      ENDDO
   ENDDO
 
-  DO nwfc = 1, natomwfc
-     IF (nlmchi(nwfc)%ind == 1) THEN
-        filextension='.pdos_atm#'
-        !             12345678901
-        c_tab = 11
-        IF (nlmchi(nwfc)%na < 10) THEN
-           WRITE (filextension( c_tab : c_tab ),'(i1)') nlmchi(nwfc)%na
-           c_tab = c_tab + 1
-        ELSEIF (nlmchi(nwfc)%na < 100) THEN
-           WRITE (filextension( c_tab : c_tab+1 ),'(i2)') nlmchi(nwfc)%na
-           c_tab = c_tab + 2
-        ELSEIF (nlmchi(nwfc)%na < 1000) THEN
-           WRITE (filextension( c_tab : c_tab+2 ),'(i3)') nlmchi(nwfc)%na
-           c_tab = c_tab + 3
-        ELSEIF (nlmchi(nwfc)%na < 10000) THEN
-           WRITE (filextension( c_tab : c_tab+3 ),'(i4)') nlmchi(nwfc)%na
-           c_tab = c_tab + 4
-        ELSE
-           CALL errore('partialdos_nc',&
-                'file extension not supporting so many atoms', nwfc)
-        ENDIF
-        WRITE (filextension(c_tab:c_tab+4),'(a1,a)') &
-             '(',trim(atm(ityp(nlmchi(nwfc)%na)))
-        c_tab = c_tab + len_trim(atm(ityp(nlmchi(nwfc)%na))) + 1
-        IF (nlmchi(nwfc)%l > 3) &
-             CALL errore('partialdos_nc',&
-             'file extension not supporting so many l', nwfc)
-        IF (nlmchi(nwfc)%n < 10) THEN
-           IF (lspinorb) THEN
-             WRITE (filextension(c_tab:),'(")_wfc#",i1,"(",a1,"_j",f3.1,")")') &
-             nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l),nlmchi(nwfc)%jj
-           ELSE
-             WRITE (filextension(c_tab:),'(")_wfc#",i1,"(",a1,")")')  &
-             nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l)
-           ENDIF
-        ELSE IF (nlmchi(nwfc)%n < 100) THEN
-           IF (lspinorb) THEN
-             WRITE (filextension(c_tab:),'(")_wfc#",i2,"(",a1,"_j",f3.1,")")') &
-             nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l),nlmchi(nwfc)%jj
-           ELSE
-             WRITE (filextension(c_tab:),'(")_wfc#",i2,"(",a1,")")')  &
-             nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l)
-           ENDIF
-        ELSE
-           CALL errore('partialdos_nc',&
-             'file extension not supporting so many atomic wfc', nwfc)
-        ENDIF
-        fileout = trim(filpdos)//trim(filextension)
-        OPEN (4,file=fileout,form='formatted', status='unknown')
+  if (.not. skipfiles) THEN
+	  DO nwfc = 1, natomwfc
+	     IF (nlmchi(nwfc)%ind == 1) THEN
+		filextension='.pdos_atm#'
+		!             12345678901
+		c_tab = 11
+		IF (nlmchi(nwfc)%na < 10) THEN
+		   WRITE (filextension( c_tab : c_tab ),'(i1)') nlmchi(nwfc)%na
+		   c_tab = c_tab + 1
+		ELSEIF (nlmchi(nwfc)%na < 100) THEN
+		   WRITE (filextension( c_tab : c_tab+1 ),'(i2)') nlmchi(nwfc)%na
+		   c_tab = c_tab + 2
+		ELSEIF (nlmchi(nwfc)%na < 1000) THEN
+		   WRITE (filextension( c_tab : c_tab+2 ),'(i3)') nlmchi(nwfc)%na
+		   c_tab = c_tab + 3
+		ELSEIF (nlmchi(nwfc)%na < 10000) THEN
+		   WRITE (filextension( c_tab : c_tab+3 ),'(i4)') nlmchi(nwfc)%na
+		   c_tab = c_tab + 4
+		ELSE
+		   CALL errore('partialdos_nc',&
+		        'file extension not supporting so many atoms', nwfc)
+		ENDIF
+		WRITE (filextension(c_tab:c_tab+4),'(a1,a)') &
+		     '(',trim(atm(ityp(nlmchi(nwfc)%na)))
+		c_tab = c_tab + len_trim(atm(ityp(nlmchi(nwfc)%na))) + 1
+		IF (nlmchi(nwfc)%l > 3) &
+		     CALL errore('partialdos_nc',&
+		     'file extension not supporting so many l', nwfc)
+		IF (nlmchi(nwfc)%n < 10) THEN
+		   IF (lspinorb) THEN
+		     WRITE (filextension(c_tab:),'(")_wfc#",i1,"(",a1,"_j",f3.1,")")') &
+		     nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l),nlmchi(nwfc)%jj
+		   ELSE
+		     WRITE (filextension(c_tab:),'(")_wfc#",i1,"(",a1,")")')  &
+		     nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l)
+		   ENDIF
+		ELSE IF (nlmchi(nwfc)%n < 100) THEN
+		   IF (lspinorb) THEN
+		     WRITE (filextension(c_tab:),'(")_wfc#",i2,"(",a1,"_j",f3.1,")")') &
+		     nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l),nlmchi(nwfc)%jj
+		   ELSE
+		     WRITE (filextension(c_tab:),'(")_wfc#",i2,"(",a1,")")')  &
+		     nlmchi(nwfc)%n, l_label(nlmchi(nwfc)%l)
+		   ENDIF
+		ELSE
+		   CALL errore('partialdos_nc',&
+		     'file extension not supporting so many atomic wfc', nwfc)
+		ENDIF
+		fileout = trim(filpdos)//trim(filextension)
+		OPEN (4,file=fileout,form='formatted', status='unknown')
 
-        IF (kresolveddos) THEN
-           WRITE (4,'("# ik   ")', advance="NO")
-        ELSE
-           WRITE (4,'("#")', advance="NO")
-        ENDIF
-        IF (nspin0 == 1) THEN
-           WRITE (4,'(" E(eV)   ldos(E)   ")', advance="NO")
-        ELSE
-           WRITE (4,'(" E(eV)  ldosup(E)  ldosdw(E)")', advance="NO")
-        ENDIF
-        IF (lspinorb) THEN
-           ind = 0
-           DO m = -nlmchi(nwfc)%l-1, nlmchi(nwfc)%l
-              fact(1) = spinor(nlmchi(nwfc)%l,nlmchi(nwfc)%jj,m,1)
-              fact(2) = spinor(nlmchi(nwfc)%l,nlmchi(nwfc)%jj,m,2)
-              IF (abs(fact(1))>1.d-8.or.abs(fact(2))>1.d-8) THEN
-                 ind = ind + 1
-                 WRITE(4,'("pdos(E)_",i1,"   ")', advance="NO") ind
-              ENDIF
-           ENDDO
-        ELSE
-           DO ind=1,2 * nlmchi(nwfc)%l + 1
-              WRITE(4,'(" pdosup(E) ")', advance="NO")
-              WRITE(4,'(" pdosdw(E) ")', advance="NO")
-           ENDDO
-        ENDIF
-        WRITE(4,*)
-        !
-        ! ldos = PDOS summed over m (m=-l:+l)
-        !
-        ldos  (:,:,:) = 0.d0
-        IF (lspinorb) THEN
-           DO ik=1,nkseff
-              DO ie= 0, ne
-                 IF (abs(nlmchi(nwfc)%jj-nlmchi(nwfc)%l-0.5d0)<1.d-8) THEN
-                    DO ind = 1, 2 * nlmchi(nwfc)%l + 2
-                       ldos  (ie, 1, ik) = ldos  (ie, 1, ik) + pdos(ie,nwfc+ind-1,1,ik)
-                    ENDDO
-                 ELSEIF (abs(nlmchi(nwfc)%jj-nlmchi(nwfc)%l+0.5d0)<1.d-8) THEN
-                    DO ind = 1, 2 * nlmchi(nwfc)%l
-                       ldos  (ie, 1, ik) = ldos  (ie, 1, ik) + pdos(ie,nwfc+ind-1,1,ik)
-                    ENDDO
-                 ENDIF
-              ENDDO
-           ENDDO
-           DO ik=1,nkseff
-              DO ie= 0, ne
-                 IF (kresolveddos) THEN
-                    WRITE (4,'(i5," ")', advance="NO") ik
-                 ENDIF
-                 etev = Emin + ie * DeltaE
-                 IF (abs(nlmchi(nwfc)%jj-nlmchi(nwfc)%l-0.5d0)<1.d-8) THEN
-                    WRITE (4,'(f7.3,2e11.3,14e11.3)') etev*rytoev, ldos(ie,1,ik), &
-                         (pdos(ie,nwfc+ind-1,1,ik), ind=1,2*nlmchi(nwfc)%l+2)
-                 ELSEIF (abs(nlmchi(nwfc)%jj-nlmchi(nwfc)%l+0.5d0)<1.d-8) THEN
-                    WRITE (4,'(f7.3,2e11.3,14e11.3)') etev*rytoev, ldos(ie,1,ik), &
-                         (pdos(ie,nwfc+ind-1,1,ik), ind=1,2*nlmchi(nwfc)%l)
-                 ENDIF
-              ENDDO
-              IF (kresolveddos) WRITE (4,*)
-           ENDDO
-        ELSE
-           DO ik=1,nkseff
-              DO ie= 0, ne
-                 DO is=1, nspin0
-                    DO ind=1,4 * nlmchi(nwfc)%l + 2
-                       ldos  (ie, is, ik) = ldos  (ie, is, ik) + pdos(ie,nwfc+ind-1,is, ik)
-                    ENDDO
-                 ENDDO
-              ENDDO
-           ENDDO
-           DO ik=1,nkseff
-              DO ie= 0, ne
-                 IF (kresolveddos) THEN
-                    WRITE (4,'(i5," ")', advance="NO") ik
-                 ENDIF
-                 etev = Emin + ie * DeltaE
-                 WRITE (4,'(f7.3,2e11.3,14e11.3)') etev*rytoev,  &
-                      (ldos(ie,is,ik), is=1,nspin0), &
-                      ((pdos(ie,nwfc+ind-1+(is-1)*(2*nlmchi(nwfc)%l+1),is,ik), is=1,nspin0), &
-                      ind=1,2*nlmchi(nwfc)%l+1)
-              ENDDO
-              IF (kresolveddos) WRITE (4,*)
-           ENDDO
-        ENDIF
-        CLOSE (4)
-     ENDIF
-  ENDDO
+		IF (kresolveddos) THEN
+		   WRITE (4,'("# ik   ")', advance="NO")
+		ELSE
+		   WRITE (4,'("#")', advance="NO")
+		ENDIF
+		IF (nspin0 == 1) THEN
+		   WRITE (4,'(" E(eV)   ldos(E)   ")', advance="NO")
+		ELSE
+		   WRITE (4,'(" E(eV)  ldosup(E)  ldosdw(E)")', advance="NO")
+		ENDIF
+		IF (lspinorb) THEN
+		   ind = 0
+		   DO m = -nlmchi(nwfc)%l-1, nlmchi(nwfc)%l
+		      fact(1) = spinor(nlmchi(nwfc)%l,nlmchi(nwfc)%jj,m,1)
+		      fact(2) = spinor(nlmchi(nwfc)%l,nlmchi(nwfc)%jj,m,2)
+		      IF (abs(fact(1))>1.d-8.or.abs(fact(2))>1.d-8) THEN
+		         ind = ind + 1
+		         WRITE(4,'("pdos(E)_",i1,"   ")', advance="NO") ind
+		      ENDIF
+		   ENDDO
+		ELSE
+		   DO ind=1,2 * nlmchi(nwfc)%l + 1
+		      WRITE(4,'(" pdosup(E) ")', advance="NO")
+		      WRITE(4,'(" pdosdw(E) ")', advance="NO")
+		   ENDDO
+		ENDIF
+		WRITE(4,*)
+		!
+		! ldos = PDOS summed over m (m=-l:+l)
+		!
+		ldos  (:,:,:) = 0.d0
+		IF (lspinorb) THEN
+		   DO ik=1,nkseff
+		      DO ie= 0, ne
+		         IF (abs(nlmchi(nwfc)%jj-nlmchi(nwfc)%l-0.5d0)<1.d-8) THEN
+		            DO ind = 1, 2 * nlmchi(nwfc)%l + 2
+		               ldos  (ie, 1, ik) = ldos  (ie, 1, ik) + pdos(ie,nwfc+ind-1,1,ik)
+		            ENDDO
+		         ELSEIF (abs(nlmchi(nwfc)%jj-nlmchi(nwfc)%l+0.5d0)<1.d-8) THEN
+		            DO ind = 1, 2 * nlmchi(nwfc)%l
+		               ldos  (ie, 1, ik) = ldos  (ie, 1, ik) + pdos(ie,nwfc+ind-1,1,ik)
+		            ENDDO
+		         ENDIF
+		      ENDDO
+		   ENDDO
+		   DO ik=1,nkseff
+		      DO ie= 0, ne
+		         IF (kresolveddos) THEN
+		            WRITE (4,'(i5," ")', advance="NO") ik
+		         ENDIF
+		         etev = Emin + ie * DeltaE
+		         IF (abs(nlmchi(nwfc)%jj-nlmchi(nwfc)%l-0.5d0)<1.d-8) THEN
+		            WRITE (4,'(f7.3,2e11.3,14e11.3)') etev*rytoev, ldos(ie,1,ik), &
+		                 (pdos(ie,nwfc+ind-1,1,ik), ind=1,2*nlmchi(nwfc)%l+2)
+		         ELSEIF (abs(nlmchi(nwfc)%jj-nlmchi(nwfc)%l+0.5d0)<1.d-8) THEN
+		            WRITE (4,'(f7.3,2e11.3,14e11.3)') etev*rytoev, ldos(ie,1,ik), &
+		                 (pdos(ie,nwfc+ind-1,1,ik), ind=1,2*nlmchi(nwfc)%l)
+		         ENDIF
+		      ENDDO
+		      IF (kresolveddos) WRITE (4,*)
+		   ENDDO
+		ELSE
+		   DO ik=1,nkseff
+		      DO ie= 0, ne
+		         DO is=1, nspin0
+		            DO ind=1,4 * nlmchi(nwfc)%l + 2
+		               ldos  (ie, is, ik) = ldos  (ie, is, ik) + pdos(ie,nwfc+ind-1,is, ik)
+		            ENDDO
+		         ENDDO
+		      ENDDO
+		   ENDDO
+		   DO ik=1,nkseff
+		      DO ie= 0, ne
+		         IF (kresolveddos) THEN
+		            WRITE (4,'(i5," ")', advance="NO") ik
+		         ENDIF
+		         etev = Emin + ie * DeltaE
+		         WRITE (4,'(f7.3,2e11.3,14e11.3)') etev*rytoev,  &
+		              (ldos(ie,is,ik), is=1,nspin0), &
+		              ((pdos(ie,nwfc+ind-1+(is-1)*(2*nlmchi(nwfc)%l+1),is,ik), is=1,nspin0), &
+		              ind=1,2*nlmchi(nwfc)%l+1)
+		      ENDDO
+		      IF (kresolveddos) WRITE (4,*)
+		   ENDDO
+		ENDIF
+		CLOSE (4)
+	     ENDIF
+	  ENDDO
+  ENDIF
   fileout = trim(filpdos)//".pdos_tot"
   OPEN (4,file=fileout,form='formatted', status='unknown')
   IF (kresolveddos) THEN
