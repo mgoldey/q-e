@@ -8,6 +8,7 @@
 ! Contributors to this file:
 !   Nicholas P. Brawand (nicholasbrawand@gmail.com)
 !   Matthew B. Goldey (matthew.goldey@gmail.com)
+!   Marton Voros (vormar@gmail.com)
 !
 ! DOI: 10.1021/acs.chemmater.6b04631 and 10.1021/acs.jctc.7b00088
 !
@@ -63,10 +64,7 @@ SUBROUTINE epcdft_controller(dr2)
   REAL(DP), INTENT(IN) :: dr2
   REAL(DP) :: dv
   REAL(DP) :: acharge, dcharge                     ! acceptor/donor charge 
-  REAL(DP) :: achargep, dchargep                   ! acceptor/donor charge parallel
   REAL(DP) :: einwell                              ! number of electrons in well
-  REAL(DP) :: einwellp                             ! number of electrons in well
-  REAL(DP) :: epcdft_shiftp                        ! size of shift
   REAL(DP) :: enumerr                              ! epcdft_charge - einwell  (e number error)
   LOGICAL  :: elocflag                             ! true if charge localization condition is satisfied
   REAL(DP), DIMENSION(:,:), ALLOCATABLE :: vpotenp ! ef is added to this potential
@@ -105,7 +103,6 @@ SUBROUTINE epcdft_controller(dr2)
   !
   dv = omega / DBLE( dfftp%nr1 * dfftp%nr2 * dfftp%nr3 )
   epcdft_shift = 0.D0
-  epcdft_shiftp = 0.D0
   !
   conv_epcdft=.true. ! set to false whenever anything is not satisfied
   !
@@ -116,12 +113,9 @@ SUBROUTINE epcdft_controller(dr2)
     !
     acharge = 0.D0
     dcharge = 0.D0
-    achargep = 0.D0
-    dchargep = 0.D0
     elocflag=.true.
     einwell  = 0.D0
-    einwellp  = 0.D0
-    epcdft_shiftp=0.D0
+    epcdft_shift=0.D0
     next_epcdft_amp = 0.D0
     vpotenp=0.D0
     !
@@ -138,9 +132,9 @@ SUBROUTINE epcdft_controller(dr2)
       ! calculate energy correction
       !
       IF (nspin.eq.1) THEN
-        epcdft_shiftp = epcdft_shiftp + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv
+        epcdft_shift = epcdft_shift + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv
       ELSE
-        epcdft_shiftp = epcdft_shiftp + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv &
+        epcdft_shift = epcdft_shift + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv &
                                       + epcdft_amp * vpotenp(i,2) * rho%of_r(i,2) * dv
       ENDIF
       !
@@ -149,57 +143,57 @@ SUBROUTINE epcdft_controller(dr2)
       SELECT CASE( epcdft_type(iconstraint) )
       CASE('charge','delta_charge')
         !
-        einwellp = einwellp + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
+        einwell = einwell + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
         !
         IF(vpotenp(i,1)<0.D0) THEN
           !
-          achargep = achargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) +vpotenp(i,2) * rho%of_r(i,2)) * dv
+          acharge = acharge - ABS( vpotenp(i,1)  * rho%of_r(i,1) +vpotenp(i,2) * rho%of_r(i,2)) * dv
           !
         ELSE IF(vpotenp(i,1)>0.D0) THEN
           !
-          dchargep = dchargep - ABS( vpotenp(i,1)  * rho%of_r(i,1) +vpotenp(i,2) * rho%of_r(i,2)) * dv
+          dcharge = dcharge - ABS( vpotenp(i,1)  * rho%of_r(i,1) +vpotenp(i,2) * rho%of_r(i,2)) * dv
           !
         ENDIF
         !
       CASE('spin','delta_spin')
         !
-        einwellp = einwellp + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
+        einwell = einwell + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
         !
         IF(vpotenp(i,1)<0.D0) THEN
           !
-          achargep = achargep + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
+          acharge = acharge + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
           !
         ELSE IF(vpotenp(i,1)>0.D0) THEN
           !
-          dchargep = dchargep + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
+          dcharge = dcharge + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
           !
         ENDIF
         !
       CASE('delta_alpha')
         !
-        einwellp = einwellp + vpotenp(i,1) * rho%of_r(i,1) * dv  
+        einwell = einwell + vpotenp(i,1) * rho%of_r(i,1) * dv  
         !
         IF(vpotenp(i,1)<0.D0) THEN
           !
-          achargep = achargep + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
+          acharge = acharge + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
           !
         ELSE IF(vpotenp(i,1)>0.D0) THEN
           !
-          dchargep = dchargep + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
+          dcharge = dcharge + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
           !
         ENDIF
         !
       CASE('delta_beta')
         !
-        einwellp = einwellp + vpotenp(i,2) * rho%of_r(i,2) * dv  
+        einwell = einwell + vpotenp(i,2) * rho%of_r(i,2) * dv  
         !
         IF(vpotenp(i,2)<0.D0) THEN
           !
-          achargep = achargep + ABS( vpotenp(i,2)  * rho%of_r(i,2)) * dv
+          acharge = acharge + ABS( vpotenp(i,2)  * rho%of_r(i,2)) * dv
           !
         ELSE IF(vpotenp(i,2)>0.D0) THEN
           !
-          dchargep = dchargep + ABS( vpotenp(i,2)  * rho%of_r(i,2)) * dv
+          dcharge = dcharge + ABS( vpotenp(i,2)  * rho%of_r(i,2)) * dv
           !
         ENDIF
         !
@@ -207,27 +201,10 @@ SUBROUTINE epcdft_controller(dr2)
       !
     END DO ! i over nnr
     !
-#ifdef __MPI
-    !
-    CALL MP_SUM(epcdft_shiftp,intra_image_comm) 
-    CALL MP_SUM(einwellp,intra_image_comm) 
-    epcdft_shift=epcdft_shiftp
-    einwell=einwellp
-    !
-    CALL MP_SUM(achargep,intra_image_comm) 
-    acharge=achargep
-    CALL MP_SUM(dchargep,intra_image_comm)
-    dcharge=dchargep
-    !
-#else
-    !
-    epcdft_shift=epcdft_shiftp
-    einwell=einwellp
-    !
-    acharge=achargep
-    dcharge=dchargep
-    !
-#endif
+    CALL MP_SUM(epcdft_shift,intra_image_comm) 
+    CALL MP_SUM(einwell,intra_image_comm) 
+    CALL MP_SUM(acharge,intra_image_comm) 
+    CALL MP_SUM(dcharge,intra_image_comm)
     !
     ! count nuc charge
     !
@@ -238,12 +215,12 @@ SUBROUTINE epcdft_controller(dr2)
           !
           IF ((iatom.ge.epcdft_locs(1,iconstraint)) .AND. (iatom.le.epcdft_locs(2,iconstraint)) ) THEN
             !
-            einwell = einwell - zv(ityp(iatom))
+            einwell = einwell + zv(ityp(iatom))
             acharge = acharge + zv(ityp(iatom)) 
             !
           ELSE IF ((iatom.ge.epcdft_locs(3,iconstraint)) .AND. (iatom.le.epcdft_locs(4,iconstraint)) ) THEN
             !
-            einwell = einwell + zv(ityp(iatom))
+            einwell = einwell - zv(ityp(iatom))
             dcharge = dcharge + zv(ityp(iatom))
             !
           ENDIF

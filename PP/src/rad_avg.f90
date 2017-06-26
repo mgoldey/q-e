@@ -9,7 +9,10 @@
 ! UC Davis & LLNL: atupham@ucdavis.edu, pham16@llnl.gov
 ! 
 ! Rewritten for spherical average by M. Voros
-! UC Davis: vormar@gmail.com
+! ANL: vormar@gmail.com
+!
+! Touched up for QE 6.1 by M. Goldey
+! U of Chicago : matthew.goldey@gmail.com 
 !
 ! Original purpose:
 ! The program is designed to calculate the local density of states (LDOS): D(z,e)
