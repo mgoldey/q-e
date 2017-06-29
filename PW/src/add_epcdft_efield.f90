@@ -59,6 +59,7 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !
   IF(first)THEN
     !
+    IF(nspin/=2) CALL errore('add_epcdft_efield', 'CDFT requires nspin=2.', ierr)
     IF(.NOT. gamma_only) CALL errore('add_epcdft_efield', 'CDFT requires gamma_only.', ierr)  
     IF(okvan) CALL errore('add_epcdft_efield', 'CDFT: ultrasoft not implemented.', ierr)  
     IF(okpaw) CALL errore('add_epcdft_efield', 'CDFT: PAW not implemented.', ierr)  
@@ -601,7 +602,7 @@ SUBROUTINE EPCDFT_FORCE(force,rho)
 	              write(filename,"(A6,I2,A1,I1,A1,I1)") "atomic",na,"_",l,"_",m
 	            ENDIF
 	            CALL write_cube_r ( 84332, filename,  REAL(wfcatomr,KIND=DP))
-  	    ENDIF ! write_debug_cube
+	        ENDIF ! write_debug_cube
             !
           ENDDO ! m
         ENDIF ! end if occupied
