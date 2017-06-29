@@ -59,6 +59,7 @@ SUBROUTINE add_epcdft_efield(vpoten,iflag)
   !
   IF(first)THEN
     !
+    IF(nspin/=2) CALL errore('add_epcdft_efield', 'CDFT requires nspin=2.', ierr)
     IF(.NOT. gamma_only) CALL errore('add_epcdft_efield', 'CDFT requires gamma_only.', ierr)  
     IF(okvan) CALL errore('add_epcdft_efield', 'CDFT: ultrasoft not implemented.', ierr)  
     IF(okpaw) CALL errore('add_epcdft_efield', 'CDFT: PAW not implemented.', ierr)  

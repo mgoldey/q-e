@@ -129,21 +129,14 @@ SUBROUTINE epcdft_controller(dr2)
     !
     DO i=1, dfftp%nnr
       !
-      ! calculate energy correction
+      ! count number of electrons in well
       !
-      IF (nspin.eq.1) THEN
-        epcdft_shift = epcdft_shift + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv
-      ELSE
-        epcdft_shift = epcdft_shift + epcdft_amp * vpotenp(i,1) * rho%of_r(i,1) * dv &
-                                      + epcdft_amp * vpotenp(i,2) * rho%of_r(i,2) * dv
-      ENDIF
+      einwell = einwell + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
       !
-      ! count number of electrons in well - this must depend on the well
+      ! count number of acceptor and donor charges - this must depend on the well
       !
       SELECT CASE( epcdft_type(iconstraint) )
       CASE('charge','delta_charge')
-        !
-        einwell = einwell + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
         !
         IF(vpotenp(i,1)<0.D0) THEN
           !
@@ -157,8 +150,6 @@ SUBROUTINE epcdft_controller(dr2)
         !
       CASE('spin','delta_spin')
         !
-        einwell = einwell + vpotenp(i,1) * rho%of_r(i,1) * dv + vpotenp(i,2) * rho%of_r(i,2) * dv
-        !
         IF(vpotenp(i,1)<0.D0) THEN
           !
           acharge = acharge + ABS( vpotenp(i,1)  * rho%of_r(i,1) + vpotenp(i,2) * rho%of_r(i,2)) * dv
@@ -171,8 +162,6 @@ SUBROUTINE epcdft_controller(dr2)
         !
       CASE('delta_alpha')
         !
-        einwell = einwell + vpotenp(i,1) * rho%of_r(i,1) * dv  
-        !
         IF(vpotenp(i,1)<0.D0) THEN
           !
           acharge = acharge + ABS( vpotenp(i,1)  * rho%of_r(i,1)) * dv
@@ -184,8 +173,6 @@ SUBROUTINE epcdft_controller(dr2)
         ENDIF
         !
       CASE('delta_beta')
-        !
-        einwell = einwell + vpotenp(i,2) * rho%of_r(i,2) * dv  
         !
         IF(vpotenp(i,2)<0.D0) THEN
           !
@@ -228,6 +215,10 @@ SUBROUTINE epcdft_controller(dr2)
         ENDDO ! atoms
         !
     END SELECT
+    !
+    ! calculate energy correction
+    !
+    epcdft_shift = epcdft_shift + epcdft_amp * einwell
     !
     ! is the localization condition satisfied?
     !
